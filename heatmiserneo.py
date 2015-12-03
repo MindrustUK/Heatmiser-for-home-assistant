@@ -30,7 +30,11 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
     for device in NeoHubJson['devices']:
         name = device['device']
-        unit_of_measurement = TEMP_CELCIUS
+        tmptempfmt = device['TEMPERATURE_FORMAT']
+        if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
+          unit_of_measurement = TEMP_CELCIUS
+        else:
+          unit_of_measurement = TEMP_FAHRENHEIT
         away = device['AWAY']
         current_temperature = device['CURRENT_TEMPERATURE']
         set_temperature = device['CURRENT_SET_TEMPERATURE']
@@ -132,7 +136,11 @@ class HeatmiserNeostat(ThermostatDevice):
             # Add handling for mulitple thermostats here
             _LOGGER.debug("update() json response: %s " % response)
             # self._name = device['device']
-            # self._unit_of_measurement = TEMP_CELCIUS
+            tmptempfmt = response['devices'][0]["TEMPERATURE_FORMAT"]
+            if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
+              self._unit_of_measurement = TEMP_CELCIUS
+            else:
+              self._unit_of_measurement = TEMP_FAHRENHEIT
             self._away = response['devices'][0]['AWAY']
             self._target_temperature =  round(float(response['devices'][0]["CURRENT_SET_TEMPERATURE"]), 2)
             self._current_temperature = round(float(response['devices'][0]["CURRENT_TEMPERATURE"]), 2)

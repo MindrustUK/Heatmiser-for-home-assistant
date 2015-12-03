@@ -8,13 +8,14 @@ demo.py, nest.py and light/hyperion.py for the json elements
 """
 
 from homeassistant.components.thermostat import ThermostatDevice
-from homeassistant.const import TEMP_CELCIUS, TEMP_FAHRENHEIT, CONF_HOST #, CONF_PORT
+from homeassistant.const import TEMP_CELCIUS, TEMP_FAHRENHEIT, CONF_HOST
 
 import logging
 import socket
 import json
 
 _LOGGER = logging.getLogger(__name__)
+
 
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     """ Sets up a Heatmiser Neo-Hub And Returns Neostats"""
@@ -25,7 +26,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
     NeoHubJson = HeatmiserNeostat(TEMP_CELCIUS, False, host, port).json_request({"INFO": "0"})
 
-    #_LOGGER.info(NeoHubJson)
+    _LOGGER.debug(NeoHubJson)
 
     for device in NeoHubJson['devices']:
         name = device['device']
@@ -56,6 +57,7 @@ class HeatmiserNeostat(ThermostatDevice):
         self._port = port
         #self._type = type Neostat vs Neostat-e
         self._operation = "Null"
+        self.update()
 
     @property
     def should_poll(self):
@@ -80,24 +82,12 @@ class HeatmiserNeostat(ThermostatDevice):
     @property
     def current_temperature(self):
         """ Returns the current temperature. """
-        #print("Self %s" % self)
-        #print(dir(self))
-        response = self.json_request({"INFO": "0"})
-        if response:
-            _LOGGER.info("response: %s " % response)
-            self._current_temperature = float(response['devices'][0]["CURRENT_TEMPERATURE"])
-            return round(self._current_temperature, 2)
-        return False
+        return self._current_temperature
 
     @property
     def target_temperature(self):
         """ Returns the temperature we try to reach. """
-        response = self.json_request({"INFO": "0"})
-        if response:
-            _LOGGER.debug("response: %s " % response)
-            self._target_temperature = float(response['devices'][0]["CURRENT_SET_TEMPERATURE"])
-            return round(self._target_temperature, 2)
-        return False
+        return self._target_temperature
 
     @property
     def is_away_mode_on(self):
@@ -106,38 +96,46 @@ class HeatmiserNeostat(ThermostatDevice):
 
     def set_temperature(self, temperature):
         """ Set new target temperature. """
-        _LOGGER.info("target_temp: %s" % self._target_temperature)
-        _LOGGER.info("Name: %s" % self._name)
-        data = {"SET_TEMP": [int(temperature), self._name]}
-        json_data = json.dumps(data)
-        _LOGGER.debug("set_temperature Request: %s " % json_data)
-        response = self.json_request(data)
-        _LOGGER.info("set_temperature response: %s " % response)
-
+        response = self.json_request({"SET_TEMP": [int(temperature), self._name]})
         if response:
-            _LOGGER.info("response: %s " % response)
-            _LOGGER.info("Target Temperature: %s " % temperature)
+            _LOGGER.info("set_temperature response: %s " % response)
             # Need check for sucsess here
             # {'result': 'temperature was set'}
-            self._target_temperature = temperature
-            return round(self._target_temperature, 2)
-        return False
 
     def turn_away_mode_on(self):
         """ Turns away mode on. """
-        self._away = True
+        _LOGGER.debug("Entered turn_away_mode_on for device: %s" % self._name)
+        response = self.json_request({"AWAY_ON":self._name})
+        if response:
+            _LOGGER.info("turn_away_mode_on request: %s " % response)
+            # Need check for success here
+            # {"result":"away on"}
+            # {"error":"Could not complete away on"}
+            # {"error":"Invalid argument to AWAY_OFF, should be a valid device array of valid devices"}
 
     def turn_away_mode_off(self):
         """ Turns away mode off. """
-        self._away = False
+        _LOGGER.debug("Entered turn_away_mode_off for device: %s" % self._name)
+        response = self.json_request({"AWAY_OFF":self._name})
+        if response:
+            _LOGGER.info("turn_away_mode_off response: %s " % response)
+            # Need check for success here
+            # {"result":"away off"}
+            # {"error":"Could not complete away off"}
+            # {"error":"Invalid argument to AWAY_OFF, should be a valid device or
 
     def update(self):
         """ Get Updated Info. """
+        _LOGGER.debug("Entered update(self)")
         response = self.json_request({"INFO": "0"})
         if response:
-            _LOGGER.debug("response: %s " % response)
-            self._target_temperature = float(response['devices'][0]["CURRENT_SET_TEMPERATURE"])
-            self._target_temperature = round(self._target_temperature, 2)
+            # Add handling for mulitple thermostats here
+            _LOGGER.debug("update() json response: %s " % response)
+            # self._name = device['device']
+            # self._unit_of_measurement = TEMP_CELCIUS
+            self._away = response['devices'][0]['AWAY']
+            self._target_temperature =  round(float(response['devices'][0]["CURRENT_SET_TEMPERATURE"]), 2)
+            self._current_temperature = round(float(response['devices'][0]["CURRENT_TEMPERATURE"]), 2)
         return False
 
     def json_request(self, request=None, wait_for_response=False):
@@ -156,7 +154,7 @@ class HeatmiserNeostat(ThermostatDevice):
             sock.close()
             return True
 
-        _LOGGER.info("json_request: %s " % request)
+        _LOGGER.debug("json_request: %s " % request)
 
         sock.send(bytearray(json.dumps(request) + "\0\r", "utf-8"))
         try:

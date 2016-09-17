@@ -1,14 +1,14 @@
 """
 homeassistant.components.thermostat.heatmiserneo
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Heatmiser NeoStat control via Heatmiser Neo-hub
 Code largely ripped off and glued togehter from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
 
-from homeassistant.components.thermostat import ThermostatDevice
-from homeassistant.const import TEMP_CELCIUS, TEMP_FAHRENHEIT, CONF_HOST
+from homeassistant.components.climate import ClimateDevice
+from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE, TEMP_FAHRENHEIT, CONF_HOST
 
 import logging
 import socket
@@ -24,7 +24,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
     thermostats = []
 
-    NeoHubJson = HeatmiserNeostat(TEMP_CELCIUS, False, host, port).json_request({"INFO": "0"})
+    NeoHubJson = HeatmiserNeostat(TEMP_CELSIUS, False, host, port).json_request({"INFO": "0"})
 
     _LOGGER.debug(NeoHubJson)
 
@@ -32,7 +32,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         name = device['device']
         tmptempfmt = device['TEMPERATURE_FORMAT']
         if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-          unit_of_measurement = TEMP_CELCIUS
+          unit_of_measurement = TEMP_CELSIUS
         else:
           unit_of_measurement = TEMP_FAHRENHEIT
         away = device['AWAY']
@@ -51,7 +51,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     add_devices_callback(thermostats)
 
 
-class HeatmiserNeostat(ThermostatDevice):
+class HeatmiserNeostat(ClimateDevice):
     """ Represents a Heatmiser Neostat thermostat. """
     def __init__(self, unit_of_measurement, away, host, port, name="Null"):
         self._name = name
@@ -98,9 +98,9 @@ class HeatmiserNeostat(ThermostatDevice):
         """ Returns if away mode is on. """
         return self._away
 
-    def set_temperature(self, temperature):
+    def set_temperature(self, **kwargs):
         """ Set new target temperature. """
-        response = self.json_request({"SET_TEMP": [int(temperature), self._name]})
+        response = self.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})
         if response:
             _LOGGER.info("set_temperature response: %s " % response)
             # Need check for sucsess here
@@ -138,7 +138,7 @@ class HeatmiserNeostat(ThermostatDevice):
             # self._name = device['device']
             tmptempfmt = response['devices'][0]["TEMPERATURE_FORMAT"]
             if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-              self._unit_of_measurement = TEMP_CELCIUS
+              self._unit_of_measurement = TEMP_CELSIUS
             else:
               self._unit_of_measurement = TEMP_FAHRENHEIT
             self._away = response['devices'][0]['AWAY']

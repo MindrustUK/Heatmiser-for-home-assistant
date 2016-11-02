@@ -1,26 +1,37 @@
 """
 homeassistant.components.thermostat.heatmiserneo
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Heatmiser NeoStat control via Heatmiser Neo-hub
 Code largely ripped off and glued togehter from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
-
-from homeassistant.components.climate import ClimateDevice
-from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE, TEMP_FAHRENHEIT, CONF_HOST
-
 import logging
+
+import voluptuous as vol
+
+from homeassistant.components.climate import ClimateDevice, PLATFORM_SCHEMA
+from homeassistant.const import (
+    TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_PORT, CONF_NAME)
+import homeassistant.helpers.config_validation as cv
+
 import socket
 import json
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_HOST = 'host'
+CONF_PORT = 'port'
 
-def setup_platform(hass, config, add_devices_callback, discovery_info=None):
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_HOST): cv.string,
+    vol.Required(CONF_PORT): cv.port,
+})
+
+def setup_platform(hass, config, add_devices, discovery_info=None):
     """ Sets up a Heatmiser Neo-Hub And Returns Neostats"""
     host = config.get(CONF_HOST, None)
-    port = config.get("port", 4242)
+    port = config.get("CONF_PORT", 4242)
 
     thermostats = []
 
@@ -32,9 +43,9 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         name = device['device']
         tmptempfmt = device['TEMPERATURE_FORMAT']
         if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-          unit_of_measurement = TEMP_CELSIUS
+          temperature_unit = TEMP_CELSIUS
         else:
-          unit_of_measurement = TEMP_FAHRENHEIT
+          temperature_unit = TEMP_FAHRENHEIT
         away = device['AWAY']
         current_temperature = device['CURRENT_TEMPERATURE']
         set_temperature = device['CURRENT_SET_TEMPERATURE']
@@ -43,19 +54,19 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         _LOGGER.info("Thermostat Away Mode: %s " % away)
         _LOGGER.info("Thermostat Current Temp: %s " % current_temperature)
         _LOGGER.info("Thermostat Set Temp: %s " % set_temperature)
-        _LOGGER.info("Thermostat Unit Of Measurement: %s " % unit_of_measurement)
+        _LOGGER.info("Thermostat Unit Of Measurement: %s " % temperature_unit)
 
-        thermostats.append(HeatmiserNeostat(unit_of_measurement, away, host, port, name))
+        thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
 
     _LOGGER.info("Adding Thermostats: %s " % thermostats)
-    add_devices_callback(thermostats)
+    add_devices(thermostats)
 
 
 class HeatmiserNeostat(ClimateDevice):
     """ Represents a Heatmiser Neostat thermostat. """
-    def __init__(self, unit_of_measurement, away, host, port, name="Null"):
+    def __init__(self, temperature_unit, away, host, port, name="Null"):
         self._name = name
-        self._unit_of_measurement = unit_of_measurement
+        self._temperature_unit = temperature_unit
         self._away = away
         self._host = host
         self._port = port
@@ -79,9 +90,9 @@ class HeatmiserNeostat(ClimateDevice):
         return self._operation
 
     @property
-    def unit_of_measurement(self):
+    def temperature_unit(self):
         """ Returns the unit of measurement. """
-        return self._unit_of_measurement
+        return self._temperature_unit
 
     @property
     def current_temperature(self):
@@ -138,9 +149,9 @@ class HeatmiserNeostat(ClimateDevice):
             # self._name = device['device']
             tmptempfmt = response['devices'][0]["TEMPERATURE_FORMAT"]
             if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-              self._unit_of_measurement = TEMP_CELSIUS
+              self._temperature_unit = TEMP_CELSIUS
             else:
-              self._unit_of_measurement = TEMP_FAHRENHEIT
+              self._temperature_unit = TEMP_FAHRENHEIT
             self._away = response['devices'][0]['AWAY']
             self._target_temperature =  round(float(response['devices'][0]["CURRENT_SET_TEMPERATURE"]), 2)
             self._current_temperature = round(float(response['devices'][0]["CURRENT_TEMPERATURE"]), 2)

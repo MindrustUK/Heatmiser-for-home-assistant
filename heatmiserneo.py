@@ -147,14 +147,16 @@ class HeatmiserNeostat(ClimateDevice):
             # Add handling for mulitple thermostats here
             _LOGGER.debug("update() json response: %s " % response)
             # self._name = device['device']
-            tmptempfmt = response['devices'][0]["TEMPERATURE_FORMAT"]
-            if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-              self._temperature_unit = TEMP_CELSIUS
-            else:
-              self._temperature_unit = TEMP_FAHRENHEIT
-            self._away = response['devices'][0]['AWAY']
-            self._target_temperature =  round(float(response['devices'][0]["CURRENT_SET_TEMPERATURE"]), 2)
-            self._current_temperature = round(float(response['devices'][0]["CURRENT_TEMPERATURE"]), 2)
+            for device in response['devices']:
+              if self._name == device['device']:
+                tmptempfmt = device["TEMPERATURE_FORMAT"]
+                if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
+                  self._temperature_unit = TEMP_CELSIUS
+                else:
+                  self._temperature_unit = TEMP_FAHRENHEIT
+                self._away = device['AWAY']
+                self._target_temperature =  round(float(device["CURRENT_SET_TEMPERATURE"]), 2)
+                self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
         return False
 
     def json_request(self, request=None, wait_for_response=False):

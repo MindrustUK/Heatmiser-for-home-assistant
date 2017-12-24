@@ -10,7 +10,12 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components.climate import ClimateDevice, PLATFORM_SCHEMA
+from homeassistant.components.climate import (
+    ATTR_TARGET_TEMP_HIGH, ATTR_TARGET_TEMP_LOW, DOMAIN,
+    ClimateDevice, PLATFORM_SCHEMA, STATE_AUTO,
+    STATE_COOL, STATE_HEAT, SUPPORT_TARGET_TEMPERATURE,
+    SUPPORT_TARGET_TEMPERATURE_HIGH, SUPPORT_TARGET_TEMPERATURE_LOW,
+    SUPPORT_OPERATION_MODE, SUPPORT_AWAY_MODE, SUPPORT_FAN_MODE)
 from homeassistant.const import (
     TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_PORT, CONF_NAME)
 import homeassistant.helpers.config_validation as cv
@@ -22,6 +27,8 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_HOST = 'host'
 CONF_PORT = 'port'
+
+SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -35,7 +42,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     thermostats = []
 
-    NeoHubJson = HeatmiserNeostat(TEMP_CELSIUS, False, host, port).json_request({"INFO": "0"})
+    NeoHubJson = HeatmiserNeostat(TEMP_CELSIUS, False, host, port).json_request({"INFO": 0})
 
     _LOGGER.debug(NeoHubJson)
 
@@ -73,6 +80,11 @@ class HeatmiserNeostat(ClimateDevice):
         #self._type = type Neostat vs Neostat-e
         self._operation = "Null"
         self.update()
+
+    @property
+    def supported_features(self):
+        """Return the list of supported features."""
+        return SUPPORT_FLAGS
 
     @property
     def should_poll(self):
@@ -142,7 +154,7 @@ class HeatmiserNeostat(ClimateDevice):
     def update(self):
         """ Get Updated Info. """
         _LOGGER.debug("Entered update(self)")
-        response = self.json_request({"INFO": "0"})
+        response = self.json_request({"INFO": 0})
         if response:
             # Add handling for mulitple thermostats here
             _LOGGER.debug("update() json response: %s " % response)

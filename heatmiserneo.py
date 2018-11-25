@@ -122,9 +122,9 @@ class HeatmiserNeostat(ClimateDevice):
         return self._away
     
     @property
-    def current_operation(self):
-        """Return current operation ie. auto_eco, cool_only, fan_only."""
-        return self._current_op
+    def operation(self):
+        """ Returns current operation. heat, cool idle """
+        return self._operation
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
@@ -175,11 +175,14 @@ class HeatmiserNeostat(ClimateDevice):
                 self._target_temperature =  round(float(device["CURRENT_SET_TEMPERATURE"]), 2)
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
                 if device["HEATING"] == True:
-                    self._current_op = STATE_HEAT
-                if device["COOLING"] == True:
-                    self._current_op = STATE_COOL
+                    self._current_operation = STATE_HEAT
+                    _LOGGER.debug("Heating")
+                elif device["COOLING"] == True:
+                    self._current_operation = STATE_COOL
+                    _LOGGER.debug("Cooling")
                 else:
-                    self._current_op = STATE_IDLE
+                    self._current_operation = STATE_IDLE
+                    _LOGGER.debug("Idle")
         return False
 
     def json_request(self, request=None, wait_for_response=False):

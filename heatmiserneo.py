@@ -78,7 +78,7 @@ class HeatmiserNeostat(ClimateDevice):
         self._host = host
         self._port = port
         #self._type = type Neostat vs Neostat-e
-        self._operation = "Null"
+        self._operation = "STATE_IDLE"
         self.update()
 
     @property
@@ -121,10 +121,9 @@ class HeatmiserNeostat(ClimateDevice):
         """ Returns if away mode is on. """
         return self._away
     
-    @property
-    def operation(self):
-        """ Returns current operation. heat, cool idle """
-        return self._operation
+    def current_operation(self):
+        """Return current operation."""
+        return self._current_operation
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """

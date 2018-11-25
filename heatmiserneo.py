@@ -13,7 +13,7 @@ import voluptuous as vol
 from homeassistant.components.climate import (
     ATTR_TARGET_TEMP_HIGH, ATTR_TARGET_TEMP_LOW, DOMAIN,
     ClimateDevice, PLATFORM_SCHEMA, STATE_AUTO,
-    STATE_COOL, STATE_HEAT, SUPPORT_TARGET_TEMPERATURE,
+    STATE_COOL, STATE_HEAT, STATE_IDLE, SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_TARGET_TEMPERATURE_HIGH, SUPPORT_TARGET_TEMPERATURE_LOW,
     SUPPORT_OPERATION_MODE, SUPPORT_AWAY_MODE, SUPPORT_FAN_MODE)
 from homeassistant.const import (
@@ -120,6 +120,11 @@ class HeatmiserNeostat(ClimateDevice):
     def is_away_mode_on(self):
         """ Returns if away mode is on. """
         return self._away
+    
+    @property
+    def current_operation(self):
+        """Return current operation ie. auto_eco, cool_only, fan_only."""
+        return self._current_op
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
@@ -169,6 +174,12 @@ class HeatmiserNeostat(ClimateDevice):
                 self._away = device['AWAY']
                 self._target_temperature =  round(float(device["CURRENT_SET_TEMPERATURE"]), 2)
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
+                if device["HEATING"] == True:
+                    self._current_op = STATE_HEAT
+                if device["COOLING"] == True:
+                    self._current_op = STATE_COOL
+                else:
+                    self._current_op = STATE_IDLE
         return False
 
     def json_request(self, request=None, wait_for_response=False):

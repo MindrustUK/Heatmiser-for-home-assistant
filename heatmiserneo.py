@@ -120,7 +120,8 @@ class HeatmiserNeostat(ClimateDevice):
     def is_away_mode_on(self):
         """ Returns if away mode is on. """
         return self._away
-    
+
+    @property
     def current_operation(self):
         """Return current operation."""
         return self._current_operation

@@ -78,7 +78,7 @@ class HeatmiserNeostat(ClimateDevice):
         self._host = host
         self._port = port
         #self._type = type Neostat vs Neostat-e
-        self._operation = "STATE_IDLE"
+        self._operation = STATE_IDLE
         self.update()
 
     @property

@@ -47,23 +47,27 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     _LOGGER.debug(NeoHubJson)
 
     for device in NeoHubJson['devices']:
-        name = device['device']
-        tmptempfmt = device['TEMPERATURE_FORMAT']
-        if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
-          temperature_unit = TEMP_CELSIUS
-        else:
-          temperature_unit = TEMP_FAHRENHEIT
-        away = device['AWAY']
-        current_temperature = device['CURRENT_TEMPERATURE']
-        set_temperature = device['CURRENT_SET_TEMPERATURE']
+        if device['DEVICE_TYPE'] != 6:
+            name = device['device']
+            tmptempfmt = device['TEMPERATURE_FORMAT']
+            if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
+                temperature_unit = TEMP_CELSIUS
+            else:
+                temperature_unit = TEMP_FAHRENHEIT
+            away = device['AWAY']
+            current_temperature = device['CURRENT_TEMPERATURE']
+            set_temperature = device['CURRENT_SET_TEMPERATURE']
 
-        _LOGGER.info("Thermostat Name: %s " % name)
-        _LOGGER.info("Thermostat Away Mode: %s " % away)
-        _LOGGER.info("Thermostat Current Temp: %s " % current_temperature)
-        _LOGGER.info("Thermostat Set Temp: %s " % set_temperature)
-        _LOGGER.info("Thermostat Unit Of Measurement: %s " % temperature_unit)
+            _LOGGER.info("Thermostat Name: %s " % name)
+            _LOGGER.info("Thermostat Away Mode: %s " % away)
+            _LOGGER.info("Thermostat Current Temp: %s " % current_temperature)
+            _LOGGER.info("Thermostat Set Temp: %s " % set_temperature)
+            _LOGGER.info("Thermostat Unit Of Measurement: %s " % temperature_unit)
 
-        thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
+            thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
+
+        elif device['DEVICE_TYPE'] == 6:
+            _LOGGER.debug("Found a Neoplug named: %s skipping" % device['device'])
 
     _LOGGER.info("Adding Thermostats: %s " % thermostats)
     add_devices(thermostats)

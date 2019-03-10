@@ -17,16 +17,14 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE_HIGH, SUPPORT_TARGET_TEMPERATURE_LOW,
     SUPPORT_OPERATION_MODE, SUPPORT_AWAY_MODE, SUPPORT_FAN_MODE)
 from homeassistant.const import (
-    TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_PORT, CONF_NAME)
+    TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_HOST,
+    CONF_PORT, CONF_NAME)
 import homeassistant.helpers.config_validation as cv
 
 import socket
 import json
 
 _LOGGER = logging.getLogger(__name__)
-
-CONF_HOST = 'host'
-CONF_PORT = 'port'
 
 SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE)
 
@@ -38,7 +36,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """ Sets up a Heatmiser Neo-Hub And Returns Neostats"""
     host = config.get(CONF_HOST, None)
-    port = config.get("CONF_PORT", 4242)
+    port = config.get(CONF_PORT, 4242)
 
     thermostats = []
 

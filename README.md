@@ -28,7 +28,7 @@ General Configuration:
 [Authors note: Add notes about how to find your heatmiser neohub on your network (Nmap, checking your routers DHCP table, ARP etc).]
 
 Suggestions from Haakon Storm Heen:
-Use namp on your local network range: nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open
+Use namp on your local network range: ```nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open```
 
 As per example_configuration.yaml, add the following to the configuration.yaml in your /config directory.
 

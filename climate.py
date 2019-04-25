@@ -26,7 +26,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE)
+SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATION_MODE)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -81,6 +81,7 @@ class HeatmiserNeostat(ClimateDevice):
         self._port = port
         #self._type = type Neostat vs Neostat-e
         self._operation = STATE_IDLE
+        self._operation_list = ['heat', 'cool', 'auto', 'off']
         self.update()
 
     @property
@@ -127,7 +128,12 @@ class HeatmiserNeostat(ClimateDevice):
     def current_operation(self):
         """Return current operation."""
         return self._current_operation
-
+    
+    @property
+    def operation_list(self):
+        """Return the list of available operation modes."""
+        return self._operation_list
+    
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
         response = self.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})

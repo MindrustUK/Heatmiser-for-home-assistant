@@ -1,0 +1,8 @@
+{
+  "domain": "heatmiserneo",
+  "name": "Heatmiser Neo Climate",
+  "documentation": "https://github.com/MindrustUK/Heatmiser-for-home-assistant",
+  "dependencies": [],
+  "codeowners": ["MindrustUK"],
+  "requirements": []
+}

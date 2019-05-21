@@ -1,12 +1,13 @@
 {
     "heatmiserneo": {
         "version": "1.0.1",
-        "local_location": "/custom_components/heatmiserneo/__init__.py",
-        "remote_location": "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/__init__.py",
+        "local_location": "/custom_components/heatmiserneo/climate.py",
+        "remote_location": "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/climate.py",
         "visit_repo": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/",
         "changelog": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/",
         "resources": [
-            "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/climate.py"
+            "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/__init__.py"
+            "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/manifest.json"
         ]
     }
 }

@@ -9,17 +9,19 @@ For Hass.io:
 Install and configure SSH server from the "Add-on store". Once you have shell run the following:
 ```
 cd /config/
-mkdir -p custom_components/heatmiserneo/
-cd /config/custom_components/heatmiserneo/
-wget https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/climate.py
+mkdir custom_components
+cd /config/custom_components
+git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant
+mv Heatmiser-for-home-assistant heatmiserneo
 ```
 
 For Manual / Custom installations:
 Change directory to config location then run the following:
 ```
-mkdir -p custom_components/heatmiserneo/
-cd custom_components/heatmiserneo/
-wget https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/climate.py
+mkdir custom_components
+cd /config/custom_components
+git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant
+mv Heatmiser-for-home-assistant heatmiserneo
 ```
 For both above scenarios then complete configuration as follows:
 

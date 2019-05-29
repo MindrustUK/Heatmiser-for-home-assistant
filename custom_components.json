@@ -6,7 +6,7 @@
         "visit_repo": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/",
         "changelog": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/",
         "resources": [
-            "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/__init__.py"
+            "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/__init__.py",
             "https://raw.githubusercontent.com/MindrustUK/Heatmiser-for-home-assistant/master/manifest.json"
         ]
     }

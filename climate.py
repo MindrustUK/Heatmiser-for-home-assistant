@@ -1,39 +1,60 @@
 """
-homeassistant.components.thermostat.heatmiserneo
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+homeassistant.components.climate.heatmiserneo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Heatmiser NeoStat control via Heatmiser Neo-hub
 Code largely ripped off and glued togehter from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
-import logging
-
-import voluptuous as vol
 
 from homeassistant.components.climate import ClimateDevice, PLATFORM_SCHEMA
+import logging
+import voluptuous as vol
 from homeassistant.components.climate.const import (
-    ATTR_TARGET_TEMP_HIGH, ATTR_TARGET_TEMP_LOW, DOMAIN, STATE_AUTO,
-    STATE_COOL, STATE_HEAT, STATE_IDLE, SUPPORT_TARGET_TEMPERATURE,
-    SUPPORT_TARGET_TEMPERATURE_HIGH, SUPPORT_TARGET_TEMPERATURE_LOW,
-    SUPPORT_OPERATION_MODE, SUPPORT_AWAY_MODE, SUPPORT_FAN_MODE)
-from homeassistant.const import (
-    TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_HOST,
-    CONF_PORT, CONF_NAME)
+    ATTR_TARGET_TEMP_HIGH,
+    ATTR_TARGET_TEMP_LOW,
+    CURRENT_HVAC_COOL,
+    CURRENT_HVAC_HEAT,
+    HVAC_MODE_COOL,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_HEAT_COOL,
+    HVAC_MODE_OFF,
+    HVAC_MODES,
+    SUPPORT_AUX_HEAT,
+    SUPPORT_FAN_MODE,
+    SUPPORT_PRESET_MODE,
+    SUPPORT_SWING_MODE,
+    SUPPORT_TARGET_HUMIDITY,
+    SUPPORT_TARGET_TEMPERATURE,
+    SUPPORT_TARGET_TEMPERATURE_RANGE,
+    HVAC_MODE_AUTO,
+)
+from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.const import (CONF_HOST,CONF_PORT,CONF_NAME)
 import homeassistant.helpers.config_validation as cv
-
 import socket
 import json
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = '1.0.1'
+VERSION = '2.0.1'
 
-SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATION_MODE)
+SUPPORT_FLAGS = 0
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_HOST): cv.string,
-    vol.Required(CONF_PORT): cv.port,
-})
+# Heatmiser does support all lots more stuff, but only heat for now.
+#hvac_modes=[HVAC_MODE_HEAT_COOL, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF]
+hvac_modes=[HVAC_MODE_HEAT, HVAC_MODE_OFF]
+
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_PORT): cv.port,
+    }
+)
+
+# Fix this when I figure out why my config won't read in. Voluptuous schma thing.
+# Excludes time clocks from being included if set to True
+ExcludeTimeClock = False
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """ Sets up a Heatmiser Neo-Hub And Returns Neostats"""
@@ -64,7 +85,10 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
             _LOGGER.info("Thermostat Set Temp: %s " % set_temperature)
             _LOGGER.info("Thermostat Unit Of Measurement: %s " % temperature_unit)
 
-            thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
+            if (('TIMECLOCK' in device['STAT_MODE']) and (ExcludeTimeClock == True)):
+              _LOGGER.debug("Found a Neostat configured in timer mode named: %s skipping" % device['device'])
+            else:
+              thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
 
         elif device['DEVICE_TYPE'] == 6:
             _LOGGER.debug("Found a Neoplug named: %s skipping" % device['device'])
@@ -75,21 +99,23 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
 class HeatmiserNeostat(ClimateDevice):
     """ Represents a Heatmiser Neostat thermostat. """
-    def __init__(self, temperature_unit, away, host, port, name="Null"):
+    def __init__(self, unit_of_measurement, away, host, port, name="Null"):
         self._name = name
-        self._temperature_unit = temperature_unit
+        self._unit_of_measurement = unit_of_measurement
         self._away = away
         self._host = host
         self._port = port
         #self._type = type Neostat vs Neostat-e
-        self._operation = STATE_IDLE
-        self._operation_list = ['heat', 'cool', 'auto', 'off']
+        self._hvac_action = None
+        self._hvac_modes = hvac_modes
+        self._support_flags = SUPPORT_FLAGS
+        self._support_flags = self._support_flags | SUPPORT_TARGET_TEMPERATURE
         self.update()
 
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        return SUPPORT_FLAGS
+        return self._support_flags
 
     @property
     def should_poll(self):
@@ -102,14 +128,9 @@ class HeatmiserNeostat(ClimateDevice):
         return self._name
 
     @property
-    def operation(self):
-        """ Returns current operation. heat, cool idle """
-        return self._operation
-
-    @property
     def temperature_unit(self):
-        """ Returns the unit of measurement. """
-        return self._temperature_unit
+        """Return the unit of measurement."""
+        return self._unit_of_measurement
 
     @property
     def current_temperature(self):
@@ -118,24 +139,50 @@ class HeatmiserNeostat(ClimateDevice):
 
     @property
     def target_temperature(self):
-        """ Returns the temperature we try to reach. """
+        """Return the temperature we try to reach."""
         return self._target_temperature
 
     @property
-    def is_away_mode_on(self):
-        """ Returns if away mode is on. """
-        return self._away
+    def current_humidity(self):
+        """Return the current humidity."""
+        return self._current_humidity
 
     @property
-    def current_operation(self):
-        """Return current operation."""
-        return self._current_operation
-    
+    def target_humidity(self):
+        """Return the humidity we try to reach."""
+        return self._target_humidity
+
+    #@property
+    #def target_temperature(self):
+    #    """ Returns the temperature we try to reach. """
+    #    return self._target_temperature
+
     @property
-    def operation_list(self):
+    def hvac_action(self):
+        """Return current operation ie. heat, cool, idle."""
+        return self._hvac_action
+
+    @property
+    def hvac_mode(self):
+        """Return hvac target hvac state."""
+        return HVAC_MODE_OFF
+        #return self._hvac_mode
+
+    @property
+    def hvac_modes(self):
         """Return the list of available operation modes."""
-        return self._operation_list
-    
+        return self._hvac_modes
+
+    @property
+    def preset_mode(self):
+        """Return preset mode."""
+        return self._preset
+
+    @property
+    def preset_modes(self):
+        """Return preset modes."""
+        return self._preset_modes
+
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
         response = self.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})
@@ -143,28 +190,6 @@ class HeatmiserNeostat(ClimateDevice):
             _LOGGER.info("set_temperature response: %s " % response)
             # Need check for sucsess here
             # {'result': 'temperature was set'}
-
-    def turn_away_mode_on(self):
-        """ Turns away mode on. """
-        _LOGGER.debug("Entered turn_away_mode_on for device: %s" % self._name)
-        response = self.json_request({"AWAY_ON":self._name})
-        if response:
-            _LOGGER.info("turn_away_mode_on request: %s " % response)
-            # Need check for success here
-            # {"result":"away on"}
-            # {"error":"Could not complete away on"}
-            # {"error":"Invalid argument to AWAY_OFF, should be a valid device array of valid devices"}
-
-    def turn_away_mode_off(self):
-        """ Turns away mode off. """
-        _LOGGER.debug("Entered turn_away_mode_off for device: %s" % self._name)
-        response = self.json_request({"AWAY_OFF":self._name})
-        if response:
-            _LOGGER.info("turn_away_mode_off response: %s " % response)
-            # Need check for success here
-            # {"result":"away off"}
-            # {"error":"Could not complete away off"}
-            # {"error":"Invalid argument to AWAY_OFF, should be a valid device or
 
     def update(self):
         """ Get Updated Info. """
@@ -184,14 +209,15 @@ class HeatmiserNeostat(ClimateDevice):
                 self._away = device['AWAY']
                 self._target_temperature =  round(float(device["CURRENT_SET_TEMPERATURE"]), 2)
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
+                self._current_humidity = round(float(device["HUMIDITY"]), 2)
                 if device["HEATING"] == True:
-                    self._current_operation = STATE_HEAT
+                    self._hvac_action = STATE_HEAT
                     _LOGGER.debug("Heating")
                 elif device["COOLING"] == True:
-                    self._current_operation = STATE_COOL
+                    self._hvac_action = STATE_COOL
                     _LOGGER.debug("Cooling")
                 else:
-                    self._current_operation = STATE_IDLE
+                    self._hvac_action = HVAC_MODE_OFF
                     _LOGGER.debug("Idle")
         return False
 

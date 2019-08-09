@@ -211,10 +211,10 @@ class HeatmiserNeostat(ClimateDevice):
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
                 self._current_humidity = round(float(device["HUMIDITY"]), 2)
                 if device["HEATING"] == True:
-                    self._hvac_action = STATE_HEAT
+                    self._hvac_action = HVAC_MODE_HEAT
                     _LOGGER.debug("Heating")
                 elif device["COOLING"] == True:
-                    self._hvac_action = STATE_COOL
+                    self._hvac_action = HVAC_MODE_COOL
                     _LOGGER.debug("Cooling")
                 else:
                     self._hvac_action = HVAC_MODE_OFF

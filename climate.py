@@ -216,9 +216,9 @@ class HeatmiserNeostat(ClimateDevice):
 
                 # Figure out the current mode based on whether cooling is enabled - should verify that this is correct
                 if device["COOLING_ENABLED"] == True:
-                    self._hvac_mode = HVAC_MODE_HEAT
-                else:
                     self._hvac_mode = HVAC_MODE_COOL
+                else:
+                    self._hvac_mode = HVAC_MODE_HEAT
 
                 # Figure out current action based on Heating / Cooling flags
                 if device["HEATING"] == True:

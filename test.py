@@ -5,13 +5,19 @@ Test stub for testing at CLI
 import socket
 import json
 
+_host = "heatmiser.eponn.net"
+_port = 4242
+
+def get_info():
+    response = json_request({"INFO": 0})
+
 def json_request(self, request=None, wait_for_response=False):
     """ Communicate with the json server. """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)
 
     try:
-        sock.connect((self._host, self._port))
+        sock.connect((_host, _port))
     except OSError:
         sock.close()
         return False
@@ -21,7 +27,7 @@ def json_request(self, request=None, wait_for_response=False):
         sock.close()
         return True
 
-    _LOGGER.debug("json_request: %s " % request)
+    print("json_request: %s " % request)
 
     sock.send(bytearray(json.dumps(request) + "\0\r", "utf-8"))
     try:
@@ -52,7 +58,7 @@ def json_request(self, request=None, wait_for_response=False):
 
     response = response.rstrip('\0')
 
-    _LOGGER.debug("json_response: %s " % response)
+    print("json_response: %s " % response)
 
     return json.loads(response, strict=False)
 

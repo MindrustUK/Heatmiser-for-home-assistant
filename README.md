@@ -48,7 +48,7 @@ If debugging is required (submitting bug reports etc.) logger verbosity can be a
 
 ```yaml
 logger:
-  default: debug
+  default: warning
   logs:
     custom_components.heatmiserneo: debug
 ```

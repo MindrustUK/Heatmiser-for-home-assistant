@@ -35,7 +35,7 @@ Suggestions from Haakon Storm Heen, Use namp on your local network range:
 
 As per example_configuration.yaml, add the following to the configuration.yaml in your /config directory.
 
-```
+```yaml
 climate:
   - platform: heatmiserneo
     host: <Insert IP Address / Hostname>
@@ -46,9 +46,9 @@ climate:
 
 If debugging is required (submitting bug reports etc.) logger verbosity can be adjusted as follows:
 
-```
+```yaml
 logger:
   default: debug
   logs:
-    homeassistant.components.climate.heatmiserneo: debug
+    custom_components.heatmiserneo: debug
 ```

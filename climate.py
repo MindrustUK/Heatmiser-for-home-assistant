@@ -15,6 +15,8 @@ from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_LOW,
     CURRENT_HVAC_COOL,
     CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_IDLE,
+    CURRENT_HVAC_OFF,
     HVAC_MODE_COOL,
     HVAC_MODE_HEAT,
     HVAC_MODE_HEAT_COOL,
@@ -37,13 +39,14 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = '2.0.1'
+VERSION = '2.0.2'
 
 SUPPORT_FLAGS = 0
 
 # Heatmiser does support all lots more stuff, but only heat for now.
 #hvac_modes=[HVAC_MODE_HEAT_COOL, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF]
-hvac_modes=[HVAC_MODE_HEAT, HVAC_MODE_OFF]
+# Heatmiser doesn't really have an off mode - standby is a preset
+hvac_modes = [HVAC_MODE_HEAT]
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -107,6 +110,7 @@ class HeatmiserNeostat(ClimateDevice):
         self._port = port
         #self._type = type Neostat vs Neostat-e
         self._hvac_action = None
+        self._hvac_mode = None
         self._hvac_modes = hvac_modes
         self._support_flags = SUPPORT_FLAGS
         self._support_flags = self._support_flags | SUPPORT_TARGET_TEMPERATURE
@@ -159,36 +163,35 @@ class HeatmiserNeostat(ClimateDevice):
 
     @property
     def hvac_action(self):
-        """Return current operation ie. heat, cool, idle."""
+        """Return current activity ie. currently heating, cooling, idle."""
         return self._hvac_action
 
     @property
     def hvac_mode(self):
-        """Return hvac target hvac state."""
-        return HVAC_MODE_OFF
-        #return self._hvac_mode
+        """Return current operation mode ie. heat, cool, off."""
+        return self._hvac_mode
 
     @property
     def hvac_modes(self):
         """Return the list of available operation modes."""
         return self._hvac_modes
 
-    @property
-    def preset_mode(self):
-        """Return preset mode."""
-        return self._preset
+    # @property
+    # def preset_mode(self):
+    #     """Return preset mode."""
+    #     return self._preset
 
-    @property
-    def preset_modes(self):
-        """Return preset modes."""
-        return self._preset_modes
+    # @property
+    # def preset_modes(self):
+    #     """Return preset modes."""
+    #     return self._preset_modes
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
         response = self.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})
         if response:
             _LOGGER.info("set_temperature response: %s " % response)
-            # Need check for sucsess here
+            # Need check for success here
             # {'result': 'temperature was set'}
 
     def update(self):
@@ -211,13 +214,15 @@ class HeatmiserNeostat(ClimateDevice):
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
                 self._current_humidity = round(float(device["HUMIDITY"]), 2)
                 if device["HEATING"] == True:
-                    self._hvac_action = HVAC_MODE_HEAT
+                    self._hvac_mode = HVAC_MODE_HEAT
+                    self._hvac_action = CURRENT_HVAC_HEAT
                     _LOGGER.debug("Heating")
                 elif device["COOLING"] == True:
-                    self._hvac_action = HVAC_MODE_COOL
+                    self._hvac_mode = HVAC_MODE_COOL
+                    self._hvac_action = CURRENT_HVAC_COOL
                     _LOGGER.debug("Cooling")
                 else:
-                    self._hvac_action = HVAC_MODE_OFF
+                    self._hvac_action = CURRENT_HVAC_IDLE
                     _LOGGER.debug("Idle")
         return False
 

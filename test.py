@@ -10,6 +10,7 @@ _port = 4242
 
 def get_info():
     response = json_request({"INFO": 0})
+    print(response)
 
 def json_request(self, request=None, wait_for_response=False):
     """ Communicate with the json server. """
@@ -62,3 +63,4 @@ def json_request(self, request=None, wait_for_response=False):
 
     return json.loads(response, strict=False)
 
+get_info()

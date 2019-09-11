@@ -9,10 +9,11 @@ _host = "heatmiser.eponn.net"
 _port = 4242
 
 def get_info():
-    response = json_request({"INFO": 0})
+    print("Starting get_info")
+    response = json_request({"INFO": 0}, True)
     print(response)
 
-def json_request(self, request=None, wait_for_response=False):
+def json_request(request=None, wait_for_response=False):
     """ Communicate with the json server. """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)

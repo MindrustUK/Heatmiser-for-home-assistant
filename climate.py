@@ -45,7 +45,7 @@ SUPPORT_FLAGS = 0
 
 # Heatmiser does support all lots more stuff, but only heat for now.
 #hvac_modes=[HVAC_MODE_HEAT_COOL, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF]
-# Heatmiser doesn't really have an off mode - standby is a preset
+# Heatmiser doesn't really have an off mode - standby is a preset - implement later
 hvac_modes = [HVAC_MODE_HEAT]
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -213,12 +213,18 @@ class HeatmiserNeostat(ClimateDevice):
                 self._target_temperature =  round(float(device["CURRENT_SET_TEMPERATURE"]), 2)
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
                 self._current_humidity = round(float(device["HUMIDITY"]), 2)
-                if device["HEATING"] == True:
+
+                # Figure out the current mode based on whether cooling is enabled - should verify that this is correct
+                if device["COOLING_ENABLED"] == True:
                     self._hvac_mode = HVAC_MODE_HEAT
+                else:
+                    self._hvac_mode = HVAC_MODE_COOL
+
+                # Figure out current action based on Heating / Cooling flags
+                if device["HEATING"] == True:
                     self._hvac_action = CURRENT_HVAC_HEAT
                     _LOGGER.debug("Heating")
                 elif device["COOLING"] == True:
-                    self._hvac_mode = HVAC_MODE_COOL
                     self._hvac_action = CURRENT_HVAC_COOL
                     _LOGGER.debug("Cooling")
                 else:

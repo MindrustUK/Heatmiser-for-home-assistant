@@ -30,6 +30,8 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_TARGET_TEMPERATURE_RANGE,
     HVAC_MODE_AUTO,
+    PRESET_AWAY,
+    PRESET_NONE
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.const import (CONF_HOST,CONF_PORT,CONF_NAME)
@@ -42,6 +44,8 @@ _LOGGER = logging.getLogger(__name__)
 VERSION = '2.0.2'
 
 SUPPORT_FLAGS = 0
+
+PRESET_MODES = [PRESET_NONE, PRESET_AWAY]
 
 # Heatmiser does support all lots more stuff, but only heat for now.
 #hvac_modes=[HVAC_MODE_HEAT_COOL, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF]
@@ -114,6 +118,7 @@ class HeatmiserNeostat(ClimateDevice):
         self._hvac_modes = hvac_modes
         self._support_flags = SUPPORT_FLAGS
         self._support_flags = self._support_flags | SUPPORT_TARGET_TEMPERATURE
+        self._support_flags = self._support_flags | SUPPORT_PRESET_MODE
         self.update()
 
     @property
@@ -176,15 +181,28 @@ class HeatmiserNeostat(ClimateDevice):
         """Return the list of available operation modes."""
         return self._hvac_modes
 
-    # @property
-    # def preset_mode(self):
-    #     """Return preset mode."""
-    #     return self._preset
+    @property
+    def preset_mode(self):
+        """Return preset mode."""
+        if self._away:
+            return PRESET_AWAY
+        return PRESET_NONE
 
-    # @property
-    # def preset_modes(self):
-    #     """Return preset modes."""
-    #     return self._preset_modes
+    @property
+    def preset_modes(self):
+        """Return preset modes."""
+        return PRESET_MODES
+        
+    def set_preset_mode(self, preset_mode):
+        """Set preset mode."""
+        if preset_mode == self.preset_mode:
+            return
+        elif preset_mode == PRESET_AWAY:
+            self._away = True
+            self.json_request({"AWAY_ON":self._name})
+        elif preset_mode == PRESET_NONE:
+            self._away = False
+            self.json_request({"AWAY_OFF":self._name})
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """

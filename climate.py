@@ -46,7 +46,7 @@ SUPPORT_FLAGS = 0
 # Heatmiser does support all lots more stuff, but only heat for now.
 #hvac_modes=[HVAC_MODE_HEAT_COOL, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF]
 # Heatmiser doesn't really have an off mode - standby is a preset - implement later
-hvac_modes = [HVAC_MODE_HEAT]
+hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT]
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -194,6 +194,22 @@ class HeatmiserNeostat(ClimateDevice):
             # Need check for success here
             # {'result': 'temperature was set'}
 
+    def set_hvac_mode(self, hvac_mode):
+        """Set hvac mode."""
+        if hvac_mode == HVAC_MODE_HEAT:
+            self._hvac_mode = HVAC_MODE_HEAT
+            mode = "FROST_OFF"
+        elif hvac_mode == HVAC_MODE_OFF:
+            self._hvac_mode = HVAC_MODE_OFF
+            mode = "FROST_ON"
+        else:
+            _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
+            return
+
+        response = self.json_request({mode: [self._name]})
+        if response:
+            _LOGGER.info("set_hvac_mode response: %s " % response)
+
     def update(self):
         """ Get Updated Info. """
         _LOGGER.debug("Entered update(self)")
@@ -214,8 +230,9 @@ class HeatmiserNeostat(ClimateDevice):
                 self._current_temperature = round(float(device["CURRENT_TEMPERATURE"]), 2)
                 self._current_humidity = round(float(device["HUMIDITY"]), 2)
 
-                # Figure out the current mode based on whether cooling is enabled - should verify that this is correct
-                if device["COOLING_ENABLED"] == True:
+                if device['STANDBY']:
+                    self._hvac_mode = HVAC_MODE_OFF
+                elif device["COOLING_ENABLED"] == True:
                     self._hvac_mode = HVAC_MODE_COOL
                 else:
                     self._hvac_mode = HVAC_MODE_HEAT

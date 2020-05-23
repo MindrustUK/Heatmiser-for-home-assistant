@@ -7,7 +7,7 @@ Code largely ripped off and glued togehter from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
 
-from homeassistant.components.climate import ClimateDevice, PLATFORM_SCHEMA
+from homeassistant.components.climate import ClimateEntity, PLATFORM_SCHEMA
 import logging
 import voluptuous as vol
 from homeassistant.components.climate.const import (
@@ -100,7 +100,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     add_devices(thermostats)
 
 
-class HeatmiserNeostat(ClimateDevice):
+class HeatmiserNeostat(ClimateEntity):
     """ Represents a Heatmiser Neostat thermostat. """
     def __init__(self, unit_of_measurement, away, host, port, name="Null"):
         self._name = name

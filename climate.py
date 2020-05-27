@@ -3,7 +3,7 @@ homeassistant.components.climate.heatmiserneo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Heatmiser NeoStat control via Heatmiser Neo-hub
-Code largely ripped off and glued togehter from:
+Code largely ripped off and glued together from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
 
@@ -55,7 +55,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-# Fix this when I figure out why my config won't read in. Voluptuous schma thing.
+# Fix this when I figure out why my config won't read in. Voluptuous schema thing.
 # Excludes time clocks from being included if set to True
 ExcludeTimeClock = False
 

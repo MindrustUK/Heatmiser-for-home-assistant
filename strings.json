@@ -1,0 +1,17 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Set up Heatmiser Neo integration.",
+                "title": "Heatmiser Neo",
+		"data": {
+                    "host": "Host",
+                    "port": "Port"
+		}
+            }
+        },
+	"error": {
+	    "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
+        }
+    }
+}

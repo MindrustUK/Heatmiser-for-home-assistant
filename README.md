@@ -33,14 +33,7 @@ Suggestions from Haakon Storm Heen, Use namp on your local network range:
 
 ```nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open```
 
-As per example_configuration.yaml, add the following to the configuration.yaml in your /config directory.
-
-```yaml
-climate:
-  - platform: heatmiserneo
-    host: <Insert IP Address / Hostname>
-    port: 4242
-```
+Heatmiser Neo integration can be setup via Home Assistant Integrations page.
 
 (Optional) Logging Configuration:
 

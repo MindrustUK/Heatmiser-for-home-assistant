@@ -33,6 +33,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.const import (CONF_HOST,CONF_PORT,CONF_NAME)
+from .const import DOMAIN
 import homeassistant.helpers.config_validation as cv
 import socket
 import json
@@ -48,21 +49,17 @@ SUPPORT_FLAGS = 0
 # Heatmiser doesn't really have an off mode - standby is a preset - implement later
 hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT]
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_PORT): cv.port,
-    }
-)
 
 # Fix this when I figure out why my config won't read in. Voluptuous schema thing.
 # Excludes time clocks from being included if set to True
 ExcludeTimeClock = False
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
-    """ Sets up a Heatmiser Neo-Hub And Returns Neostats"""
-    host = config.get(CONF_HOST, None)
-    port = config.get(CONF_PORT, 4242)
+
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up Heatmiser Neo from a config entry."""
+
+    host = hass.data[DOMAIN][entry.entry_id][CONF_HOST]
+    port = hass.data[DOMAIN][entry.entry_id][CONF_PORT]
 
     thermostats = []
 
@@ -97,7 +94,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
             _LOGGER.debug("Found a Neoplug named: %s skipping" % device['device'])
 
     _LOGGER.info("Adding Thermostats: %s " % thermostats)
-    add_devices(thermostats)
+    async_add_entities(thermostats)
 
 
 class HeatmiserNeostat(ClimateEntity):
@@ -129,6 +126,11 @@ class HeatmiserNeostat(ClimateEntity):
     @property
     def name(self):
         """ Returns the name. """
+        return self._name
+
+    @property
+    def unique_id(self):
+        """Return a unique ID."""
         return self._name
 
     @property

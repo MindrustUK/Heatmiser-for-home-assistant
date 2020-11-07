@@ -5,8 +5,9 @@ This is a work in progress for adding Heatmiser Neo-hub support to Home Assistan
 
 Installation:
 
-Before starting instalation you need the IP address of the Neo-hub. If you don't know use one of the approaches suggested below.
-Where possible you should allocate a static IP to the Neo-hub.
+Before starting instalation you should know the IP address of the Neo-hub. If you don't know the IP address, use one of the approaches suggested below to find your neo-hubs IP address.
+
+It is suggested that you should allocate a static IP to the Heatmiser Neo-hub or use a DNS entry that's resolvable by Home-Assistant.
 
 The preferred method of installation is to use the Home Assistant function which you access via Configuration->Integrations.
 Clicking on the orange icon in the bottom right corner produces a drop down list and scroll down to "Heatmiser Neo Climate".

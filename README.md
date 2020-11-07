@@ -5,7 +5,23 @@ This is a work in progress for adding Heatmiser Neo-hub support to Home Assistan
 
 Installation:
 
-For Hass.io:
+Before starting instalation you need the IP address of the Neo-hub. If you don't know use one of the approaches suggested below.
+Where possible it  you should allocate a static IP to the Neo-hub
+
+The preferred method of installation is to use the Home Assistant function which you access via Configuration->Integrations.
+Clicking on the orange icon in the bottom right corner produces a drop down list and scroll down to "Heatmiser Neo Climate".
+![HowToIntegrate](https://user-images.githubusercontent.com/56273663/98438130-07c44b00-20e0-11eb-8895-166cb856643a.png)
+
+When the integration starts you will need to enter the Neo-hub IP address. The port is always 4242.
+![Config](https://user-images.githubusercontent.com/56273663/98438427-fb40f200-20e1-11eb-8437-a0288548082b.png)
+
+When the integration is running you can still change logger options by editing (usually) configuration.yaml as described below.
+
+
+
+Legacy installation:
+
+You can also install manually if you are running a version of HA that doesn't offer Integrations as below.
 Install and configure SSH server from the "Add-on store". Once you have shell run the following:
 ```
 cd /config/

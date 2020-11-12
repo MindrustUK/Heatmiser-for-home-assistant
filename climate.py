@@ -68,7 +68,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.debug(NeoHubJson)
 
     for device in NeoHubJson['devices']:
-        if device['DEVICE_TYPE'] != 6:
+        if device['DEVICE_TYPE'] not in [0,6]:
             name = device['device']
             tmptempfmt = device['TEMPERATURE_FORMAT']
             if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
+
 # Empty file for great migration new file structure
 
 from homeassistant.const import (CONF_HOST,CONF_PORT)

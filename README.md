@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
+-->
+
 # Heatmiser-for-home-assistant
 Heatmiser Neo-Hub / Neostat / Neostat-e support for home-assistant.io
 

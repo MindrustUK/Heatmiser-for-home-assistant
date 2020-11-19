@@ -16,8 +16,6 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, entry):
     """Set up Heatmiser Neo from a config entry."""
-    
-    hass.data[DOMAIN] = {}
 
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_HOST: entry.data[CONF_HOST],

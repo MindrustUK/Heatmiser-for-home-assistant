@@ -23,7 +23,7 @@ async def async_setup_entry(hass, entry):
     }
 
     # Set the Hub up to use and save
-    hass.data[DOMAIN][HUB] = NeoHub(hass.data[DOMAIN][CONF_HOST], hass.data[DOMAIN][CONF_PORT])
+    hass.data[DOMAIN][HUB] = NeoHub(entry.data[CONF_HOST], entry.data[CONF_PORT])
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")

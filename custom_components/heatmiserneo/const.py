@@ -3,5 +3,8 @@
 """Constants used by multiple Heatmiser Neo modules."""
 DOMAIN = "heatmiserneo"
 
+HUB = "Hub"
+
 DEFAULT_HOST = "Neo-Hub"
 DEFAULT_PORT = 4242
+

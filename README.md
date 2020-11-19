@@ -12,24 +12,18 @@ Before starting instalation you should know the IP address of the Neo-hub. If yo
 
 It is suggested that you should allocate a static IP to the Heatmiser Neo-hub or use a DNS entry that's resolvable by Home-Assistant.
 
-## Step 1: Copy the component code to home assistant installation
-
-Download or clone the code from this repository and copy to home assistant installation under `/config/custom_components/heatmiserneo`
-
-This can be done via the Samba Add-on or by SSH/Terminal. 
-Install and configure SSH server from the "Add-on store". Once you have shell run the following:
-```
-cd /config/
-mkdir custom_components
-cd /config/custom_components
-git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant
-mv Heatmiser-for-home-assistant heatmiserneo
-```
+## Step 1: Add to HACS
+Open HACS
+Go to the Settings tab
+Add "https://github.com/MindrustUK/Heatmiser-for-home-assistant" as a repository as an "Integration" type.
+Go to the Integrations tab
+Search for "Heatmiser Neo Integration", select and install
 
 ## Step 2: Restart Home Assistant
+
 Go to Configuraton -> Server Tools and then "Restart"
 
-## Step 2: Configure the integration via the integrations menu:
+## Step 3: Configure the integration via the integrations menu:
 
 Clicking on the orange icon in the bottom right corner produces a drop down list and scroll down to "Heatmiser Neo Climate".
 ![HowToIntegrate](https://user-images.githubusercontent.com/56273663/98438130-07c44b00-20e0-11eb-8895-166cb856643a.png)

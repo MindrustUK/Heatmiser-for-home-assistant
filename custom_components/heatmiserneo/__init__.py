@@ -4,7 +4,8 @@
 
 from homeassistant.const import (CONF_HOST,CONF_PORT)
 
-from .const import DOMAIN
+from .heatmiserneo import NeoHub
+from .const import (DOMAIN, HUB)
 
 async def async_setup(hass, config):
     """Set up Heamiser Neo components."""
@@ -21,8 +22,15 @@ async def async_setup_entry(hass, entry):
         CONF_PORT: entry.data[CONF_PORT],
     }
 
+    # Set the Hub up to use and save
+    hass.data[DOMAIN][HUB] = NeoHub(hass.data[DOMAIN][CONF_HOST], hass.data[DOMAIN][CONF_PORT])
+
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "switch")
     )
 
     return True

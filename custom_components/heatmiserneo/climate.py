@@ -52,7 +52,7 @@ hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT]
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
-    hub = hass.data[DOMAIN]['hub']
+    hub = hass.data[DOMAIN][HUB]
 
     thermostats = []
 

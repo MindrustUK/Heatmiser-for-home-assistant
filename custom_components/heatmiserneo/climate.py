@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
+
 """
 homeassistant.components.climate.heatmiserneo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,9 +9,9 @@ Code largely ripped off and glued together from:
 demo.py, nest.py and light/hyperion.py for the json elements
 """
 
-from homeassistant.components.climate import ClimateEntity, PLATFORM_SCHEMA
 import logging
-import voluptuous as vol
+
+from homeassistant.components.climate import ClimateEntity, PLATFORM_SCHEMA
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
@@ -32,15 +34,12 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_AUTO,
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
-from homeassistant.const import (CONF_HOST,CONF_PORT,CONF_NAME)
-from .const import DOMAIN, EXCLUDE_TIME_CLOCK
-import homeassistant.helpers.config_validation as cv
-import socket
-import json
+
+from .heatmiserneo import NeoHub
+from .const import (DOMAIN,HUB)
 
 _LOGGER = logging.getLogger(__name__)
 
-VERSION = '2.0.2'
 
 SUPPORT_FLAGS = 0
 
@@ -49,22 +48,20 @@ SUPPORT_FLAGS = 0
 # Heatmiser doesn't really have an off mode - standby is a preset - implement later
 hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT]
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up Heatmiser Neo from a config entry."""
 
-    _LOGGER.debug(f"enry.data {entry.data}")
-    
-    host = entry.data[CONF_HOST]
-    port = entry.data[CONF_PORT]
-    ExcludeTimeClock = entry.data[EXCLUDE_TIME_CLOCK]
+
+async def async_setup_entry(hass, entry, async_add_entities):
+
+    hub = hass.data[DOMAIN][HUB]
 
     thermostats = []
-    NeoHubJson = HeatmiserNeostat(TEMP_CELSIUS, False, host, port).json_request({"INFO": 0})
+
+    NeoHubJson = hub.json_request({"INFO": 0})
 
     _LOGGER.debug(NeoHubJson)
 
     for device in NeoHubJson['devices']:
-        if device['DEVICE_TYPE'] not in [0,6]:
+        if (device['DEVICE_TYPE'] != 6) and ('THERMOSTAT' in device['STAT_MODE']):
             name = device['device']
             tmptempfmt = device['TEMPERATURE_FORMAT']
             if (tmptempfmt == False) or (tmptempfmt.upper() == "C"):
@@ -81,13 +78,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             _LOGGER.info("Thermostat Set Temp: %s " % set_temperature)
             _LOGGER.info("Thermostat Unit Of Measurement: %s " % temperature_unit)
 
-            if (('TIMECLOCK' in device['STAT_MODE']) and (ExcludeTimeClock == True)):
-              _LOGGER.debug("Found a Neostat configured in timer mode named: %s skipping" % device['device'])
-            else:
-              thermostats.append(HeatmiserNeostat(temperature_unit, away, host, port, name))
-
-        elif device['DEVICE_TYPE'] == 6:
-            _LOGGER.debug("Found a Neoplug named: %s skipping" % device['device'])
+            thermostats.append(HeatmiserNeostat(temperature_unit, away, hub, name))
 
     _LOGGER.info("Adding Thermostats: %s " % thermostats)
     async_add_entities(thermostats)
@@ -95,13 +86,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class HeatmiserNeostat(ClimateEntity):
     """ Represents a Heatmiser Neostat thermostat. """
-    def __init__(self, unit_of_measurement, away, host, port, name="Null"):
-        _LOGGER.debug("Init called")
+    def __init__(self, unit_of_measurement, away, hub, name="Null"):
+        self._hub = hub
         self._name = name
         self._unit_of_measurement = unit_of_measurement
         self._away = away
-        self._host = host
-        self._port = port
         #self._type = type Neostat vs Neostat-e
         self._hvac_action = None
         self._hvac_mode = None
@@ -187,7 +176,7 @@ class HeatmiserNeostat(ClimateEntity):
 
     def set_temperature(self, **kwargs):
         """ Set new target temperature. """
-        response = self.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})
+        response = self._hub.json_request({"SET_TEMP": [int(kwargs.get(ATTR_TEMPERATURE)), self._name]})
         if response:
             _LOGGER.info("set_temperature response: %s " % response)
             # Need check for success here
@@ -205,14 +194,14 @@ class HeatmiserNeostat(ClimateEntity):
             _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
 
-        response = self.json_request({mode: [self._name]})
+        response = self._hub.json_request({mode: [self._name]})
         if response:
             _LOGGER.info("set_hvac_mode response: %s " % response)
 
     def update(self):
         """ Get Updated Info. """
         _LOGGER.debug("Entered update(self)")
-        response = self.json_request({"INFO": 0})
+        response = self._hub.json_request({"INFO": 0})
         if response:
             # Add handling for mulitple thermostats here
             _LOGGER.debug("update() json response: %s " % response)
@@ -248,53 +237,3 @@ class HeatmiserNeostat(ClimateEntity):
                     _LOGGER.debug("Idle")
         return False
 
-    def json_request(self, request=None, wait_for_response=False):
-        """ Communicate with the json server. """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
-
-        try:
-            sock.connect((self._host, self._port))
-        except OSError:
-            sock.close()
-            return False
-
-        if not request:
-            # no communication needed, simple presence detection returns True
-            sock.close()
-            return True
-
-        _LOGGER.debug("json_request: %s " % request)
-
-        sock.send(bytearray(json.dumps(request) + "\0\r", "utf-8"))
-        try:
-            buf = sock.recv(4096)
-        except socket.timeout:
-            # something is wrong, assume it's offline
-            sock.close()
-            return False
-
-        # read until a newline or timeout
-        buffering = True
-        while buffering:
-            if "\n" in str(buf, "utf-8"):
-                response = str(buf, "utf-8").split("\n")[0]
-                buffering = False
-            else:
-                try:
-                    more = sock.recv(4096)
-                except socket.timeout:
-                    more = None
-                if not more:
-                    buffering = False
-                    response = str(buf, "utf-8")
-                else:
-                    buf += more
-
-        sock.close()
-
-        response = response.rstrip('\0')
-
-        _LOGGER.debug("json_response: %s " % response)
-
-        return json.loads(response, strict=False)

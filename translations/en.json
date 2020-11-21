@@ -4,14 +4,19 @@
             "user": {
                 "description": "Set up Heatmiser Neo integration.",
                 "title": "Heatmiser Neo",
-		"data": {
+                "data": {
                     "host": "Host",
-                    "port": "Port"
-		}
+                    "port": "Port",
+                    "exclude_time_clock": "Exclude Time Clock"
+                }
+            },
+            "zeroconf_confirm": {
+                "description": "Do you want to add the Heatmiser Neo `{name}` to Home Assistant?",
+                "title": "Heatmiser Neo"
             }
         },
-	"error": {
-	    "cannot_connect": "Failed to connect"
+        "error": {
+            "cannot_connect": "Failed to connect"
         }
     }
 }

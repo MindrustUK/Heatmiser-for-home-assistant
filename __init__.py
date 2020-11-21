@@ -2,7 +2,10 @@
 
 from homeassistant.const import (CONF_HOST,CONF_PORT)
 
-from .const import DOMAIN
+from .const import DOMAIN, EXCLUDE_TIME_CLOCK
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up Heamiser Neo components."""
@@ -13,11 +16,6 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, entry):
     """Set up Heatmiser Neo from a config entry."""
-
-    hass.data[DOMAIN][entry.entry_id] = {
-        CONF_HOST: entry.data[CONF_HOST],
-        CONF_PORT: entry.data[CONF_PORT],
-    }
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")

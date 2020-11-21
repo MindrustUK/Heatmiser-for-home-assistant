@@ -33,7 +33,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.const import (CONF_HOST,CONF_PORT,CONF_NAME)
-from .const import DOMAIN
+from .const import DOMAIN, EXCLUDE_TIME_CLOCK
 import homeassistant.helpers.config_validation as cv
 import socket
 import json
@@ -49,20 +49,16 @@ SUPPORT_FLAGS = 0
 # Heatmiser doesn't really have an off mode - standby is a preset - implement later
 hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT]
 
-
-# Fix this when I figure out why my config won't read in. Voluptuous schema thing.
-# Excludes time clocks from being included if set to True
-ExcludeTimeClock = False
-
-
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Heatmiser Neo from a config entry."""
 
-    host = hass.data[DOMAIN][entry.entry_id][CONF_HOST]
-    port = hass.data[DOMAIN][entry.entry_id][CONF_PORT]
+    _LOGGER.debug(f"enry.data {entry.data}")
+    
+    host = entry.data[CONF_HOST]
+    port = entry.data[CONF_PORT]
+    ExcludeTimeClock = entry.data[EXCLUDE_TIME_CLOCK]
 
     thermostats = []
-
     NeoHubJson = HeatmiserNeostat(TEMP_CELSIUS, False, host, port).json_request({"INFO": 0})
 
     _LOGGER.debug(NeoHubJson)
@@ -100,6 +96,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class HeatmiserNeostat(ClimateEntity):
     """ Represents a Heatmiser Neostat thermostat. """
     def __init__(self, unit_of_measurement, away, host, port, name="Null"):
+        _LOGGER.debug("Init called")
         self._name = name
         self._unit_of_measurement = unit_of_measurement
         self._away = away

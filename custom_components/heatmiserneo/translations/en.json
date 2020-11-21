@@ -6,8 +6,7 @@
                 "title": "Heatmiser Neo",
                 "data": {
                     "host": "Host",
-                    "port": "Port",
-                    "exclude_time_clock": "Exclude Time Clock"
+                    "port": "Port"
                 }
             },
             "zeroconf_confirm": {

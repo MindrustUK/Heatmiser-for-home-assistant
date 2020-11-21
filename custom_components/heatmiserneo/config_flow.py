@@ -20,7 +20,6 @@ from .const import (
     DEFAULT_HOST,
     DEFAULT_PORT,
     DOMAIN,
-    EXCLUDE_TIME_CLOCK,
 )
 
 from homeassistant.core import callback
@@ -41,7 +40,6 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._host = DEFAULT_HOST
         self._port = DEFAULT_PORT
         self._errors = None
-        self._exclude_time_clock = False
 
     async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
         """Handle zeroconf discovery."""
@@ -87,7 +85,6 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data={
                 CONF_HOST: self._host,
                 CONF_PORT: self._port,
-                EXCLUDE_TIME_CLOCK: self._exclude_time_clock
             }
         )
     async def async_step_user(self, user_input=None):
@@ -98,7 +95,6 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._host = user_input[CONF_HOST]
             self._port = user_input[CONF_PORT]
-            self._exclude_time_clock = user_input[EXCLUDE_TIME_CLOCK]
 
             await self.async_set_unique_id(f"{self._host}:{self._port}")
             self._abort_if_unique_id_configured()
@@ -114,7 +110,6 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_HOST, default=self._host): str,
                     vol.Required(CONF_PORT, default=self._port): int,
-                    vol.Required(EXCLUDE_TIME_CLOCK, default=self._exclude_time_clock): bool
                 }
             ), 
             errors=self._errors

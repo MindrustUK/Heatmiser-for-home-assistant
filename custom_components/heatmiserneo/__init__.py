@@ -2,10 +2,11 @@
 
 # Empty file for great migration new file structure
 
-from homeassistant.const import (CONF_HOST,CONF_PORT)
+from homeassistant.const import CONF_HOST, CONF_PORT
 
-from .heatmiserneo import NeoHub
-from .const import (DOMAIN, HUB)
+from neohubapi.neohub import NeoHub
+from .const import DOMAIN, HUB
+
 
 async def async_setup(hass, config):
     """Set up Heamiser Neo components."""
@@ -17,10 +18,10 @@ async def async_setup(hass, config):
 async def async_setup_entry(hass, entry):
     """Set up Heatmiser Neo from a config entry."""
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        CONF_HOST: entry.data[CONF_HOST],
-        CONF_PORT: entry.data[CONF_PORT],
-    }
+    #    hass.data[DOMAIN][entry.entry_id] = {
+    #        CONF_HOST: entry.data[CONF_HOST],
+    #        CONF_PORT: entry.data[CONF_PORT],
+    #    }
 
     # Set the Hub up to use and save
     hass.data[DOMAIN][HUB] = NeoHub(entry.data[CONF_HOST], entry.data[CONF_PORT])
@@ -28,9 +29,9 @@ async def async_setup_entry(hass, entry):
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")
     )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "switch")
-    )
+    #
+    # hass.async_create_task(
+    #    hass.config_entries.async_forward_entry_setup(entry, "switch")
+    # )
 
     return True

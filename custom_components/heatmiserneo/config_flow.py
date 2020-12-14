@@ -5,8 +5,10 @@
 import socket
 import voluptuous as vol
 
-from homeassistant import config_entries
+from homeassistant import config_entries, core, exceptions
 import homeassistant.helpers.config_validation as cv
+
+import logging
 
 from homeassistant.const import (
     CONF_HOST,
@@ -20,13 +22,11 @@ from .const import (
     DOMAIN,
 )
 
+from homeassistant.core import callback
+from homeassistant.helpers.typing import DiscoveryInfoType
 
-SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-    }
-)
+_LOGGER = logging.getLogger(__name__)
+
 
 @config_entries.HANDLERS.register("heatmiserneo")
 class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -37,31 +37,80 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         """Initialize Heatmiser Neo options flow."""
+        self._host = DEFAULT_HOST
+        self._port = DEFAULT_PORT
+        self._errors = None
 
+    async def async_step_zeroconf(self, discovery_info: DiscoveryInfoType):
+        """Handle zeroconf discovery."""
+        _LOGGER.debug("Zeroconfig discovered %s" % discovery_info)
+        self._host = discovery_info['hostname']
 
+        await self.async_set_unique_id(f"{self._host}:{self._port}")
+        self._abort_if_unique_id_configured()
+        return await self.async_step_zeroconf_confirm()
+
+    async def async_step_zeroconf_confirm(self, user_input=None):
+        _LOGGER.debug(f"context {self.context}")
+        """Handle a flow initiated by zeroconf."""
+        if user_input is not None:
+            self._errors = await self.try_connection()
+            if not self._errors:
+                return self._async_get_entry()
+            return await self.async_step_user()
+
+        return self.async_show_form(
+            step_id="zeroconf_confirm",
+            description_placeholders={
+                'name': self._host
+            },
+        )
+
+    async def try_connection(self):
+        _LOGGER.debug("Trying connection...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        try:
+            sock.connect((self._host, self._port))
+        except OSError:
+            return "cannot_connect"
+        sock.close()
+        _LOGGER.debug("Connection Worked!")
+        return None
+
+    @callback
+    def _async_get_entry(self):
+        return self.async_create_entry(
+            title=f"{self._host}:{self._port}", 
+            data={
+                CONF_HOST: self._host,
+                CONF_PORT: self._port,
+            }
+        )
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-
+        _LOGGER.debug(f"User Input {user_input}")
         errors = {}
 
         if user_input is not None:
-            host = user_input[CONF_HOST]
-            port = user_input[CONF_PORT]
-            await self.async_set_unique_id(f"{host}:{port}")
+            self._host = user_input[CONF_HOST]
+            self._port = user_input[CONF_PORT]
+
+            await self.async_set_unique_id(f"{self._host}:{self._port}")
             self._abort_if_unique_id_configured()
 
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5)
+            self._errors = await self.try_connection()
+            if not self._errors:
+                return self._async_get_entry()
 
-            try:
-                sock.connect((host, port))
-            except OSError:
-                errors["base"] = "cannot_connect"
-            sock.close()
-
-            if not errors:
-                return self.async_create_entry(title=f"{host}:{port}", data=user_input)
-
+        _LOGGER.debug(f"Error: {self._errors}")
         return self.async_show_form(
-            step_id="user", data_schema=SCHEMA, errors=errors
+            step_id="user", 
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HOST, default=self._host): str,
+                    vol.Required(CONF_PORT, default=self._port): int,
+                }
+            ), 
+            errors=self._errors
         )

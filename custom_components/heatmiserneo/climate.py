@@ -203,7 +203,7 @@ class HeatmiserNeostat(ClimateEntity):
         _LOGGER.debug("Entered update(self)")
         response = self._hub.json_request({"INFO": 0})
         if response:
-            # Add handling for mulitple thermostats here
+            # Add handling for multiple thermostats here
             _LOGGER.debug("update() json response: %s " % response)
             # self._name = device['device']
             for device in response['devices']:

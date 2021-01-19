@@ -5,7 +5,7 @@
   "documentation": "https://github.com/MindrustUK/Heatmiser-for-home-assistant",
   "dependencies": [],
   "codeowners": ["MindrustUK"],
-  "requirements": ["neohubapi>=0.3"],
+  "requirements": ["neohubapi>=0.4"],
   "zeroconf": [
     {"type":"_hap._tcp.local.", "name": "Heatmiser neoHub*"}
   ]

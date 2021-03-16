@@ -117,6 +117,11 @@ class HeatmiserNeostat(ClimateEntity):
         """Return the temperature we try to reach."""
         return self._target_temperature
 
+    @property
+    def target_temperature_step(self):
+        """Return the supported step of target temperature."""
+        return await self._hub.target_temperature_step
+
 #    @property
 #    def current_humidity(self):
 #        """Return the current humidity."""

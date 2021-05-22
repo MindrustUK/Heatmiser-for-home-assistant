@@ -37,7 +37,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class HeatmiserNeostatFloorTemperature(SensorEntity):
     """ Represents a Heatmiser Neostat thermostat floor probe. """
 
- def __init__(self, hub: NeoHub, neostat: NeoStat, unit_of_measurement):
+    def __init__(self, hub: NeoHub, neostat: NeoStat, unit_of_measurement):
         self._neostat = neostat
         self._hub = hub
         self._unit_of_measurement = unit_of_measurement

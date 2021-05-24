@@ -141,6 +141,16 @@ class HeatmiserNeostat(ClimateEntity):
     def hvac_modes(self):
         """Return the list of available operation modes."""
         return self._hvac_modes
+    
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {("HeatMiser NeoStat", self._neostat.name)},
+            "name": self._neostat.name,
+            "manufacturer": "Heatmiser",
+            "model": "NeoStat",
+            "suggested_area": self._neostat.name,
+        }
 
     async def async_set_temperature(self, **kwargs):
         """ Set new target temperature. """

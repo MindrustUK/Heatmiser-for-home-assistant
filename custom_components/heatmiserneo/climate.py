@@ -11,6 +11,7 @@ demo.py, nest.py and light/hyperion.py for the json elements
 """
 
 import logging
+import asyncio
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -199,14 +200,17 @@ class HeatmiserNeostat(ClimateEntity):
             _LOGGER.error("Unsupported hvac mode: %s", hvac_mode)
             return
 
-        if(hc_mode):
-            response = await self._neostat.set_hc_mode(hc_mode)
-        if response:
-            _LOGGER.info("set_hc_mode response: %s " % response)
+        set_hc_mode_task = None
+        if hc_mode:
+            set_hc_mode_task = asyncio.create_task(self._neostat.set_hc_mode(hc_mode))
+        set_frost_task = asyncio.create_task(self._neostat.set_frost(frost))
 
-        response = await self._neostat.set_frost(frost)
-        if response:
-            _LOGGER.info("set_frost response: %s " % response)
+        if set_hc_mode_task:
+            response = await set_hc_mode_task
+            _LOGGER.info("set_hc_mode %s response: %s " % (hc_mode, response))
+
+        response = await set_frost_task
+        _LOGGER.info("set_frost %s response: %s " % (frost, response))
 
     async def async_update(self):
         """ Get Updated Info. """

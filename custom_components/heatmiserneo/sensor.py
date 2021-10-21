@@ -62,7 +62,7 @@ class HeatmiserNeostatFloorTemperature(SensorEntity):
     @property
     def state(self):
         """Returns the floor temperature."""
-        return self._neostat.current_floor_temperature
+        return self._state
 
     @property
     def entity_registry_enabled_default(self):

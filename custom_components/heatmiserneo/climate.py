@@ -185,7 +185,7 @@ class HeatmiserNeostat(ClimateEntity):
             self._support_flags = SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE_RANGE
         elif hvac_mode == HVAC_MODE_FAN_ONLY:
             self._hvac_mode = HVAC_MODE_FAN_ONLY
-            self._support_flags = SUPPORT_FLAGS
+            self._support_flags = SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE
         else:
             _LOGGER.error("Unsupported hvac mode: %s", hvac_mode)
             return

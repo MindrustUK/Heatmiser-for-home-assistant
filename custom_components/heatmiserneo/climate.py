@@ -38,9 +38,6 @@ _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_FLAGS = 0
 
-# Heatmiser doesn't really have an off mode - standby is a preset - implement later
-hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_HEAT_COOL, HVAC_MODE_FAN_ONLY]
-
 # This should be in the neohubapi.neohub enums code
 import enum
 class AvailableMode(str, enum.Enum):
@@ -77,7 +74,6 @@ class HeatmiserNeostat(ClimateEntity):
         # self._type = type Neostat vs Neostat-e
         self._hvac_action = None
         self._hvac_mode = None
-        self._hvac_modes = hvac_modes
         self._hvac_modes = [HVAC_MODE_OFF]
         for mode in neostat.available_modes:
             self._hvac_modes.append(hvac_mode_mapping[mode])

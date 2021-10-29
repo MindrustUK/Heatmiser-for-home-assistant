@@ -41,6 +41,19 @@ SUPPORT_FLAGS = 0
 # Heatmiser doesn't really have an off mode - standby is a preset - implement later
 hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_HEAT_COOL, HVAC_MODE_FAN_ONLY]
 
+# This should be in the neohubapi.neohub enums code
+import enum
+class AvailableMode(str, enum.Enum):
+    HEAT = "heat"
+    COOL = "cool"
+    VENT = "vent"
+    AUTO = "auto"
+
+hvac_mode_mapping = {
+    AvailableMode.AUTO: HVAC_MODE_HEAT_COOL, 
+    AvailableMode.COOL: HVAC_MODE_COOL, 
+    AvailableMode.VENT: HVAC_MODE_FAN_ONLY, 
+    AvailableMode.HEAT: HVAC_MODE_HEAT}
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
@@ -65,6 +78,10 @@ class HeatmiserNeostat(ClimateEntity):
         self._hvac_action = None
         self._hvac_mode = None
         self._hvac_modes = hvac_modes
+        self._hvac_modes = [HVAC_MODE_OFF]
+        for mode in neostat.available_modes:
+            self._hvac_modes.append(hvac_mode_mapping[mode])
+
         self._target_temperature_high = None
         self._target_temperature_low = None
         self._support_flags = SUPPORT_FLAGS
@@ -237,11 +254,11 @@ class HeatmiserNeostat(ClimateEntity):
                 else:
                     # We are in heating mode by default as some devices only support this mode.
                     hc_mode = HCMode(thermostat.hc_mode)
-                    if hc_mode == HCMode.AUTO:
+                    if hc_mode == HCMode.AUTO and AvailableMode.AUTO in thermostat.available_modes:
                         self.update_hvac_mode(HVAC_MODE_HEAT_COOL)
-                    elif hc_mode == HCMode.VENT:
+                    elif hc_mode == HCMode.VENT and AvailableMode.VENT in thermostat.available_modes:
                         self.update_hvac_mode(HVAC_MODE_FAN_ONLY)
-                    elif hc_mode == HCMode.COOLING:
+                    elif hc_mode == HCMode.COOLING and AvailableMode.COOL in thermostat.available_modes:
                         self.update_hvac_mode(HVAC_MODE_COOL)
                     else:
                         self.update_hvac_mode(HVAC_MODE_HEAT)

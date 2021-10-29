@@ -83,7 +83,7 @@ class HeatmiserNeostatSwitch(SwitchEntity):
 
     async def async_update(self):
         """ Update the switch's status. """
-        _LOGGER.debug("Entered update(self)")
+        _LOGGER.debug("Entered switch.update(self)")
         _, devices = await self._hub.get_live_data()
         for device in devices['timeclocks']:
             if self._switch.name == device.name:

@@ -27,7 +27,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     hub = hass.data[DOMAIN][HUB]
     _, devices = await hub.get_live_data()
-    
+
     system_data = await hub.get_system()
     temperature_unit = system_data.CORF
 
@@ -48,7 +48,7 @@ class HeatmiserNeostatFloorTemperature(SensorEntity):
         self._hub = hub
         self._unit_of_measurement = unit_of_measurement
         self._state = None
-        
+
     @property
     def name(self):
         """Return the name of the sensor."""

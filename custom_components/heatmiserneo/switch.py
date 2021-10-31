@@ -18,7 +18,7 @@ from neohubapi.neohub import NeoHub
 from .const import DOMAIN, HUB
 
 
-_LOGGER = logging.getLogger(__package__)
+_LOGGER = logging.getLogger(__name__)
 
 
 NEO_STAT = 1

@@ -33,7 +33,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     sensors = [
         HeatmiserNeostatFloorTemperature(hub, sensor, temperature_unit)
-        for sensor in devices["thermostats"]
+        for sensor in devices["thermostats"] if sensor.current_floor_temperature < 127  # Exclude device if floor temperature is 127 or higher (V1 of the NeoStat reports 127 when no probe is connected, V2 reports 127.5)
     ]
 
     _LOGGER.info("Adding Thermostats Sensors: %s " % sensors)
@@ -66,7 +66,7 @@ class HeatmiserNeostatFloorTemperature(SensorEntity):
 
     @property
     def entity_registry_enabled_default(self):
-        """Disable entity if vaule is above 127 (V1 of the NeoStat reports 127 when no probe is connected, V2 reports 127.5)"""
+        """Disable entity if value is above 127 (V1 of the NeoStat reports 127 when no probe is connected, V2 reports 127.5)"""
         return self.state < 127
 
     @property
@@ -95,7 +95,7 @@ class HeatmiserNeostatFloorTemperature(SensorEntity):
 
     async def async_update(self):
         """Update the sensor's status."""
-        _LOGGER.debug("Entered update(self)")
+        _LOGGER.debug("Entered sensor.update(self)")
         _, devices = await self._hub.get_live_data()
         for sensor in devices["thermostats"]:
             if self._neostat.name == sensor.name:

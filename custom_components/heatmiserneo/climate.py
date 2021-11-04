@@ -181,6 +181,17 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         return float(self.data.target_temperature)
 
     @property
+    def device_state_attributes(self):
+        """Return the additional state attributes of the sensor."""
+        attributes = {}
+        # Exclude attribute if floor temperature is 127 or higher
+        # (V1 of the NeoStat reports 127 when no probe is connected, V2 reports 127.5)
+        if float(self.data.current_floor_temperature) < 127: 
+            attributes['floor_temperature'] = float(self.data.current_floor_temperature)
+
+        return attributes
+        
+    @property
     def hvac_action(self):
         """Return current activity ie. currently heating, cooling, idle."""
         if self.data.heat_on:

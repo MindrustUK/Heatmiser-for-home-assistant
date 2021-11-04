@@ -28,8 +28,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     hub = hass.data[DOMAIN][HUB]
     _, devices = await hub.get_live_data()
 
-    _LOGGER.warn(f"You are using an OBSOLETE sensor integration (Heatmiser Floor Temperature Sensor), which will be removed after 31st December 2021.  Instead, please use the new 'floor_temperature' state attribute on the standard Heatmiser neoStat climate entity.")
-
     system_data = await hub.get_system()
     temperature_unit = system_data.CORF
 

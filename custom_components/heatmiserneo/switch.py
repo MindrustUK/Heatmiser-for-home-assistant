@@ -11,12 +11,17 @@ https://github.com/RJ/heatmiser-neohub.py/blob/master/neohub_docs/NeoHub%20comma
 """
 
 import logging
-
+from datetime import timedelta
+import async_timeout
+ 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 
-from neohubapi.neohub import NeoHub
+from neohubapi.neohub import NeoHub, NeoStat
 from .const import DOMAIN, HUB
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,35 +33,79 @@ NEO_PLUG = 2
 async def async_setup_entry(hass, entry, async_add_entities):
 
     hub = hass.data[DOMAIN][HUB]
-    _, devices = await hub.get_live_data()
 
-    switches = []
-    # FIXME: handle NEO_PLUG with DEVICE_TYPE == 6, needs support in neohubapi
-    switches = [HeatmiserNeostatSwitch(hub, switch, NEO_STAT) for switch in devices['timeclocks']]
+    async def async_update_data():
+        """Fetch data from the Hub all at once and make it available for
+           all thermostats.
+        """
+        _LOGGER.info(f"Executing update_data()")
+        
+        async with async_timeout.timeout(30):
+            _, devices_data = await hub.get_live_data()
+            system_data = await hub.get_system()
+            #_LOGGER.debug(f"system_data: {system_data}")
+            
+            timers = {timer.name : timer for timer in devices_data['timeclocks']}
+            _LOGGER.debug(f"timers: {timers}")
+            
+            return (timers, system_data)
 
-    _LOGGER.info("Adding Switches: %s " % switches)
-    async_add_entities(switches, True)
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        # Name of the data. For logging purposes.
+        name="timer",
+        update_method=async_update_data,
+        # Polling interval. Will only be polled if there are subscribers.
+        update_interval=timedelta(seconds=30),
+    )
+    
+    await coordinator.async_config_entry_first_refresh()
 
+    (timers, system_data) = coordinator.data
 
-class HeatmiserNeostatSwitch(SwitchEntity):
-    """ Represents a Heatmiser Neostat in Switch mode. """
-    def __init__(self, hub: NeoHub, switch, type=0):
-        self._switch = switch
-        self._hub = hub
+    entities = [NeoTimerEntity(timer, NEO_STAT, coordinator) for timer in timers.values()]
+    _LOGGER.info(f"Adding Timers: {entities}")
+    async_add_entities(entities, True)
+    
+class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
+    """ Represents a Heatmiser neoStat thermostat. """
+    def __init__(self, timer: NeoStat, type, coordinator: DataUpdateCoordinator):
+        super().__init__(coordinator)
+        _LOGGER.debug(f"Creating {timer}")
+        
+        self._timer = timer
         self._type = type
-        self._state = None
-        self._holdfor = 60
+        self._coordinator = coordinator
+        self._state = timer.timer_on
+        self._holdfor = 30
 
+    @property
+    def data(self):
+        """Helper to get the data for the current thermostat. """
+        (devices, _) = self._coordinator.data
+        return devices[self.name]
+        
+    @property
+    def should_poll(self):
+        """ Don't poll - we fetch the data from the hub all at once """
+        return False
+        
     @property
     def name(self):
         """ Returns the name. """
-        return self._switch.name
+        return self._timer.name
 
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return self._switch.name
+        return self._timer.name
 
+    @property
+    def state(self):
+        """Return the entity state."""
+        return 'on' if self.data.timer_on else 'off'
+        
     @property
     def is_on(self):
         """Return true if the switch is on."""
@@ -69,22 +118,22 @@ class HeatmiserNeostatSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         """ Turn the switch on. """
-        if self._type == NEO_STAT:
-            response = await self._switch.set_timer_hold(True, self._holdfor)
-        elif self._type == NEO_PLUG:
-            response = await self._hub.set_timer(True, [self])
-
+        _LOGGER.info(f"{self.name} : Executing turn_on() with: {kwargs}")
+        
+        await self.async_switch_on(True)
+        
     async def async_turn_off(self, **kwargs):
         """ Turn the switch off. """
-        if self._type == NEO_STAT:
-            response = await self._switch.set_timer_hold(False, 0)
-        elif self._type == NEO_PLUG:
-            response = await self._hub.set_timer(False, [self])
+        _LOGGER.info(f"{self.name} : Executing turn_off() with: {kwargs}")
+        
+        await self.async_switch_on(False)
 
-    async def async_update(self):
-        """ Update the switch's status. """
-        _LOGGER.debug("Entered switch.update(self)")
-        _, devices = await self._hub.get_live_data()
-        for device in devices['timeclocks']:
-            if self._switch.name == device.name:
-                self._state = device.timer_on
+    async def async_switch_on(self, value: bool):
+        if self._type == NEO_STAT:
+            response = await self._timer.set_timer_hold(value, self._holdfor if value else 0)
+            _LOGGER.info(f"{self.name} : Called set_timer_hold with: {value} (response: {response})")
+            self.data.timer_on = value
+            self.async_write_ha_state()
+            
+        elif self._type == NEO_PLUG:
+            response = await self._hub.set_timer(value, [self])

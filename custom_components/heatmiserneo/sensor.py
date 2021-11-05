@@ -49,6 +49,8 @@ class HeatmiserNeostatFloorTemperature(SensorEntity):
         self._unit_of_measurement = unit_of_measurement
         self._state = None
 
+        _LOGGER.warn(f"You are using an OBSOLETE sensor integration ({DOMAIN} {self.name}), which will be removed after 31st December 2021.  Instead, please use the new 'floor_temperature' state attribute on the standard {DOMAIN} {neostat.name} climate entity (e.g. state_attr('climate.{neostat.name.lower()}', 'floor_temperature')).")
+
     @property
     def name(self):
         """Return the name of the sensor."""

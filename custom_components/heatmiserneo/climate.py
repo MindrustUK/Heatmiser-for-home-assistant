@@ -92,19 +92,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
     (thermostats, system_data) = coordinator.data
 
     temperature_unit = system_data.CORF
+    temperature_step = 1.0 if system_data.HUB_TYPE == 1 or system_data.HUB_VERSION < 2135 else 0.5
 
-    entities = [NeoStatEntity(thermostat, temperature_unit, coordinator) for thermostat in thermostats.values()]
+    entities = [NeoStatEntity(thermostat, temperature_unit, temperature_step, coordinator) for thermostat in thermostats.values()]
     _LOGGER.info(f"Adding Thermostats: {entities}")
     async_add_entities(entities, True)
     
 class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     """ Represents a Heatmiser neoStat thermostat. """
-    def __init__(self, neostat: NeoStat, unit_of_measurement, coordinator: DataUpdateCoordinator):
+    def __init__(self, neostat: NeoStat, unit_of_measurement, temperature_step, coordinator: DataUpdateCoordinator):
         super().__init__(coordinator)
         _LOGGER.debug(f"Creating {neostat}")
         
         self._neostat = neostat
         self._unit_of_measurement = unit_of_measurement
+        self._target_temperature_step = temperature_step
         self._coordinator = coordinator
         self._hvac_modes = []
         if hasattr(neostat, 'standby'):
@@ -180,6 +182,11 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """Return the temperature we try to reach."""
         return float(self.data.target_temperature)
 
+    @property
+    def target_temperature_step(self):
+        """Return the supported step of target temperature."""
+        return self._target_temperature_step
+         
     @property
     def device_state_attributes(self):
         """Return the additional state attributes."""

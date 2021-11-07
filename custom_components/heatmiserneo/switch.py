@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat
-from .const import DOMAIN, HUB, COORDINATOR
+from .const import DOMAIN, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 

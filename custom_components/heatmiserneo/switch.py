@@ -11,8 +11,6 @@ https://github.com/RJ/heatmiser-neohub.py/blob/master/neohub_docs/NeoHub%20comma
 """
 
 import logging
-from datetime import timedelta
-import async_timeout
  
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import (
@@ -21,50 +19,24 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat
-from .const import DOMAIN, HUB
+from .const import DOMAIN, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
 
 NEO_STAT = 1
 NEO_PLUG = 2
-
+TIMECLOCKS = 'timeclocks'
 
 async def async_setup_entry(hass, entry, async_add_entities):
-
-    hub = hass.data[DOMAIN][HUB]
-
-    async def async_update_data():
-        """Fetch data from the Hub all at once and make it available for
-           all thermostats.
-        """
-        _LOGGER.info(f"Executing update_data()")
-        
-        async with async_timeout.timeout(30):
-            _, devices_data = await hub.get_live_data()
-            system_data = await hub.get_system()
-            #_LOGGER.debug(f"system_data: {system_data}")
-            
-            timers = {timer.name : timer for timer in devices_data['timeclocks']}
-            _LOGGER.debug(f"timers: {timers}")
-            
-            return (timers, system_data)
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        # Name of the data. For logging purposes.
-        name="timer",
-        update_method=async_update_data,
-        # Polling interval. Will only be polled if there are subscribers.
-        update_interval=timedelta(seconds=30),
-    )
     
-    await coordinator.async_config_entry_first_refresh()
+    coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
 
-    (timers, system_data) = coordinator.data
-
+    (devices_data, system_data) = coordinator.data
+    timers = {device.name : device for device in devices_data[TIMECLOCKS]}
+    
     entities = [NeoTimerEntity(timer, NEO_STAT, coordinator) for timer in timers.values()]
+    
     _LOGGER.info(f"Adding Timers: {entities}")
     async_add_entities(entities, True)
     
@@ -84,7 +56,8 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     def data(self):
         """Helper to get the data for the current thermostat. """
         (devices, _) = self._coordinator.data
-        return devices[self.name]
+        timers = {device.name : device for device in devices[TIMECLOCKS]}
+        return timers[self.name]
         
     @property
     def should_poll(self):

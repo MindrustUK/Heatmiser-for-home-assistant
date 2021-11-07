@@ -10,8 +10,6 @@ Heatmiser NeoStat control via Heatmiser Neo-hub
 
 import logging
 import asyncio
-from datetime import timedelta
-import async_timeout
  
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -35,12 +33,13 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
-from .const import DOMAIN, HUB
+from .const import DOMAIN, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
 
 SUPPORT_FLAGS = 0
+THERMOSTATS = 'thermostats'
 
 # This should be in the neohubapi.neohub enums code
 import enum
@@ -59,42 +58,16 @@ hvac_mode_mapping = {
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
-    hub: NeoHub = hass.data[DOMAIN][HUB]
+    coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
 
-    async def async_update_data():
-        """Fetch data from the Hub all at once and make it available for
-           all thermostats.
-        """
-        _LOGGER.info(f"Executing update_data()")
-        
-        async with async_timeout.timeout(30):
-            _, devices_data = await hub.get_live_data()
-            system_data = await hub.get_system()
-            #_LOGGER.debug(f"system_data: {system_data}")
-            
-            stats = {stat.name : stat for stat in devices_data['thermostats']}
-            _LOGGER.debug(f"stats: {stats}")
-            
-            return (stats, system_data)
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        # Name of the data. For logging purposes.
-        name="neostat",
-        update_method=async_update_data,
-        # Polling interval. Will only be polled if there are subscribers.
-        update_interval=timedelta(seconds=30)
-    )
-
-    await coordinator.async_config_entry_first_refresh()
-
-    (thermostats, system_data) = coordinator.data
-
+    (devices_data, system_data) = coordinator.data
+    thermostats = {device.name : device for device in devices_data[THERMOSTATS]}
+    
     temperature_unit = system_data.CORF
     temperature_step = 1.0 if system_data.HUB_TYPE == 1 or system_data.HUB_VERSION < 2135 else 0.5
 
     entities = [NeoStatEntity(thermostat, temperature_unit, temperature_step, coordinator) for thermostat in thermostats.values()]
+    
     _LOGGER.info(f"Adding Thermostats: {entities}")
     async_add_entities(entities, True)
     
@@ -118,7 +91,8 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     def data(self):
         """Helper to get the data for the current thermostat. """
         (devices, _) = self._coordinator.data
-        return devices[self.name]
+        thermostats = {device.name : device for device in devices[THERMOSTATS]}
+        return thermostats[self.name]
         
     @property
     def supported_features(self):

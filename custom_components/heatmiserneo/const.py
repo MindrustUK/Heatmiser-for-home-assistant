@@ -4,7 +4,7 @@
 DOMAIN = "heatmiserneo"
 
 HUB = "Hub"
+COORDINATOR = "Coordinator"
 
 DEFAULT_HOST = "Neo-Hub"
 DEFAULT_PORT = 4242
-

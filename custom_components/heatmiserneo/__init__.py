@@ -32,7 +32,7 @@ async def async_setup_entry(hass, entry):
 
     async def async_update_data():
         """Fetch data from the Hub all at once and make it available for
-           all thermostats.
+           all devices.
         """
         _LOGGER.info(f"Executing update_data()")
         

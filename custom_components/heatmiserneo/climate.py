@@ -24,7 +24,7 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_HEAT_COOL,
     HVAC_MODE_OFF,
     SUPPORT_TARGET_TEMPERATURE,
-    SUPPORT_TARGET_TEMPERATURE_RANGE,
+    SUPPORT_TARGET_TEMPERATURE_RANGE
 )
 from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.helpers.update_coordinator import (
@@ -162,14 +162,10 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         return self._target_temperature_step
          
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the additional state attributes."""
         attributes = {}
-        # Exclude attribute if floor temperature is 127 or higher
-        # (V1 of the NeoStat reports 127 when no probe is connected, V2 reports 127.5)
-        if float(self.data.current_floor_temperature) < 127: 
-            attributes['floor_temperature'] = float(self.data.current_floor_temperature)
-
+        attributes['floor_temperature'] = float(self.data.current_floor_temperature)
         return attributes
     
     @property
@@ -264,4 +260,3 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         set_frost_task = asyncio.create_task(self._neostat.set_frost(frost))
         response = await set_frost_task
         _LOGGER.info(f"{self.name} : Called set_frost() with: {frost} (response: {response})")
-        

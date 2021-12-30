@@ -33,7 +33,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
-from .const import DOMAIN, COORDINATOR
+from .const import DOMAIN, HUB, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,29 +58,30 @@ hvac_mode_mapping = {
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
+    hub: NeoHub = hass.data[DOMAIN][HUB]
     coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
 
     (devices_data, system_data) = coordinator.data
     thermostats = {device.name : device for device in devices_data[THERMOSTATS]}
     
     temperature_unit = system_data.CORF
-    temperature_step = 1.0 if system_data.HUB_TYPE == 1 or system_data.HUB_VERSION < 2135 else 0.5
+    temperature_step = await hub.target_temperature_step
 
-    entities = [NeoStatEntity(thermostat, temperature_unit, temperature_step, coordinator) for thermostat in thermostats.values()]
+    entities = [NeoStatEntity(thermostat, coordinator, temperature_unit, temperature_step) for thermostat in thermostats.values()]
     
     _LOGGER.info(f"Adding Thermostats: {entities}")
     async_add_entities(entities, True)
     
 class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     """ Represents a Heatmiser neoStat thermostat. """
-    def __init__(self, neostat: NeoStat, unit_of_measurement, temperature_step, coordinator: DataUpdateCoordinator):
+    def __init__(self, neostat: NeoStat, coordinator: DataUpdateCoordinator, unit_of_measurement, temperature_step):
         super().__init__(coordinator)
         _LOGGER.debug(f"Creating {neostat}")
         
         self._neostat = neostat
+        self._coordinator = coordinator
         self._unit_of_measurement = unit_of_measurement
         self._target_temperature_step = temperature_step
-        self._coordinator = coordinator
         self._hvac_modes = []
         if hasattr(neostat, 'standby'):
             self._hvac_modes.append(HVAC_MODE_OFF)

@@ -88,7 +88,17 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     def available(self):
         """Return true if the entity is available."""
         return True
-
+    
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {("heatmiser neoStat", self._timer.name)},
+            "name": self._timer.name,
+            "manufacturer": "Heatmiser",
+            "model": "neoTimer",
+            "suggested_area": self._timer.name,
+        }
+    
     async def async_turn_on(self, **kwargs):
         """ Turn the switch on. """
         _LOGGER.info(f"{self.name} : Executing turn_on() with: {kwargs}")

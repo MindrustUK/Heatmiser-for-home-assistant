@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.const import CONF_HOST,CONF_PORT
 
 from neohubapi.neohub import NeoHub
-from .const import DOMAIN, HUB, COORDINATOR
+from .const import DOMAIN, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +28,6 @@ async def async_setup_entry(hass, entry):
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
     hub = NeoHub(host, port)
-    hass.data[DOMAIN][HUB] = hub
 
     async def async_update_data():
         """Fetch data from the Hub all at once and make it available for
@@ -65,10 +64,6 @@ async def async_setup_entry(hass, entry):
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "switch")
-    )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
     return True

@@ -3,6 +3,7 @@
 """Constants used by multiple Heatmiser Neo modules."""
 DOMAIN = "heatmiserneo"
 
+HUB = "Hub"
 COORDINATOR = "Coordinator"
 
 DEFAULT_HOST = "Neo-Hub"

@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat
-from .const import DOMAIN, COORDINATOR
+from .const import DOMAIN, HUB, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,25 +30,26 @@ TIMECLOCKS = 'timeclocks'
 
 async def async_setup_entry(hass, entry, async_add_entities):
     
+    hub: NeoHub = hass.data[DOMAIN][HUB]
     coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
 
     (devices_data, system_data) = coordinator.data
     timers = {device.name : device for device in devices_data[TIMECLOCKS]}
     
-    entities = [NeoTimerEntity(timer, NEO_STAT, coordinator) for timer in timers.values()]
+    entities = [NeoTimerEntity(timer, coordinator, NEO_STAT) for timer in timers.values()]
     
     _LOGGER.info(f"Adding Timers: {entities}")
     async_add_entities(entities, True)
     
 class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     """ Represents a Heatmiser neoStat thermostat. """
-    def __init__(self, timer: NeoStat, type, coordinator: DataUpdateCoordinator):
+    def __init__(self, timer: NeoStat, coordinator: DataUpdateCoordinator, type):
         super().__init__(coordinator)
         _LOGGER.debug(f"Creating {timer}")
         
         self._timer = timer
-        self._type = type
         self._coordinator = coordinator
+        self._type = type
         self._state = timer.timer_on
         self._holdfor = 30
 

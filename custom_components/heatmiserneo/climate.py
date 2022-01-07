@@ -167,6 +167,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """Return the additional state attributes."""
         attributes = {}
         attributes['offline'] = self.data.offline
+        attributes['preheat_active'] = self.data.preheat_active
         attributes['floor_temperature'] = float(self.data.current_floor_temperature)
         return attributes
     

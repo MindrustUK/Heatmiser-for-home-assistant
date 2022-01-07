@@ -168,7 +168,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         attributes = {}
         attributes['offline'] = self.data.offline
         attributes['preheat_active'] = bool(self.data.preheat_active)
-        attributes['floor_temperature'] = float(self.data.current_floor_temperature)
+        attributes['floor_temperature'] = self.data.current_floor_temperature
         return attributes
     
     @property

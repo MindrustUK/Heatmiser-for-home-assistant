@@ -95,6 +95,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
         """Return the additional state attributes."""
         attributes = {}
         attributes['offline'] = self.data.offline
+        attributes['standby'] = self.data.standby
         return attributes
        
     @property

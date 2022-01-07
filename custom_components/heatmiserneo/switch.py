@@ -89,7 +89,15 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     def available(self):
         """Return true if the entity is available."""
         return True
-    
+      
+    @property
+    def extra_state_attributes(self):
+        """Return the additional state attributes."""
+        attributes = {}
+        attributes['offline'] = self.data.offline
+        attributes['standby'] = self.data.standby
+        return attributes
+       
     @property
     def device_info(self):
         return {

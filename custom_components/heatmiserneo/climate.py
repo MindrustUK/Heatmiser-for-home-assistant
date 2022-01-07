@@ -167,8 +167,9 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """Return the additional state attributes."""
         attributes = {}
         attributes['offline'] = self.data.offline
-        attributes['preheat_active'] = bool(self.data.preheat_active)
+        attributes['standby'] = self.data.standby
         attributes['floor_temperature'] = self.data.current_floor_temperature
+        attributes['preheat_active'] = bool(self.data.preheat_active)
         return attributes
     
     @property

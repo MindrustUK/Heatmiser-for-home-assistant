@@ -6,6 +6,9 @@ Heatmiser Neo-Hub / Neostat / Neostat-e support for home-assistant.io
 
 This is a work in progress for adding Heatmiser Neo-hub support to Home Assistant (https://home-assistant.io/), I maintain this as a weekend project only so don't expect fast updates but feel free to raise issues as needed.
 
+# Known issues - Read me first!
+For some reason Heatmiser have labeled the API used by this intergration as "Legacy API". Please note if your intergration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
+
 # Installation:
 
 Before starting installation you should know the IP address of the Neo-hub. If you don't know the IP address, use one of the approaches suggested below to find your neo-hubs IP address.

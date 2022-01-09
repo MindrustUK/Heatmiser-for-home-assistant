@@ -104,8 +104,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
             "identifiers": {("heatmiser neoStat", self._timer.name)},
             "name": self._timer.name,
             "manufacturer": "Heatmiser",
-            "model": "neoTimer",
-            "suggested_area": self._timer.name,
+            "model": "neoTimer"
         }
     
     async def async_turn_on(self, **kwargs):

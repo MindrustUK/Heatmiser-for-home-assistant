@@ -33,7 +33,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
-from .const import DOMAIN, HUB, COORDINATOR
+from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,13 +41,6 @@ _LOGGER = logging.getLogger(__name__)
 SUPPORT_FLAGS = 0
 THERMOSTATS = 'thermostats'
 
-# This should be in the neohubapi.neohub enums code
-import enum
-class AvailableMode(str, enum.Enum):
-    HEAT = "heat"
-    COOL = "cool"
-    VENT = "vent"
-    AUTO = "auto"
 
 hvac_mode_mapping = {
     AvailableMode.AUTO: HVAC_MODE_HEAT_COOL, 
@@ -63,6 +56,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     (devices_data, system_data) = coordinator.data
     thermostats = {device.name : device for device in devices_data[THERMOSTATS]}
+    
+    hvac_config = entry.options[CONF_HVAC_MODES] if CONF_HVAC_MODES in entry.options else {}
+    _LOGGER.debug(f"hvac_config: {hvac_config}")
+    for config in hvac_config:
+        _LOGGER.debug(f"Overriding the default HVAC modes from {thermostats[config].available_modes} to {hvac_config[config]} for the {config} climate entity.")
+        thermostats[config].available_modes = hvac_config[config]
     
     temperature_unit = system_data.CORF
     temperature_step = await hub.target_temperature_step

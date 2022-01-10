@@ -8,6 +8,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
+from homeassistant import config_entries, core
 from homeassistant.const import CONF_HOST,CONF_PORT
 
 from neohubapi.neohub import NeoHub
@@ -68,3 +69,7 @@ async def async_setup_entry(hass, entry):
     )
 
     return True
+
+async def options_update_listener(hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry):
+    """Handle options update."""
+    await hass.config_entries.async_reload(config_entry.entry_id)

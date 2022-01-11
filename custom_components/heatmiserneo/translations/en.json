@@ -17,20 +17,5 @@
         "error": {
             "cannot_connect": "Failed to connect"
         }
-    },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Configure HVAC Modes",
-                "data": {
-                    "device": "Device",
-                    "hvac_modes": "HVAC Mode: (deselect all options to revert to default behaviour)",
-                    "more": "Configure another device"
-                },
-            "description": "Select a device and configure the HVAC modes"
-            }
-        },
-    "error": {
-        }
     }
 }

@@ -168,6 +168,9 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         attributes['low_battery'] = self.data.low_battery
         attributes['offline'] = self.data.offline
         attributes['standby'] = self.data.standby
+        attributes['hold_on'] = self.data.hold_on
+        attributes['hold_time'] = str(self.data.hold_time)
+        attributes['hold_temp'] = self.data.hold_temp
         attributes['floor_temperature'] = self.data.current_floor_temperature
         attributes['preheat_active'] = bool(self.data.preheat_active)
         return attributes

@@ -307,6 +307,13 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         Sets Hold for Zone
         """
 
+        if boost_minutes > 59:
+            _boost_revised_minutes = boost_minutes % 60
+            boost_hours += int((boost_minutes - _boost_revised_minutes) / 60)
+            boost_minutes = _boost_revised_minutes
+        if boost_hours > 99:
+            boost_hours = 99
+
         message = {"HOLD": [{"temp":boost_temperature, "hours":boost_hours, "minutes":boost_minutes, "id":self.name}, [self.name]]}
         reply = {"result": "temperature on hold"}
 

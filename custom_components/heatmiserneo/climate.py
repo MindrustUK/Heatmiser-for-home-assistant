@@ -10,6 +10,8 @@ Heatmiser NeoStat control via Heatmiser Neo-hub
 
 import logging
 import asyncio
+
+import voluptuous as vol
  
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -32,8 +34,19 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
+from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
 from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
+
+from .const import (
+    ATTR_BOOST_HOURS,
+    ATTR_BOOST_MINUTES,
+    ATTR_BOOST_TEMPERATURE,
+    SERVICE_BOOST_HEATING_OFF,
+    SERVICE_BOOST_HEATING_ON,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,19 +79,40 @@ async def async_setup_entry(hass, entry, async_add_entities):
     temperature_unit = system_data.CORF
     temperature_step = await hub.target_temperature_step
 
-    entities = [NeoStatEntity(thermostat, coordinator, temperature_unit, temperature_step) for thermostat in thermostats.values()]
+    entities = [NeoStatEntity(thermostat, coordinator, hub, temperature_unit, temperature_step) for thermostat in thermostats.values()]
     
     _LOGGER.info(f"Adding Thermostats: {entities}")
     async_add_entities(entities, True)
+
+    platform = entity_platform.async_get_current_platform()
     
+    platform.async_register_entity_service(
+        SERVICE_BOOST_HEATING_ON,
+        {
+            vol.Required(ATTR_BOOST_HOURS, default=1): int,
+            vol.Required(ATTR_BOOST_MINUTES, default=0): int,
+            vol.Required(ATTR_BOOST_TEMPERATURE, default=20): int,
+        },
+        "set_hold",
+    )
+
+    platform.async_register_entity_service(
+        SERVICE_BOOST_HEATING_OFF,
+        {},
+        "unset_hold",
+    )
+
+
+
 class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     """ Represents a Heatmiser neoStat thermostat. """
-    def __init__(self, neostat: NeoStat, coordinator: DataUpdateCoordinator, unit_of_measurement, temperature_step):
+    def __init__(self, neostat: NeoStat, coordinator: DataUpdateCoordinator, hub: NeoHub, unit_of_measurement, temperature_step):
         super().__init__(coordinator)
         _LOGGER.debug(f"Creating {neostat}")
         
         self._neostat = neostat
         self._coordinator = coordinator
+        self._hub = hub
         self._unit_of_measurement = unit_of_measurement
         self._target_temperature_step = temperature_step
         self._hvac_modes = []
@@ -267,3 +301,26 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         set_frost_task = asyncio.create_task(self._neostat.set_frost(frost))
         response = await set_frost_task
         _LOGGER.info(f"{self.name} : Called set_frost() with: {frost} (response: {response})")
+
+    async def set_hold(self, boost_hours: int, boost_minutes: int, boost_temperature: int):
+        """
+        Sets Hold for Zone
+        """
+
+        message = {"HOLD": [{"temp":boost_temperature, "hours":boost_hours, "minutes":boost_minutes, "id":self.name}, [self.name]]}
+        reply = {"result": "temperature on hold"}
+
+        result = await self._hub._send(message, reply)
+        return result
+
+
+    async def unset_hold(self):
+        """
+        Unsets Hold for Zone
+        """
+
+        message = {"HOLD": [{"temp":20, "hours":0, "minutes":0, "id":self.name}, [self.name]]}
+        reply = {"result": "temperature on hold"}
+
+        result = await self._hub._send(message, reply)
+        return result

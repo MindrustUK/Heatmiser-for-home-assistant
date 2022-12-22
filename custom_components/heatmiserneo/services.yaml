@@ -1,0 +1,43 @@
+boost_heating_on:
+  name: Boost Heating On
+  description: Set the boost mode ON defining the period of time and the desired target temperature for the boost.
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: climate
+  fields:
+    boost_hours:
+      name: Boost Hours
+      description: Set the hours for the boost.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 99
+          step: 1
+    boost_minutes:
+      name: Boost Minutes
+      description: Set the minutes for the boost.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 59
+          step: 1
+    boost_temperature:
+      name: Temperature
+      description: Set the target temperature for the boost period.
+      default: 20
+      selector:
+        number:
+          min: 7
+          max: 35
+          step: 1
+          unit_of_measurement: °
+boost_heating_off:
+  name: Boost Heating Off
+  description: Set the boost mode OFF.
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: climate

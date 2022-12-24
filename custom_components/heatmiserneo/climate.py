@@ -41,8 +41,7 @@ from neohubapi.neohub import NeoHub, NeoStat, HCMode
 from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
 
 from .const import (
-    ATTR_BOOST_HOURS,
-    ATTR_BOOST_MINUTES,
+    ATTR_BOOST_DURATION,
     ATTR_BOOST_TEMPERATURE,
     SERVICE_BOOST_HEATING_OFF,
     SERVICE_BOOST_HEATING_ON,
@@ -89,8 +88,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     platform.async_register_entity_service(
         SERVICE_BOOST_HEATING_ON,
         {
-            vol.Required(ATTR_BOOST_HOURS, default=1): int,
-            vol.Required(ATTR_BOOST_MINUTES, default=0): int,
+            vol.Required(ATTR_BOOST_DURATION, default=1): object,
             vol.Required(ATTR_BOOST_TEMPERATURE, default=20): int,
         },
         "set_hold",
@@ -302,10 +300,22 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         response = await set_frost_task
         _LOGGER.info(f"{self.name} : Called set_frost() with: {frost} (response: {response})")
 
-    async def set_hold(self, boost_hours: int, boost_minutes: int, boost_temperature: int):
+    async def set_hold(self, boost_duration: object, boost_temperature: int):
         """
         Sets Hold for Zone
         """
+        
+        boost_hours = 0
+        boost_minutes = 0
+        try:
+            # Try to extract hours and minutes from dict
+            boost_hours = int(boost_duration['hours'])
+            boost_minutes = int(boost_duration['minutes'])
+        except:
+            # Try to extract hours from string
+            boost_hours, boost_minutes, _ = boost_duration.split(':')
+            boost_hours = int(boost_hours)
+            boost_minutes = int(boost_minutes)
 
         if boost_minutes > 59:
             _boost_revised_minutes = boost_minutes % 60

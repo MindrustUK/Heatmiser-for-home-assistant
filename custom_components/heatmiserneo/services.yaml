@@ -6,28 +6,18 @@ boost_heating_on:
       integration: heatmiserneo
       domain: climate
   fields:
-    boost_hours:
-      name: Boost Hours
-      description: Set the hours for the boost.
-      default: 1
+    boost_duration:
+      name: Boost Duration
+      description: Set the duration for the boost (hh:mm:ss).
+      default: '01:00:00'
+      example: '01:00:00'
       selector:
-        number:
-          min: 0
-          max: 99
-          step: 1
-    boost_minutes:
-      name: Boost Minutes
-      description: Set the minutes for the boost.
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 59
-          step: 1
+        duration:
     boost_temperature:
       name: Temperature
       description: Set the target temperature for the boost period.
       default: 20
+      example: 20
       selector:
         number:
           min: 7

@@ -304,18 +304,27 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """
         Sets Hold for Zone
         """
-        
+        _LOGGER.info(f"{self.name} : Executing set_hold() with duration: {boost_duration}, temperature: {boost_temperature}")
+        _LOGGER.debug(f"self.data: {self.data}")
+
         boost_hours = 0
         boost_minutes = 0
-        try:
-            # Try to extract hours and minutes from dict
-            boost_hours = int(boost_duration['hours'])
-            boost_minutes = int(boost_duration['minutes'])
-        except:
-            # Try to extract hours from string
-            boost_hours, boost_minutes, _ = boost_duration.split(':')
-            boost_hours = int(boost_hours)
-            boost_minutes = int(boost_minutes)
+        if str(boost_duration).count(":") > 0:
+            try:
+                # Try to extract hours and minutes from dict
+                boost_hours = int(boost_duration['hours'])
+                boost_minutes = int(boost_duration['minutes'])
+                _LOGGER.debug(f"{self.name} : Duration interpreted from object")
+            except:
+                # Try to extract hours from string
+                boost_hours, boost_minutes, _ = boost_duration.split(':')
+                boost_hours = int(boost_hours)
+                boost_minutes = int(boost_minutes)
+                _LOGGER.debug(f"{self.name} : Duration interpreted from string")
+        else:
+            boost_hours = int(boost_duration)
+            _LOGGER.debug(f"{self.name} : Duration interpreted from number")
+            
 
         if boost_minutes > 59:
             _boost_revised_minutes = boost_minutes % 60
@@ -328,6 +337,15 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         reply = {"result": "temperature on hold"}
 
         result = await self._hub._send(message, reply)
+
+        # Optimistically update the mode so that the UI feels snappy.
+        # The value will be confirmed next time we get new data.
+        
+        self.data.hold_on = True
+        self.data.hold_time = str(f"{boost_hours}:{boost_minutes}:00")
+        self.data.hold_temp = int(boost_temperature)
+        self.async_schedule_update_ha_state(False)
+
         return result
 
 
@@ -340,4 +358,13 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         reply = {"result": "temperature on hold"}
 
         result = await self._hub._send(message, reply)
+        
+        # Optimistically update the mode so that the UI feels snappy.
+        # The value will be confirmed next time we get new data.
+        
+        self.data.hold_on = False
+        self.data.hold_time = str("0:00:00")
+        self.data.hold_temp = 20
+        self.async_schedule_update_ha_state(False)
+
         return result

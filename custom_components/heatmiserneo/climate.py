@@ -41,10 +41,10 @@ from neohubapi.neohub import NeoHub, NeoStat, HCMode
 from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
 
 from .const import (
-    ATTR_BOOST_DURATION,
-    ATTR_BOOST_TEMPERATURE,
-    SERVICE_BOOST_HEATING_OFF,
-    SERVICE_BOOST_HEATING_ON,
+    ATTR_HOLD_DURATION,
+    ATTR_HOLD_TEMPERATURE,
+    SERVICE_HOLD_OFF,
+    SERVICE_HOLD_ON,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,16 +86,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
     platform = entity_platform.async_get_current_platform()
     
     platform.async_register_entity_service(
-        SERVICE_BOOST_HEATING_ON,
+        SERVICE_HOLD_ON,
         {
-            vol.Required(ATTR_BOOST_DURATION, default=1): object,
-            vol.Required(ATTR_BOOST_TEMPERATURE, default=20): int,
+            vol.Required(ATTR_HOLD_DURATION, default=1): object,
+            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): int,
         },
         "set_hold",
     )
 
     platform.async_register_entity_service(
-        SERVICE_BOOST_HEATING_OFF,
+        SERVICE_HOLD_OFF,
         {},
         "unset_hold",
     )
@@ -201,7 +201,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         attributes['offline'] = self.data.offline
         attributes['standby'] = self.data.standby
         attributes['hold_on'] = self.data.hold_on
-        attributes['hold_time'] = str(self.data.hold_time)
+        attributes['hold_time'] = ':'.join(str(self.data.hold_time).split(':')[:2])
         attributes['hold_temp'] = self.data.hold_temp
         attributes['floor_temperature'] = self.data.current_floor_temperature
         attributes['preheat_active'] = bool(self.data.preheat_active)
@@ -300,40 +300,40 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         response = await set_frost_task
         _LOGGER.info(f"{self.name} : Called set_frost() with: {frost} (response: {response})")
 
-    async def set_hold(self, boost_duration: object, boost_temperature: int):
+    async def set_hold(self, hold_duration: object, hold_temperature: int):
         """
         Sets Hold for Zone
         """
-        _LOGGER.info(f"{self.name} : Executing set_hold() with duration: {boost_duration}, temperature: {boost_temperature}")
+        _LOGGER.warning(f"{self.name} : Executing set_hold() with duration: {hold_duration}, temperature: {hold_temperature}")
         _LOGGER.debug(f"self.data: {self.data}")
 
-        boost_hours = 0
-        boost_minutes = 0
-        if str(boost_duration).count(":") > 0:
+        hold_hours = 0
+        hold_minutes = 0
+        if str(hold_duration).count(":") > 0:
             try:
                 # Try to extract hours and minutes from dict
-                boost_hours = int(boost_duration['hours'])
-                boost_minutes = int(boost_duration['minutes'])
+                hold_hours = int(hold_duration['hours'])
+                hold_minutes = int(hold_duration['minutes'])
                 _LOGGER.debug(f"{self.name} : Duration interpreted from object")
             except:
                 # Try to extract hours from string
-                boost_hours, boost_minutes, _ = boost_duration.split(':')
-                boost_hours = int(boost_hours)
-                boost_minutes = int(boost_minutes)
+                hold_hours, hold_minutes, _ = hold_duration.split(':')
+                hold_hours = int(hold_hours)
+                hold_minutes = int(hold_minutes)
                 _LOGGER.debug(f"{self.name} : Duration interpreted from string")
         else:
-            boost_hours = int(boost_duration)
+            hold_hours = int(hold_duration)
             _LOGGER.debug(f"{self.name} : Duration interpreted from number")
             
 
-        if boost_minutes > 59:
-            _boost_revised_minutes = boost_minutes % 60
-            boost_hours += int((boost_minutes - _boost_revised_minutes) / 60)
-            boost_minutes = _boost_revised_minutes
-        if boost_hours > 99:
-            boost_hours = 99
+        if hold_minutes > 59:
+            _hold_revised_minutes = hold_minutes % 60
+            hold_hours += int((hold_minutes - _hold_revised_minutes) / 60)
+            hold_minutes = _hold_revised_minutes
+        if hold_hours > 99:
+            hold_hours = 99
 
-        message = {"HOLD": [{"temp":boost_temperature, "hours":boost_hours, "minutes":boost_minutes, "id":self.name}, [self.name]]}
+        message = {"HOLD": [{"temp":hold_temperature, "hours":hold_hours, "minutes":hold_minutes, "id":self.name}, [self.name]]}
         reply = {"result": "temperature on hold"}
 
         result = await self._hub._send(message, reply)
@@ -342,8 +342,8 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         # The value will be confirmed next time we get new data.
         
         self.data.hold_on = True
-        self.data.hold_time = str(f"{boost_hours}:{boost_minutes}:00")
-        self.data.hold_temp = int(boost_temperature)
+        self.data.hold_time = str(f"{str(hold_hours)}:{str(hold_minutes).ljust(2, '0')}")
+        self.data.hold_temp = int(hold_temperature)
         self.async_schedule_update_ha_state(False)
 
         return result
@@ -363,7 +363,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         # The value will be confirmed next time we get new data.
         
         self.data.hold_on = False
-        self.data.hold_time = str("0:00:00")
+        self.data.hold_time = str("0:00")
         self.data.hold_temp = 20
         self.async_schedule_update_ha_state(False)
 

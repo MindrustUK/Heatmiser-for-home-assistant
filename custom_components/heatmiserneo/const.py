@@ -13,10 +13,10 @@ DEFAULT_PORT = 4242
 
 CONF_HVAC_MODES = "hvac_modes"
 
-SERVICE_BOOST_HEATING_ON = "boost_heating_on"
-SERVICE_BOOST_HEATING_OFF = "boost_heating_off"
-ATTR_BOOST_DURATION = "boost_duration"
-ATTR_BOOST_TEMPERATURE = "boost_temperature"
+SERVICE_HOLD_ON = "hold_on"
+SERVICE_HOLD_OFF = "hold_off"
+ATTR_HOLD_DURATION = "hold_duration"
+ATTR_HOLD_TEMPERATURE = "hold_temperature"
 
 # This should be in the neohubapi.neohub enums code
 class AvailableMode(str, enum.Enum):

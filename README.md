@@ -93,3 +93,15 @@ logger:
     custom_components.heatmiserneo: warning
 ```
 If debugging is required (submitting bug reports etc.) logger verbosity can be adjusted by setting the logs: entry to debug.
+
+# Services
+This integration provides two services that can be called from home assistant.
+
+## Hold
+You can apply a hold using the `heatmiserneo.hold_on` service.  This can be used to target an entity, device or area and also accepts the following parameters:
+- `hold_duration` - how long to hold the specified temperature.  This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`) and can go up to 99:59.
+- `hold_temperature` - sets the temperature to hold.  Specified as an integer (e.g. `hold_temperature: 20`).
+
+If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
+## Release Hold
+You can release any existing hold on a NeoStat specified by entity, device or area.  There are no other parameters.

@@ -105,3 +105,9 @@ You can apply a hold using the `heatmiserneo.hold_on` service.  This can be used
 If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
 ## Release Hold
 You can release any existing hold on a NeoStat specified by entity, device or area.  There are no other parameters.
+
+## Related Attributes
+NeoStat climate entities reads the following attributes that are relevant to the Hold functionality:
+- `hold_on`: whether a hold is in action
+- `hold_temperature`: what temperature is being held (note that this will have a numeric value, even if there is no hold in effect - this is a function of the NeoStat, not of the integration)
+- `hold_duration`: shows how many hours:minutes are remaining on the hold.  If no hold is active, shows '0:00'.

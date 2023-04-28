@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
+import asyncio
 import logging
 from datetime import timedelta
 import async_timeout
@@ -40,8 +41,25 @@ async def async_setup_entry(hass, entry):
             _, devices_data = await hub.get_live_data()
             system_data = await hub.get_system()
             
-            #_LOGGER.debug(f"system_data: {system_data}")
+            _LOGGER.debug(f"system_data: {system_data}")
             _LOGGER.debug(f"devices_data: {devices_data}")
+
+            """"
+            TODO: Make this configurable, and move it from here
+            workaround to re-enable NTP after a power outage (or any other reason) 
+            where WAN connectivity will not have been restored by the time the NeoHub has fully started.
+            """
+            if getattr(system_data, "NTP_ON") != "Running":
+
+                """ Enable NTP """
+                _LOGGER.warning(f"NTP disabled. Enabling")
+
+                set_ntp_enabled_task = asyncio.create_task(hub.set_ntp(True))
+                response = await set_ntp_enabled_task
+                if response:
+                    _LOGGER.info(f"Enabled NTP (response: {response})")
+            else:
+                _LOGGER.debug(f"NTP enabled")
             
             return (devices_data, system_data)
 
@@ -66,6 +84,10 @@ async def async_setup_entry(hass, entry):
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "switch")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
     return True

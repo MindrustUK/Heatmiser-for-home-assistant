@@ -79,17 +79,5 @@ Now create a subdirectory under custom_components called heatmiserneo.
 Download all the files from the Heatmiser-for-home-assistant Github repository.
 Copy and paste all thoese files into the new Home Assistant heatmiserneo sub-directory.
 ```
-Home Assistant Configuration:
 
-Add the following lines to configuration.yaml
-```
-climate:
-  - platform: heatmiserneo
-    host: <Insert IP Address / Hostname>
-    port: 4242
-logger:
-  default: warning
-  logs:
-    custom_components.heatmiserneo: warning
-```
-If debugging is required (submitting bug reports etc.) logger verbosity can be adjusted by setting the logs: entry to debug.
+Now follow instructions above.

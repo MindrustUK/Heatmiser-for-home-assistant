@@ -66,8 +66,8 @@ Install and configure SSH server from the "Add-on store". Once you have shell ru
 cd /config/
 mkdir custom_components
 cd /config/custom_components
-git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant
-mv Heatmiser-for-home-assistant heatmiserneo
+git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
+mv /tmp/heatmiserneo/custom-components/heatmiserneo .
 ```
 
 For Windows 10 Manual installation:

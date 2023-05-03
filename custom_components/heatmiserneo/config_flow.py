@@ -9,7 +9,7 @@ from copy import deepcopy
 from typing import Dict
 from homeassistant.helpers.entity_registry import (
     async_entries_for_config_entry,
-    async_get_registry,
+    async_get,
 )
 from homeassistant import config_entries, core, exceptions
 import homeassistant.helpers.config_validation as cv
@@ -156,7 +156,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         
         # Grab all devices from the entity registry so we can populate the
         # dropdown list that will allow a user to configure a device.
-        entity_registry = await async_get_registry(self.hass)
+        entity_registry = await async_get(self.hass)
         devices = async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
         stats = {e.unique_id: e.capabilities for e in devices if e.entity_id.startswith('climate.')}
 

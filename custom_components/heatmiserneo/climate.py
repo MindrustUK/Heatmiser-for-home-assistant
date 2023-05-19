@@ -10,6 +10,8 @@ Heatmiser NeoStat control via Heatmiser Neo-hub
 import logging
 import asyncio
 
+import voluptuous as vol
+
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
@@ -31,8 +33,18 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
+from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
 from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
+
+from .const import (
+    ATTR_HOLD_DURATION,
+    ATTR_HOLD_TEMPERATURE,
+    SERVICE_HOLD_OFF,
+    SERVICE_HOLD_ON,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,13 +82,29 @@ async def async_setup_entry(hass, entry, async_add_entities):
     temperature_step = await hub.target_temperature_step
 
     entities = [
-        NeoStatEntity(thermostat, coordinator, temperature_unit, temperature_step)
+        NeoStatEntity(thermostat, coordinator, hub, temperature_unit, temperature_step)
         for thermostat in thermostats.values()
     ]
 
     _LOGGER.info(f"Adding Thermostats: {entities}")
     async_add_entities(entities, True)
 
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_HOLD_ON,
+        {
+            vol.Required(ATTR_HOLD_DURATION, default=1): object,
+            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): int,
+        },
+        "set_hold",
+    )
+
+    platform.async_register_entity_service(
+        SERVICE_HOLD_OFF,
+        {},
+        "unset_hold",
+    )
 
 class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     """Represents a Heatmiser neoStat thermostat."""
@@ -85,14 +113,17 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         self,
         neostat: NeoStat,
         coordinator: DataUpdateCoordinator,
+        hub: NeoHub,
         unit_of_measurement,
-        temperature_step,
+        temperature_step
     ):
+
         super().__init__(coordinator)
         _LOGGER.debug(f"Creating {neostat}")
 
         self._neostat = neostat
         self._coordinator = coordinator
+        self._hub = hub
         self._unit_of_measurement = unit_of_measurement
         self._target_temperature_step = temperature_step
         self._hvac_modes = []
@@ -183,7 +214,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         attributes['offline'] = self.data.offline
         attributes['standby'] = self.data.standby
         attributes['hold_on'] = self.data.hold_on
-        attributes['hold_time'] = str(self.data.hold_time)
+        attributes['hold_time'] = ':'.join(str(self.data.hold_time).split(':')[:2])
         attributes['hold_temp'] = self.data.hold_temp
         attributes['floor_temperature'] = self.data.current_floor_temperature
         attributes['preheat_active'] = bool(self.data.preheat_active)
@@ -297,3 +328,72 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         _LOGGER.info(
             f"{self.name} : Called set_frost() with: {frost} (response: {response})"
         )
+
+    async def set_hold(self, hold_duration: object, hold_temperature: int):
+        """
+        Sets Hold for Zone
+        """
+        _LOGGER.warning(f"{self.name} : Executing set_hold() with duration: {hold_duration}, temperature: {hold_temperature}")
+        _LOGGER.debug(f"self.data: {self.data}")
+
+        hold_hours = 0
+        hold_minutes = 0
+        if str(hold_duration).count(":") > 0:
+            try:
+                # Try to extract hours and minutes from dict
+                hold_hours = int(hold_duration['hours'])
+                hold_minutes = int(hold_duration['minutes'])
+                _LOGGER.debug(f"{self.name} : Duration interpreted from object")
+            except:
+                # Try to extract hours from string
+                hold_hours, hold_minutes, _ = hold_duration.split(':')
+                hold_hours = int(hold_hours)
+                hold_minutes = int(hold_minutes)
+                _LOGGER.debug(f"{self.name} : Duration interpreted from string")
+        else:
+            hold_hours = int(hold_duration)
+            _LOGGER.debug(f"{self.name} : Duration interpreted from number")
+
+
+        if hold_minutes > 59:
+            _hold_revised_minutes = hold_minutes % 60
+            hold_hours += int((hold_minutes - _hold_revised_minutes) / 60)
+            hold_minutes = _hold_revised_minutes
+        if hold_hours > 99:
+            hold_hours = 99
+
+        message = {"HOLD": [{"temp":hold_temperature, "hours":hold_hours, "minutes":hold_minutes, "id":self.name}, [self.name]]}
+        reply = {"result": "temperature on hold"}
+
+        result = await self._hub._send(message, reply)
+
+        # Optimistically update the mode so that the UI feels snappy.
+        # The value will be confirmed next time we get new data.
+
+        self.data.hold_on = True
+        self.data.hold_time = str(f"{str(hold_hours)}:{str(hold_minutes).ljust(2, '0')}")
+        self.data.hold_temp = int(hold_temperature)
+        self.async_schedule_update_ha_state(False)
+
+        return result
+
+
+    async def unset_hold(self):
+        """
+        Unsets Hold for Zone
+        """
+
+        message = {"HOLD": [{"temp":20, "hours":0, "minutes":0, "id":self.name}, [self.name]]}
+        reply = {"result": "temperature on hold"}
+
+        result = await self._hub._send(message, reply)
+
+        # Optimistically update the mode so that the UI feels snappy.
+        # The value will be confirmed next time we get new data.
+
+        self.data.hold_on = False
+        self.data.hold_time = str("0:00")
+        self.data.hold_temp = 20
+        self.async_schedule_update_ha_state(False)
+
+        return result

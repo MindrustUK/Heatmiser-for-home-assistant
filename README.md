@@ -80,4 +80,20 @@ Download all the files from the Heatmiser-for-home-assistant Github repository.
 Copy and paste all thoese files into the new Home Assistant heatmiserneo sub-directory.
 ```
 
-Now follow instructions above.
+# Services
+This integration provides two services that can be called from home assistant.
+
+## Hold
+You can apply a hold using the `heatmiserneo.hold_on` service.  This can be used to target an entity, device or area and also accepts the following parameters:
+- `hold_duration` - how long to hold the specified temperature.  This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`) and can go up to 99:59.
+- `hold_temperature` - sets the temperature to hold.  Specified as an integer (e.g. `hold_temperature: 20`).
+
+If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
+## Release Hold
+You can release any existing hold on a NeoStat specified by entity, device or area.  There are no other parameters.
+
+## Related Attributes
+NeoStat climate entities reads the following attributes that are relevant to the Hold functionality:
+- `hold_on`: whether a hold is in action
+- `hold_temperature`: what temperature is being held (note that this will have a numeric value, even if there is no hold in effect - this is a function of the NeoStat, not of the integration)
+- `hold_duration`: shows how many hours:minutes are remaining on the hold.  If no hold is active, shows '0:00'.

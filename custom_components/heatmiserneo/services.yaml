@@ -1,0 +1,33 @@
+hold_on:
+  name: Temperature Hold On
+  description: Instruct the NeoStat or NeoStats specified to 'hold' a specified temperature for a specified period of time.
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: climate
+  fields:
+    hold_duration:
+      name: Hold Duration
+      description: Set the duration for the hold (hh:mm:ss).
+      default: '01:00:00'
+      example: '01:00:00'
+      selector:
+        duration:
+    hold_temperature:
+      name: Temperature
+      description: Set the target temperature to hold.
+      default: 20
+      example: 20
+      selector:
+        number:
+          min: 7
+          max: 35
+          step: 1
+          unit_of_measurement: °
+hold_off:
+  name: Temperature Hold Off
+  description: Return the NeoStat(s) to its default state (Auto or Standby).
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: climate

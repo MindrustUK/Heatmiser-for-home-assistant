@@ -7,7 +7,9 @@ Heatmiser Neo-Hub / Neostat / Neostat-e support for home-assistant.io
 This is a work in progress for adding Heatmiser Neo-hub support to Home Assistant (https://home-assistant.io/), I maintain this as a weekend project only so don't expect fast updates but feel free to raise issues as needed.
 
 # Known issues - Read me first!
-For some reason Heatmiser have labeled the API used by this intergration as "Legacy API". Please note if your intergration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
+For some reason Heatmiser have labeled the API used by this intergration as "Legacy API". Please note if your integration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
+
+Please also note that the NeoStat WiFi does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
 
 # Installation:
 

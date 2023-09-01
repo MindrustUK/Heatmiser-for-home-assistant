@@ -69,7 +69,7 @@ cd /config/
 mkdir custom_components
 cd /config/custom_components
 git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
-mv /tmp/heatmiserneo/custom-components/heatmiserneo .
+mv /tmp/heatmiserneo/custom_components/heatmiserneo .
 ```
 
 For Windows 10 Manual installation:

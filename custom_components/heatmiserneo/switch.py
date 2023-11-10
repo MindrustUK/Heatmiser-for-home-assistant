@@ -121,8 +121,8 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
 
     async def async_switch_on(self, value: bool):
         if self._type == NEO_STAT:
-            response = await self._timer.set_frost(not value)
-            _LOGGER.info(f"{self.name} : Called set_frost with: {not value} (response: {response})")
+            response = await self._timer.set_timer_hold(value, self._holdfor if value else 0)
+            _LOGGER.info(f"{self.name} : Called set_timer_hold with: {value} (response: {response})")
             self.data.timer_on = value
             self.async_write_ha_state()
             

@@ -1,13 +1,27 @@
 <!-- SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 -->
 
+# Dev Branch
+Please note you are browsing a heavy work in progress branch. Many things will probably be broken and this readme will change frequently. Please pay close attention to commits to really understand what's happening. Please use the master branch unless you are brave or intentionally testing 'completed' functions to report bugs.
+
 # Heatmiser-for-home-assistant
-Heatmiser Neo-Hub / Neostat / Neostat-e support for home-assistant.io
+
+An integration for [Home Assistant](https://www.home-assistant.io/) to add support for [Heatmiser's Neo-Hub and 'Neo'](https://www.heatmiser.com/en/heatmiser-neo-overview/) range of products.
 
 This is a work in progress for adding Heatmiser Neo-hub support to Home Assistant (https://home-assistant.io/), I maintain this as a weekend project only so don't expect fast updates but feel free to raise issues as needed.
 
+# Announcements
+
+This is a major new branch, Many things broken, change log as follows:
+
+## Change log
+- Requires [neohubapi - v2.0](https://pypi.org/project/neohubapi/) - Not published yet.
+- 
+
 # Known issues - Read me first!
-For some reason Heatmiser have labeled the API used by this intergration as "Legacy API". Please note if your integration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
+Heatmiser have labeled the primary API used by this integration as "Legacy API". Please note if your integration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
+
+Support for adding Token based authentication is present in the underlying noehubapi and will be coming to this plugin natively at a future date.
 
 Please also note that the NeoStat WiFi does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
 

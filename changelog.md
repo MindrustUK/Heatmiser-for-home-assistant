@@ -17,4 +17,8 @@
 - Added offline handling for all Heatmiser Neo Devices and surfaced this to Home Assistant.
 - Fixed hvac_mode vs hvac_action.
 - Added Identify button
+- Added Hold Active sensors
+- Added Input for Hold Hours and Mintues
+- Added Hold State Switches (IE hold on or hold off)
+- Added Hold Temperature, or Hold by Time depending on Thermostat or TimeClocks / Neoplugs.
 - More stuff I forgot and will add later.

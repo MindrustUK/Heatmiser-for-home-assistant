@@ -17,11 +17,13 @@ from .const import DOMAIN, HUB, COORDINATOR
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup(hass, config):
     """Set up Heamiser Neo components."""
     hass.data.setdefault(DOMAIN, {})
 
     return True
+
 
 async def async_setup_entry(hass, entry):
     """Set up Heatmiser Neo from a config entry."""
@@ -36,11 +38,11 @@ async def async_setup_entry(hass, entry):
            all devices.
         """
         _LOGGER.info(f"Executing update_data()")
-        
+
         async with async_timeout.timeout(30):
-            _, devices_data = await hub.get_live_data()
             system_data = await hub.get_system()
-            
+            devices_data = await hub.get_devices_data()
+
             _LOGGER.debug(f"system_data: {system_data}")
             _LOGGER.debug(f"devices_data: {devices_data}")
 
@@ -60,8 +62,8 @@ async def async_setup_entry(hass, entry):
                     _LOGGER.info(f"Enabled NTP (response: {response})")
             else:
                 _LOGGER.debug(f"NTP enabled")
-            
-            return (devices_data, system_data)
+
+            return devices_data, system_data
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -77,20 +79,33 @@ async def async_setup_entry(hass, entry):
     hass.data[DOMAIN][COORDINATOR] = coordinator
 
     await coordinator.async_config_entry_first_refresh()
-    
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "button")
+    )
+
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "climate")
     )
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "switch")
+        hass.config_entries.async_forward_entry_setup(entry, "number")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "select")
     )
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "switch")
+    )
+
     return True
+
 
 async def options_update_listener(hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry):
     """Handle options update."""

@@ -24,6 +24,8 @@ Support for adding Token based authentication is present in the underlying noehu
 
 Please also note that the NeoStat WiFi does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
 
+Neoplug devices are broken in the dev branch and are due to be fixed as soon as I get a chance to look into the details.
+
 # Installation:
 
 Before starting installation you should know the IP address of the Neo-hub. If you don't know the IP address, use one of the approaches suggested below to find your neo-hubs IP address.

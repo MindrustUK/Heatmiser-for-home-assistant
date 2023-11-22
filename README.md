@@ -34,6 +34,21 @@ The preferred method of installation is using HACS although the legacy, cut-and-
 
 HACS is available from https://github.com/hacs and there are copious resorces available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assisant restarts! Once you have HACS running...
 
+## Dev branch only
+
+If you wish to install the development version of the code from the Dev branch please follow the instructions below. If not please continue to Stage 1.
+
+For Hass.io:
+Install and configure SSH server from the "Add-on store". Once you have shell run the following:
+```
+mkdir -p /config/custom_components
+cd /tmp/
+git clone -b dev https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
+mv /tmp/heatmiserneo/custom_components/heatmiserneo /config/custom_components/
+rm -rf /tmp/heatmiserneo/
+```
+Now restart your Home Assistant installation and the development verison of the plugin should load.
+
 ## Stage 1: Add to HACS
 
 Open HACS and go to the Settings tab

@@ -129,3 +129,14 @@ NeoStat climate entities reads the following attributes that are relevant to the
 - `hold_on`: whether a hold is in action
 - `hold_temperature`: what temperature is being held (note that this will have a numeric value, even if there is no hold in effect - this is a function of the NeoStat, not of the integration)
 - `hold_duration`: shows how many hours:minutes are remaining on the hold.  If no hold is active, shows '0:00'.
+
+# Supporting this project
+As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133) a few users found this useful and wanted to support my work. I'm very grateful and humbled, thanks for the show of support! As such I've setup the following to accept donations to support my work;
+
+[https://ko-fi.com/MindrustUK](https://ko-fi.com/MindrustUK)
+
+[https://liberapay.com/MindrustUK](https://liberapay.com/MindrustUK)
+
+If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure coverage would really help the project. Feel free to reach out if you want to help with this.
+
+This is not a completely solo project and credit is due to anyone who contributed. Please see the github commits to support these awesome devs if there was some work that helped you. I'd particularly to call out Andrius Štikonas for migrating the original calls to a Home Assistant compatible library, please also consider supporting their efforts via: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/)

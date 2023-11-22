@@ -139,4 +139,4 @@ As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](
 
 If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure coverage would really help the project. Feel free to reach out if you want to help with this.
 
-This is not a completely solo project and credit is due to anyone who contributed. Please see the github commits to support these awesome devs if there was some work that helped you. I'd particularly to call out Andrius Štikonas for migrating the original calls to a Home Assistant compatible library, please also consider supporting their efforts via: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/)
+This is not a completely solo project and credit is due to anyone who contributed. Please see the github commits to support these awesome devs if there was some work that helped you. I'd particularly like to call out Andrius Štikonas for migrating the original calls to a Home Assistant compatible library, please also consider supporting their efforts via: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/)

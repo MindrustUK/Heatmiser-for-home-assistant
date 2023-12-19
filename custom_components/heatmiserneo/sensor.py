@@ -50,6 +50,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 list_of_neo_devices.append(HeatmiserNeoHoldTimeSensor(neo_device, coordinator, hub))
                 list_of_neo_devices.append(HeatmiserNeoHoldActiveSensor(neo_device, coordinator))
 
+            # Thermostats in Time Clock mode
+            if (neo_device.device_type in [1, 12]) and neo_device.time_clock_mode:
+                list_of_neo_devices.append(HeatmiserNeoTimerOutputActiveSensor(neo_device, coordinator))
+            
             # Sensor has a temperature sensing element
             if neo_device.device_type == 14:
                 list_of_neo_devices.append(
@@ -513,3 +517,58 @@ class HeatmiserNeoTemperatureSensor(CoordinatorEntity, SensorEntity):
     def unique_id(self):
         """Return a unique ID"""
         return f"{self._neosensor.device_id}_temperature_sensor"
+
+
+class HeatmiserNeoTimerOutputActiveSensor(CoordinatorEntity, BinarySensorEntity):
+    """Represents a Heatmiser Neostat Timer Output Active binary sensor"""
+
+    def __init__(self, neostat: NeoStat, coordinator: DataUpdateCoordinator):
+        super().__init__(coordinator)
+        _LOGGER.debug(f"Creating {type(self).__name__} for Device ID: {neostat.device_id} Name: {neostat.name}")
+
+        self._neostat = neostat
+        self._coordinator = coordinator
+
+    @property
+    def data(self):
+        """Helper to get the data for the current thermostat."""
+        (devices, _) = self._coordinator.data
+        thermostats = {device.name: device for device in devices['neo_devices']}
+        return thermostats[self._neostat.name]
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{self._neostat.name} Heatmiser {HEATMISER_PRODUCT_LIST[self._neostat.device_type]} Timer Output Active"
+
+    @property
+    def should_poll(self):
+        """Don't poll - we fetch the data from the hub all at once"""
+        return False
+
+    @property
+    def available(self):
+        """Return true if the entity is available."""
+        if self.data.offline:
+            return False
+        return True
+
+    @property
+    def unique_id(self):
+        """Return a unique ID"""
+        return f"{self._neostat.device_id}_device_timer_output_active"
+
+    @property
+    def is_on(self):
+        """Return true if the binary sensor is on. i.e. Neo Device is timer output is active"""
+        return bool(self.data.timer_on)
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "name": self._neostat.name,
+            "manufacturer": "Heatmiser",
+            "suggested_area": self._neostat.name
+        }
+

@@ -22,3 +22,6 @@
 - Added Hold State Switches (IE hold on or hold off)
 - Added Hold Temperature, or Hold by Time depending on Thermostat or TimeClocks / Neoplugs.
 - More stuff I forgot and will add later.
+
+## 20231219
+- Added HeatmiserNeoTimerOutputActiveSensor to sensors.

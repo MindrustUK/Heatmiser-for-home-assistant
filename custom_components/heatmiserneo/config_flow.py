@@ -37,10 +37,10 @@ from homeassistant.helpers.typing import DiscoveryInfoType
 _LOGGER = logging.getLogger(__name__)
 
 modes = {
-    AvailableMode.HEAT: 'Heat', 
-    AvailableMode.COOL: 'Cool', 
-    AvailableMode.AUTO: 'Heat/Cool', 
-    AvailableMode.VENT: 'Fan'
+    AvailableMode.AUTO: HVACMode.HEAT_COOL,
+    AvailableMode.COOL: HVACMode.COOL,   
+    AvailableMode.HEAT: HVACMode.HEAT,
+    AvailableMode.VENT: HVACMode.FAN_ONLY
 }
 default_modes = [HVAC_MODE_HEAT]
 

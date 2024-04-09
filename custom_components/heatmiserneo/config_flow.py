@@ -42,7 +42,7 @@ modes = {
     AvailableMode.HEAT: HVACMode.HEAT,
     AvailableMode.VENT: HVACMode.FAN_ONLY
 }
-default_modes = [HVAC_MODE_HEAT]
+default_modes = [HVACMode.HEAT]
 
 @config_entries.HANDLERS.register("heatmiserneo")
 class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):

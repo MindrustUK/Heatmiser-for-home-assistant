@@ -21,12 +21,7 @@ from homeassistant.const import (
     CONF_PORT
 )
 
-from homeassistant.components.climate.const import (
-    HVAC_MODE_COOL,
-    HVAC_MODE_FAN_ONLY,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_HEAT_COOL
-)
+from homeassistant.components.climate import HVACMode
 
 from .const import (
     DEFAULT_HOST,

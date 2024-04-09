@@ -24,23 +24,10 @@ from homeassistant.components.climate import (
     ClimateEntityFeature,
     HVACAction,
     HVACMode,
+    UnitOfTemperature
 )
 
-from homeassistant.components.climate.const import (
-    ATTR_TARGET_TEMP_HIGH,
-    ATTR_TARGET_TEMP_LOW,
-    CURRENT_HVAC_COOL,
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_IDLE,
-    HVAC_MODE_COOL,
-    HVAC_MODE_FAN_ONLY,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_HEAT_COOL,
-    HVAC_MODE_OFF,
-    SUPPORT_TARGET_TEMPERATURE,
-    SUPPORT_TARGET_TEMPERATURE_RANGE,
-)
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -67,10 +54,10 @@ THERMOSTATS = "thermostats"
 
 
 hvac_mode_mapping = {
-    AvailableMode.AUTO: HVAC_MODE_HEAT_COOL,
-    AvailableMode.COOL: HVAC_MODE_COOL,
-    AvailableMode.VENT: HVAC_MODE_FAN_ONLY,
-    AvailableMode.HEAT: HVAC_MODE_HEAT,
+    AvailableMode.AUTO: HVACMode.HEAT_COOL,
+    AvailableMode.COOL: HVACMode.COOL,
+    AvailableMode.VENT: HVACMode.FAN_ONLY,
+    AvailableMode.HEAT: HVACMode.HEAT,
 }
 
 
@@ -143,7 +130,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         self._target_temperature_step = temperature_step
         self._hvac_modes = []
         if hasattr(neostat, "standby"):
-            self._hvac_modes.append(HVAC_MODE_OFF)
+            self._hvac_modes.append(HVACMode.OFF)
         for mode in neostat.available_modes:
             self._hvac_modes.append(hvac_mode_mapping[mode])
 
@@ -160,13 +147,13 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         _LOGGER.debug(f"self.data: {self.data}")
 
         hc_mode: HCMode = None
-        if hvac_mode == HVAC_MODE_HEAT:
+        if hvac_mode == HVACMode.HEAT:
             hc_mode = HCMode.HEATING
-        elif hvac_mode == HVAC_MODE_COOL:
-            hc_mode = HCMode.COOLING
-        elif hvac_mode == HVAC_MODE_HEAT_COOL:
+        elif hvac_mode == HVACMode.COOL:
+            hc_mode = HVACMode.COOLING
+        elif hvac_mode == HVACMode.HEAT_COOL:
             hc_mode = HCMode.AUTO
-        elif hvac_mode == HVAC_MODE_FAN_ONLY:
+        elif hvac_mode == HVACMode.FAN_ONLY:
             hc_mode = HCMode.VENT
 
         # Optimistically update the mode so that the UI feels snappy.
@@ -361,16 +348,16 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     def supported_features(self):
         """Return the list of supported features."""
         hvac_mode = self.hvac_mode
-        if hvac_mode == HVAC_MODE_HEAT:
-            return SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE
-        elif hvac_mode == HVAC_MODE_COOL:
-            return SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE
-        elif hvac_mode == HVAC_MODE_OFF:
+        if hvac_mode == HVACMode.HEAT:
+            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
+        elif hvac_mode == HVACMode.COOL:
+            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
+        elif hvac_mode == HVACMode.OFF:
             return SUPPORT_FLAGS
-        elif hvac_mode == HVAC_MODE_HEAT_COOL:
-            return SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE_RANGE
-        elif hvac_mode == HVAC_MODE_FAN_ONLY:
-            return SUPPORT_FLAGS | SUPPORT_TARGET_TEMPERATURE
+        elif hvac_mode == HVACMode.HEAT_COOL:
+            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+        elif hvac_mode == HVACMode.FAN_ONLY:
+            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
         else:
             _LOGGER.error(f"Unsupported hvac mode: {hvac_mode}")
             return SUPPORT_FLAGS
@@ -400,9 +387,9 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     def temperature_unit(self):
         """Return the unit of measurement."""
         if self._unit_of_measurement == "C":
-            return TEMP_CELSIUS
+            return UnitOfTemperature.CELSIUS
         if self._unit_of_measurement == "F":
-            return TEMP_FAHRENHEIT
+            return UnitOfTemperature.FAHRENHEIT
         return self._unit_of_measurement
 
     @property

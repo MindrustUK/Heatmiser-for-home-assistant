@@ -83,7 +83,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities = []
     for device in thermostats.values():
-        if (device.device_type == 1) or (device.device_type == 12):
+        if device.device_type in [1, 2, 7, 12, 13]:
             if not device.time_clock_mode:
                 entities.append(NeoStatEntity(device, coordinator, hub, temperature_unit, temperature_step))
 

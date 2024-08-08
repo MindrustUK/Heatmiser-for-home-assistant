@@ -27,11 +27,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     for thermostat in thermostats.values():
         if HOLD_CONTROLS_ENABLED:
             # All Thermostats, Thermostats operating in Timeclock Mode and Neoplugs can have Hold times.
-            if thermostat.device_type in [1, 6, 12]:
+            if thermostat.device_type in [1, 2, 6, 7, 12, 13]:
                 list_of_thermostat_buttons.append(HoldHours(thermostat, coordinator, hub))
                 list_of_thermostat_buttons.append(HoldMins(thermostat, coordinator, hub))
 
-                if (thermostat.device_type in [1, 12]) and (thermostat.time_clock_mode == False):
+                if (thermostat.device_type in [1, 2, 7, 12, 13]) and (thermostat.time_clock_mode == False):
                     list_of_thermostat_buttons.append(TargetTemperature(thermostat, coordinator, hub))
 
     _LOGGER.info(f"Adding Thermostat Buttons: {list_of_thermostat_buttons}")

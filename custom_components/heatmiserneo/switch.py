@@ -48,11 +48,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
             # Thermostats (In Thermostat / Timeclock mode) and NeoPlugs all allow for holding.
 
             # Thermostats not operating in time clock mode should have the Hold Temperature switch.
-            if (neo_device.device_type in [1, 12]) and (not neo_device.time_clock_mode):
+            if (neo_device.device_type in [1, 2, 7, 12, 13]) and (not neo_device.time_clock_mode):
                 list_of_neo_devices.append(HeatmiserTemperatureHoldSwitch(neo_device, coordinator, hub))
 
             # Neo plugs and Thermostats in Time Clock mode
-            if (neo_device.device_type in [1, 12]) and neo_device.time_clock_mode:
+            if (neo_device.device_type in [1, 2, 7, 12, 13]) and neo_device.time_clock_mode:
                 # Switch to control hold active
                 list_of_neo_devices.append(HeatmiserTimerHoldSwitch(neo_device, coordinator, hub))
                 # Switch to control hold state, hold_on vs hold_off

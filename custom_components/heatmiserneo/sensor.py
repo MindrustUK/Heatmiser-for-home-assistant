@@ -46,12 +46,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if neo_device.device_type == 5:
                 list_of_neo_devices.append(HeatmiserNeoContactSensor(neo_device, coordinator, hub))
 
-            if neo_device.device_type in [1, 6, 12]:
+            if neo_device.device_type in [1, 2, 6, 7, 12, 13]:
                 list_of_neo_devices.append(HeatmiserNeoHoldTimeSensor(neo_device, coordinator, hub))
                 list_of_neo_devices.append(HeatmiserNeoHoldActiveSensor(neo_device, coordinator))
 
             # Thermostats in Time Clock mode
-            if (neo_device.device_type in [1, 12]) and neo_device.time_clock_mode:
+            if (neo_device.device_type in [1, 2, 7, 12, 13]) and neo_device.time_clock_mode:
                 list_of_neo_devices.append(HeatmiserNeoTimerOutputActiveSensor(neo_device, coordinator))
             
             # Sensor has a temperature sensing element

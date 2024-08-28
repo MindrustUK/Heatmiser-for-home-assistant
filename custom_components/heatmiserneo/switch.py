@@ -114,7 +114,7 @@ class HeatmiserNeoPlugPowerSwitch(CoordinatorEntity, SwitchEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }
@@ -224,7 +224,7 @@ class HeatmiserNeoPlugTimerSwitch(CoordinatorEntity, SwitchEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }
@@ -323,7 +323,7 @@ class HeatmiserTemperatureHoldSwitch(CoordinatorEntity, SwitchEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }
@@ -415,7 +415,7 @@ class HeatmiserTimerHoldSwitch(CoordinatorEntity, SwitchEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }
@@ -507,7 +507,7 @@ class HeatmiserTimerHoldStateSwitch(CoordinatorEntity, SwitchEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }

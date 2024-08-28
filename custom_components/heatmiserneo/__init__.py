@@ -79,26 +79,8 @@ async def async_setup_entry(hass, entry):
     hass.data[DOMAIN][COORDINATOR] = coordinator
 
     await coordinator.async_config_entry_first_refresh()
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "button")
-    )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "climate")
-    )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "number")
-    )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    )
-
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "switch")
-    )
+    
+    await hass.config_entries.async_forward_entry_setups(entry, ["button", "climate", "number", "sensor", "switch"])
 
     return True
 

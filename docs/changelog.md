@@ -2,6 +2,7 @@
 
 ## 20240828
 - Fix deprecation notice: https://developers.home-assistant.io/blog/2024/06/12/async_forward_entry_setups/
+- Handling of 127 and 255 temperatures on hub disconnect as per: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/155
 
 ## 20231121
 - Added support for Temperature Sensors

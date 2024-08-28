@@ -37,7 +37,7 @@ from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
-from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode, HEATMISER_PRODUCT_LIST
+from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, HEATMISER_PRODUCT_LIST
 
 from .const import (
     ATTR_HOLD_DURATION,
@@ -51,15 +51,6 @@ _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_FLAGS = 0
 THERMOSTATS = "thermostats"
-
-
-hvac_mode_mapping = {
-    AvailableMode.AUTO: HVACMode.HEAT_COOL,
-    AvailableMode.COOL: HVACMode.COOL,
-    AvailableMode.VENT: HVACMode.FAN_ONLY,
-    AvailableMode.HEAT: HVACMode.HEAT,
-}
-
 
 async def async_setup_entry(hass, entry, async_add_entities):
     hub: NeoHub = hass.data[DOMAIN][HUB]
@@ -83,7 +74,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities = []
     for device in thermostats.values():
-        if device.device_type in [1, 2, 7, 12, 13]:
+        if device.device_type in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]:
             if not device.time_clock_mode:
                 entities.append(NeoStatEntity(device, coordinator, hub, temperature_unit, temperature_step))
 
@@ -133,8 +124,10 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         self._hvac_modes = []
         if hasattr(neostat, "standby"):
             self._hvac_modes.append(HVACMode.OFF)
-        for mode in neostat.available_modes:
-            self._hvac_modes.append(hvac_mode_mapping[mode])
+        # The following devices support Heating modes
+        if self.data.device_type in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]:
+            self._hvac_modes.append(HVACMode.HEAT)
+        # Todo: Add support for other modes per device type.
 
     @property
     def data(self):
@@ -158,24 +151,22 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         elif hvac_mode == HVACMode.FAN_ONLY:
             hc_mode = HCMode.VENT
 
-        # Optimistically update the mode so that the UI feels snappy.
-        # The value will be confirmed next time we get new data.
-        self.data.hc_mode = hc_mode
-        self.async_schedule_update_ha_state(False)
 
-        if hc_mode:
+        if hvac_mode != HVACMode.OFF:
+            frost_mode = False  # Standby Mode False
+
+            set_frost_task = asyncio.create_task(self._neostat.set_frost(frost_mode))
+            response = await set_frost_task
+            _LOGGER.info(f"{self.name} : Called set_frost() with: {frost_mode} (response: {response})")
+
             set_hc_mode_task = asyncio.create_task(self._neostat.set_hc_mode(hc_mode))
             response = await set_hc_mode_task
-            _LOGGER.info(
-                f"{self.name} : Called set_hc_mode() with: {hc_mode} (response: {response})"
-            )
-
-        frost: bool = True if hvac_mode == HVAC_MODE_OFF else False
-        set_frost_task = asyncio.create_task(self._neostat.set_frost(frost))
-        response = await set_frost_task
-        _LOGGER.info(
-            f"{self.name} : Called set_frost() with: {frost} (response: {response})"
-        )
+            _LOGGER.info(f"{self.name} : Called set_hc_mode() with: {hc_mode} (response: {response})")
+        else:
+            frost_mode = True # Turn on Standby Mode
+            set_frost_task = asyncio.create_task(self._neostat.set_frost(frost_mode))
+            response = await set_frost_task
+            _LOGGER.info(f"{self.name} : Called set_frost() with: {frost_mode} (response: {response})")
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
@@ -359,20 +350,21 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
-        hvac_mode = self.hvac_mode
-        if hvac_mode == HVACMode.HEAT:
-            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
-        elif hvac_mode == HVACMode.COOL:
-            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
-        elif hvac_mode == HVACMode.OFF:
-            return SUPPORT_FLAGS
-        elif hvac_mode == HVACMode.HEAT_COOL:
-            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-        elif hvac_mode == HVACMode.FAN_ONLY:
-            return SUPPORT_FLAGS | ClimateEntityFeature.TARGET_TEMPERATURE
-        else:
-            _LOGGER.error(f"Unsupported hvac mode: {hvac_mode}")
-            return SUPPORT_FLAGS
+        # Do this based on device type
+
+        # All thermostats should have on and off
+        supported_features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
+
+        # TODO: Add the rest of the thermostat models here
+        if self.data.device_type in [1, 2, 7, 8, 9, 11, 12, 13, 15, 17]:
+            # Heatmiser NeoStat v1, NeoStat V2
+            supported_features = supported_features | ClimateEntityFeature.TARGET_TEMPERATURE
+
+        elif self.data.device_type == 11:
+            # neoStat-HC
+            supported_features = supported_features | ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
+
+        return supported_features
 
     @property
     def target_temperature(self):

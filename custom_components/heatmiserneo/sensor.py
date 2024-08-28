@@ -175,7 +175,7 @@ class HeatmiserNeoContactSensor(CoordinatorEntity, BinarySensorEntity):
             "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "model": f"Contact Sensor - Device Type: {self._neosensor.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neosensor.name,
             "sw_version": self._neosensor.stat_version,
             "via_device": self._hub
@@ -398,7 +398,7 @@ class NeoBatterySensor(CoordinatorEntity, BinarySensorEntity):
             "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neosensor.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neosensor.name,
             "sw_version": self.data.stat_version
         }
@@ -461,7 +461,7 @@ class HeatmiserNeoTemperatureSensor(CoordinatorEntity, SensorEntity):
             "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "model": f"Wireless Air Sensor - Device Type: {self._neosensor.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neosensor.name,
             "sw_version": self._neosensor.stat_version,
             "via_device": self._hub

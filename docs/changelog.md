@@ -1,5 +1,8 @@
 # Change Log
 
+## 20240828
+- Fix deprecation notice: https://developers.home-assistant.io/blog/2024/06/12/async_forward_entry_setups/
+
 ## 20231121
 - Added support for Temperature Sensors
 - Added Support for Window Door Contact Sensors

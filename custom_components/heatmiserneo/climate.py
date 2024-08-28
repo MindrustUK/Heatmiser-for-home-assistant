@@ -37,7 +37,7 @@ from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from neohubapi.neohub import NeoHub, NeoStat, HCMode
-from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode
+from .const import DOMAIN, HUB, COORDINATOR, CONF_HVAC_MODES, AvailableMode, HEATMISER_PRODUCT_LIST
 
 from .const import (
     ATTR_HOLD_DURATION,

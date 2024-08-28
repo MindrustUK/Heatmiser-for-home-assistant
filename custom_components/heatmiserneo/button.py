@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from neohubapi.neohub import NeoHub, NeoStat
-from .const import DOMAIN, HUB, COORDINATOR
+from .const import DOMAIN, HUB, COORDINATOR, HEATMISER_PRODUCT_LIST
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -79,7 +79,7 @@ class HeatmiserNeoIdentifyButton(CoordinatorEntity, ButtonEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }

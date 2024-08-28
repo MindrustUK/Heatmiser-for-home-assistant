@@ -237,7 +237,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
             "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "model": f"Device Type: {self._neostat.device_type}",
+            "model": f"Contact Sensor - Device Type: {self._neosensor.device_type}",
             "suggested_area": self._neostat.name,
             "sw_version": self.data.stat_version
         }

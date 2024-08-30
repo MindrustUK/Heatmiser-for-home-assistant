@@ -213,7 +213,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
 
         # Checking for unreasonable temperatures, happens on hub disconnection.
         # Centigrade
-        if (float(self.data.temperature) < 0.0 or float(self.data.temperature) > 70.0) and self._unit_of_measurement == "C":
+        if (float(self.data.temperature) < -50.0 or float(self.data.temperature) > 70.0) and self._unit_of_measurement == "C":
             _LOGGER.error(
                 f"Error: Climate entity '{self._neostat.name}' has an invalid current_temperature value: "
                 f"{self.data.temperature} degrees Centigrade, Hub lost connection?"
@@ -221,7 +221,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
             return None
 
         # Fahrenheit
-        if (float(self.data.temperature) < 32.0 or float(self.data.temperature) > 158.0) and self._unit_of_measurement == "F":
+        if (float(self.data.temperature) < -58.0 or float(self.data.temperature) > 158.0) and self._unit_of_measurement == "F":
             _LOGGER.error(
                 f"Error: Climate entity '{self._neostat.name}' has an invalid current_temperature value: "
                 f"{self.data.temperature} degrees Fahrenheit, Hub lost connection?"

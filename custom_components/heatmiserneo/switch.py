@@ -53,6 +53,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
             # Neo plugs and Thermostats in Time Clock mode
             if (neo_device.device_type in [1, 2, 7, 12, 13]) and neo_device.time_clock_mode:
+                # Switch to control standby mode
+                list_of_neo_devices.append(HeatmiserTimerDeviceStandbySwitch(neo_device, coordinator, hub))
                 # Switch to control hold active
                 list_of_neo_devices.append(HeatmiserTimerHoldSwitch(neo_device, coordinator, hub))
                 # Switch to control hold state, hold_on vs hold_off
@@ -552,3 +554,109 @@ class HeatmiserTimerHoldStateSwitch(CoordinatorEntity, SwitchEntity):
     def unique_id(self):
         """Return a unique ID"""
         return f"{self._neostat.device_id}_heatmiser_neo_device_hold_state_switch"
+
+class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
+    """Represents a Heatmiser Neostat Timer Device Standby Switch"""
+
+    def __init__(
+            self,
+            neostat: NeoStat,
+            coordinator: DataUpdateCoordinator,
+            hub: NeoHub
+    ):
+        super().__init__(coordinator)
+        _LOGGER.debug(f"Creating {type(self).__name__} for {neostat.name} {neostat.device_id}")
+
+        self._neostat = neostat
+        self._coordinator = coordinator
+        self._hub = hub
+        self._neostat.standby = neostat.standby
+
+    @property
+    def data(self):
+        """Helper to get the data for the current thermostat."""
+        (devices, _) = self._coordinator.data
+        neo_devices = {device.name: device for device in devices["neo_devices"]}
+        return neo_devices[self._neostat.name]
+
+    @property
+    def available(self):
+        """Return true if the entity is available."""
+        if self.data.offline:
+            return False
+        else:
+            return True
+
+    @property
+    def device_class(self):
+        return SwitchDeviceClass.SWITCH
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "name": self._neostat.name,
+            "manufacturer": "Heatmiser",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "suggested_area": self._neostat.name,
+            "sw_version": self.data.stat_version
+        }
+
+    @property
+    def extra_state_attributes(self):
+        """Return the additional state attributes."""
+        attributes = {
+            'device_id': self._neostat.device_id,
+            'device_type': self._neostat.device_type,
+            'offline': self.data.offline
+        }
+        return attributes
+
+    @property
+    def icon(self):
+        if self.data.offline:
+            return "mdi:network-off-outline"
+
+        elif self.data.standby:
+            return "mdi:power-standby"
+
+        elif not self.data.standby:
+            return "mdi:power"
+
+        else:
+            return "mdi:image-broken-variant"
+
+    @property
+    def is_on(self):
+        """Return is_on status."""
+        return self.data.standby
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{self._neostat.name} Heatmiser {HEATMISER_PRODUCT_LIST[self._neostat.device_type]} Standby"
+
+    @property
+    def should_poll(self):
+        """Don't poll - we fetch the data from the hub all at once"""
+        return False
+
+    @property
+    def unique_id(self):
+        """Return a unique ID"""
+        return f"{self._neostat.device_id}_heatmiser_neo_timer_device_standby_switch"
+        
+    async def async_turn_on(self, **kwargs):
+        """ Turn on Standby (Previously Frost) mode. """
+        response = await self._neostat.set_frost(True)
+        _LOGGER.info(f"{self.name} : Called set_frost with: True (response: {response})")
+        self.data.standby = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """ Turn off Standby (Previously Frost) mode. """
+        response = await self._neostat.set_frost(False)
+        _LOGGER.info(f"{self.name} : Called set_frost with: False (response: {response})")
+        self.data.standby = False
+        self.async_write_ha_state()
+        

@@ -2,6 +2,7 @@
 
 ## 20240830
 - Better handling of invalid temperatures on hub disconnect as per: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/155
+- Added switch to control standby on timers as per: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/153
 
 ## 20240828
 - Fix deprecation notice: https://developers.home-assistant.io/blog/2024/06/12/async_forward_entry_setups/

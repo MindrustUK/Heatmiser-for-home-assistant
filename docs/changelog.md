@@ -1,5 +1,16 @@
 # Change Log
 
+## 20240928
+- Multiple fixes and enhancements relating to issue: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/170 - Multiple Hubs / Instances should now work. 
+- **Breaking changes:** Unique IDs are now generated based on serial number, this will cause duplicate entries and a bunch of breakage. Please remove and re-add the integration to clear any issues with this.
+- Added support for device serial numbers to ensure device ID's are more distinct when multiple hubs and instances of the integration are in use.
+- Serial numbers now report in device info.
+- Heatmiser NeoHub now appears as a device. The Serial Number is a placeholder for now. Longer term I'll make this configurable or hopefully Heatmiser will add some API support.
+- Heatmiser NeoHub does not have a 'real' serial number, issue raised with Heatmiser here: https://dev.heatmiser.com/t/no-method-to-retrive-serial-nubmer-for-neohub-in-api/1298
+- Added Heatmiser NeoHub types / models to constants.
+- Report Heatmiser NeoHub type / model in device info. 
+- Relationships between Heatmiser devices and the Hub now work (via_device).
+
 ## 20240830
 - Better handling of invalid temperatures on hub disconnect as per: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/155
 - Added switch to control standby on timers as per: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/153

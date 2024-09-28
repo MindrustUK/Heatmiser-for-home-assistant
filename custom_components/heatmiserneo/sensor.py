@@ -111,7 +111,8 @@ class NeoOfflineBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neosensor.device_id}_device_offline_sensor"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neosensor.name}_{self._coordinator.serial_number}_{self._neosensor.serial_number}_device_offline_sensor"
 
     @property
     def is_on(self):
@@ -128,10 +129,12 @@ class NeoOfflineBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neosensor.serial_number}")},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neosensor.name
+            "serial_number": self._neosensor.serial_number,
+            "suggested_area": self._neosensor.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
 
@@ -172,13 +175,14 @@ class HeatmiserNeoContactSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neosensor.serial_number}")},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neosensor.serial_number,
             "suggested_area": self._neosensor.name,
             "sw_version": self._neosensor.stat_version,
-            "via_device": self._hub
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -223,7 +227,8 @@ class HeatmiserNeoContactSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neosensor.device_id}_contact_sensor"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neosensor.name}_{self._coordinator.serial_number}_{self._neosensor.serial_number}_heatmiser_neo_contact_sensor"
 
 
 class HeatmiserNeoHoldActiveSensor(CoordinatorEntity, BinarySensorEntity):
@@ -267,7 +272,8 @@ class HeatmiserNeoHoldActiveSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_device_hold_active"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_device_hold_active"
 
     @property
     def is_on(self):
@@ -281,10 +287,12 @@ class HeatmiserNeoHoldActiveSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
 
@@ -325,10 +333,12 @@ class HeatmiserNeoHoldTimeSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -361,7 +371,8 @@ class HeatmiserNeoHoldTimeSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_hold_time_sensor"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_hold_time_sensor"
 
 
 class NeoBatterySensor(CoordinatorEntity, BinarySensorEntity):
@@ -395,12 +406,12 @@ class NeoBatterySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neosensor.serial_number}")},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neosensor.serial_number,
             "suggested_area": self._neosensor.name,
-            "sw_version": self.data.stat_version
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -416,7 +427,8 @@ class NeoBatterySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neosensor.device_id}_battery_level_sensor"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neosensor.name}_{self._coordinator.serial_number}_{self._neosensor.serial_number}_heatmiser_neo_battery_level_sensor"
 
 
 class HeatmiserNeoTemperatureSensor(CoordinatorEntity, SensorEntity):
@@ -458,13 +470,13 @@ class HeatmiserNeoTemperatureSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neosensor.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neosensor.serial_number}")},
             "name": self._neosensor.name,
             "manufacturer": "Heatmiser",
-            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neosensor.serial_number,
             "suggested_area": self._neosensor.name,
-            "sw_version": self._neosensor.stat_version,
-            "via_device": self._hub
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -516,7 +528,8 @@ class HeatmiserNeoTemperatureSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neosensor.device_id}_temperature_sensor"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neosensor.name}_{self._coordinator.serial_number}_{self._neosensor.serial_number}_heatmiser_neo_temperature_sensor"
 
 
 class HeatmiserNeoTimerOutputActiveSensor(CoordinatorEntity, BinarySensorEntity):
@@ -556,7 +569,8 @@ class HeatmiserNeoTimerOutputActiveSensor(CoordinatorEntity, BinarySensorEntity)
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_device_timer_output_active"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_device_timer_output_active"
 
     @property
     def is_on(self):
@@ -566,9 +580,13 @@ class HeatmiserNeoTimerOutputActiveSensor(CoordinatorEntity, BinarySensorEntity)
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "model": f"{HEATMISER_PRODUCT_LIST[self._neostat.device_type]}",
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "sw_version": self._neostat.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 

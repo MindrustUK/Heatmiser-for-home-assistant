@@ -76,12 +76,14 @@ class HeatmiserNeoIdentifyButton(CoordinatorEntity, ButtonEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "serial_number": self._neostat.serial_number,
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -112,7 +114,8 @@ class HeatmiserNeoIdentifyButton(CoordinatorEntity, ButtonEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_identify_button"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_identify_button"
 
     async def async_press(self) -> None:
         """Handle the button press."""

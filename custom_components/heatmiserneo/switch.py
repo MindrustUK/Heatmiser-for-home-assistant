@@ -113,12 +113,14 @@ class HeatmiserNeoPlugPowerSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -176,7 +178,8 @@ class HeatmiserNeoPlugPowerSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_plug"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_plug"
 
 
 class HeatmiserNeoPlugTimerSwitch(CoordinatorEntity, SwitchEntity):
@@ -223,12 +226,14 @@ class HeatmiserNeoPlugTimerSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -280,7 +285,8 @@ class HeatmiserNeoPlugTimerSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_plug_timer_switch"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_plug_timer_switch"
 
 
 class HeatmiserTemperatureHoldSwitch(CoordinatorEntity, SwitchEntity):
@@ -322,12 +328,14 @@ class HeatmiserTemperatureHoldSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -372,7 +380,8 @@ class HeatmiserTemperatureHoldSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_device_temperature_hold_switch"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_temperature_hold_switch"
 
 
 class HeatmiserTimerHoldSwitch(CoordinatorEntity, SwitchEntity):
@@ -414,12 +423,14 @@ class HeatmiserTimerHoldSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -464,7 +475,8 @@ class HeatmiserTimerHoldSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_device_timer_hold_switch"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_timer_hold_switch"
 
 
 class HeatmiserTimerHoldStateSwitch(CoordinatorEntity, SwitchEntity):
@@ -506,12 +518,14 @@ class HeatmiserTimerHoldStateSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -553,7 +567,8 @@ class HeatmiserTimerHoldStateSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_device_hold_state_switch"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_hold_state_switch"
 
 class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
     """Represents a Heatmiser Neostat Timer Device Standby Switch"""
@@ -594,12 +609,14 @@ class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
             "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
             "suggested_area": self._neostat.name,
-            "sw_version": self.data.stat_version
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -644,7 +661,8 @@ class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_heatmiser_neo_timer_device_standby_switch"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_timer_device_standby_switch"
         
     async def async_turn_on(self, **kwargs):
         """ Turn on Standby (Previously Frost) mode. """

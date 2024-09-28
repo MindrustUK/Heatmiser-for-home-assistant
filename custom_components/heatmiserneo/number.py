@@ -72,10 +72,12 @@ class HoldHours(CoordinatorEntity, NumberEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -125,7 +127,8 @@ class HoldHours(CoordinatorEntity, NumberEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_hold_time_hours"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_hold_time_hours"
 
 
 class HoldMins(CoordinatorEntity, NumberEntity):
@@ -162,10 +165,12 @@ class HoldMins(CoordinatorEntity, NumberEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -216,7 +221,8 @@ class HoldMins(CoordinatorEntity, NumberEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_hold_time_mins"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_hold_time_mins"
 
 
 class TargetTemperature(CoordinatorEntity, NumberEntity):
@@ -253,10 +259,12 @@ class TargetTemperature(CoordinatorEntity, NumberEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {("Heatmiser Neo Device", self._neostat.device_id)},
+            "identifiers": {(DOMAIN, f"{self._coordinator.serial_number}_{self._neostat.serial_number}")},
             "name": self._neostat.name,
             "manufacturer": "Heatmiser",
-            "suggested_area": self._neostat.name
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
         }
 
     @property
@@ -307,5 +315,6 @@ class TargetTemperature(CoordinatorEntity, NumberEntity):
     @property
     def unique_id(self):
         """Return a unique ID"""
-        return f"{self._neostat.device_id}_hold_target_temp"
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neo_hold_target_temp"
   

@@ -1,26 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 import asyncio
-import logging
-from datetime import timedelta
-import async_timeout
-
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
-
-from homeassistant import config_entries, core
-from homeassistant.const import CONF_HOST,CONF_PORT
-from homeassistant.helpers import device_registry as dr
-
-from neohubapi.neohub import NeoHub
 from .const import DOMAIN, HUB, COORDINATOR, HEATMISER_HUB_PRODUCT_LIST
+from datetime import timedelta
+from homeassistant import config_entries
+from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.update_coordinator import (CoordinatorEntity, DataUpdateCoordinator)
+from neohubapi.neohub import NeoHub
+import logging
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass, config):
-    """Set up Heamiser Neo components."""
+    """Set up Heatmiser Neo components."""
     hass.data.setdefault(DOMAIN, {})
 
     return True
@@ -52,13 +46,29 @@ async def async_setup_entry(hass, entry):
         sw_version=init_system_data.HUB_VERSION
     )
 
-    async def async_update_data():
-        """Fetch data from the Hub all at once and make it available for
-           all devices.
-        """
-        _LOGGER.info(f"Executing update_data()")
+    # TODO: NTP Fixes as per below.
+    """"
+    TODO: Make this configurable, and move it from here
+    workaround to re-enable NTP after a power outage (or any other reason) 
+    where WAN connectivity will not have been restored by the time the NeoHub has fully started.
+    """
+    if getattr(init_system_data, "NTP_ON") != "Running":
 
-        async with async_timeout.timeout(30):
+        """ Enable NTP """
+        _LOGGER.warning(f"NTP disabled. Enabling")
+
+        set_ntp_enabled_task = asyncio.create_task(hub.set_ntp(True))
+        response = await set_ntp_enabled_task
+        if response:
+            _LOGGER.info(f"Enabled NTP (response: {response})")
+    else:
+        _LOGGER.debug(f"NTP enabled")
+
+
+    async def async_update_data():
+        """Fetch data from the Hub all at once and make it available for all devices."""
+        _LOGGER.info("Executing update_data()")
+        async with asyncio.timeout(30):
             system_data = await hub.get_system()
             devices_data = await hub.get_devices_data()
             device_serial_numbers = await hub.devices_sn()
@@ -66,23 +76,6 @@ async def async_setup_entry(hass, entry):
             _LOGGER.debug(f"system_data: {system_data}")
             _LOGGER.debug(f"devices_data: {devices_data}")
             _LOGGER.debug(f"device_serial_numbers: {device_serial_numbers}")
-
-            """"
-            TODO: Make this configurable, and move it from here
-            workaround to re-enable NTP after a power outage (or any other reason) 
-            where WAN connectivity will not have been restored by the time the NeoHub has fully started.
-            """
-            if getattr(system_data, "NTP_ON") != "Running":
-
-                """ Enable NTP """
-                _LOGGER.warning(f"NTP disabled. Enabling")
-
-                set_ntp_enabled_task = asyncio.create_task(hub.set_ntp(True))
-                response = await set_ntp_enabled_task
-                if response:
-                    _LOGGER.info(f"Enabled NTP (response: {response})")
-            else:
-                _LOGGER.debug(f"NTP enabled")
 
             ## Adding Serial numbers to device data.
             # Convert device_serial_numbers (SimpleNamespace) to a dictionary
@@ -112,30 +105,26 @@ async def async_setup_entry(hass, entry):
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        # Name of the data. For logging purposes.
         name=f"Heatmiser NeoHub : {host}",
         update_method=async_update_data,
-        # Polling interval. Will only be polled if there are subscribers.
         update_interval=timedelta(seconds=30),
-        # Set always_update to `False` if the data returned from the
-        # api can be compared via `__eq__` to avoid duplicate updates
-        # being dispatched to listeners
-        always_update = True
+        always_update=True
     )
 
-    # Attach the serial number to the coordinator (this can later be fetched from the API)
     coordinator.serial_number = hub_serial_number
 
-    hass.data[DOMAIN][HUB] = hub
-    hass.data[DOMAIN][COORDINATOR] = coordinator
+    # Store hub and coordinator per entry_id
+    hass.data[DOMAIN][entry.entry_id] = {
+        HUB: hub,
+        COORDINATOR: coordinator,
+    }
 
     await coordinator.async_config_entry_first_refresh()
-    
     await hass.config_entries.async_forward_entry_setups(entry, ["button", "climate", "number", "sensor", "switch"])
 
     return True
 
 
-async def options_update_listener(hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry):
+async def options_update_listener(hass: HomeAssistant, config_entry: config_entries.ConfigEntry):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)

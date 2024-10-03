@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241003
+- Fixes following previous work to avoid entities being added twice when multiple instances of the integration are in use.
+
 ## 20240928
 - Multiple fixes and enhancements relating to issue: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/170 - Multiple Hubs / Instances should now work. 
 - **Breaking changes:** Unique IDs are now generated based on serial number, this will cause duplicate entries and a bunch of breakage. Please remove and re-add the integration to clear any issues with this.

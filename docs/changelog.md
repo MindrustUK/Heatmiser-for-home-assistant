@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241013
+- Allow calling hold service with float temperatures: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/175
+
 ## 20241003
 - Fixes following previous work to avoid entities being added twice when multiple instances of the integration are in use.
 

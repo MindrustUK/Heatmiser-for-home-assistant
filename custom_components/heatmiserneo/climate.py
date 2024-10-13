@@ -53,10 +53,14 @@ SUPPORT_FLAGS = 0
 THERMOSTATS = "thermostats"
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    hub: NeoHub = hass.data[DOMAIN][HUB]
-    coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
+    hub = hass.data[DOMAIN][entry.entry_id][HUB]
+    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
 
-    (devices_data, system_data) = coordinator.data
+    if coordinator.data is None:
+        _LOGGER.error("Coordinator data is None. Cannot set up climate entities.")
+        return
+
+    devices_data, system_data = coordinator.data
     thermostats = {device.name: device for device in devices_data['neo_devices']}
 
     hvac_config = (

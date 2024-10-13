@@ -27,10 +27,14 @@ ICON_NETWORK_ONLINE = "mdi:network-outline"
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    hub: NeoHub = hass.data[DOMAIN][HUB]
-    coordinator: DataUpdateCoordinator = hass.data[DOMAIN][COORDINATOR]
+    hub = hass.data[DOMAIN][entry.entry_id][HUB]
+    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
 
-    (devices_data, system_data) = coordinator.data
+    if coordinator.data is None:
+        _LOGGER.error("Coordinator data is None. Cannot set up sensor entities.")
+        return
+
+    devices_data, system_data = coordinator.data
 
     temperature_unit = system_data.CORF
 

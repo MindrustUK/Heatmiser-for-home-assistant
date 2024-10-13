@@ -87,7 +87,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         SERVICE_HOLD_ON,
         {
             vol.Required(ATTR_HOLD_DURATION, default=1): object,
-            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): int,
+            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): float,
         },
         "set_hold",
     )
@@ -303,7 +303,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """Return the list of available operation modes."""
         return self._hvac_modes
 
-    async def set_hold(self, hold_duration: object, hold_temperature: int):
+    async def set_hold(self, hold_duration: object, hold_temperature: float):
         """
         Sets Hold for Zone
         """
@@ -347,7 +347,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
 
         self.data.hold_on = True
         self.data.hold_time = str(f"{str(hold_hours)}:{str(hold_minutes).ljust(2, '0')}")
-        self.data.hold_temp = int(hold_temperature)
+        self.data.hold_temp = float(hold_temperature)
         self.async_schedule_update_ha_state(False)
 
         return result

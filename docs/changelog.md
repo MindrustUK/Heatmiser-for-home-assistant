@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241013
+- Allow calling hold service with float temperatures: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/175
+
 ## 20240928
 - Multiple fixes and enhancements relating to issue: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/170 - Multiple Hubs / Instances should now work. 
 - **Breaking changes:** Unique IDs are now generated based on serial number, this will cause duplicate entries and a bunch of breakage. Please remove and re-add the integration to clear any issues with this.

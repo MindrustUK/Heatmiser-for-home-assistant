@@ -22,7 +22,7 @@ hold_on:
         number:
           min: 7
           max: 35
-          step: 1
+          step: 0.5
           unit_of_measurement: °
 hold_off:
   name: Temperature Hold Off

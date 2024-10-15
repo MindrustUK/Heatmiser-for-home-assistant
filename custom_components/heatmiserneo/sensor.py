@@ -135,13 +135,19 @@ class NeoStatOfflineBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
         self._neostat = neostat
         self._coordinator = coordinator
+        self._available = True
 
     @property
     def data(self):
         """Helper to get the data for the current thermostat."""
         (devices, _) = self._coordinator.data
         thermostats = {device.name: device for device in devices[THERMOSTATS]}
-        return thermostats[self._neostat.name]
+        if self.name in thermostats:
+            self._neostat = thermostats[self.name]
+            self._available = True
+        else:
+            self._available = False
+        return self._neostat
 
     @property
     def name(self):
@@ -156,7 +162,7 @@ class NeoStatOfflineBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def available(self):
         """Return true if the entity is available."""
-        return True
+        return self._available
 
     @property
     def unique_id(self):

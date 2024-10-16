@@ -12,7 +12,7 @@ This is a work in progress for adding Heatmiser Neo-hub support to Home Assistan
 Branch Version 1.5 now promoted to main, please see _Change Log_ below for further info
 
 ## Change log
-[Change Log](https://github.com/MindrustUK/Heatmiser-for-home-assistant/blob/dev/docs/changelog.md)
+[Change Log](https://github.com/MindrustUK/Heatmiser-for-home-assistant/blob/Version_1.5/docs/changelog.md)
 
 # Known issues - Read me first!
 Heatmiser have labeled the primary API used by this integration as "Legacy API". Please note if your integration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.

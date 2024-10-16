@@ -1,9 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 -->
 
-# Dev Branch
-Please note you are browsing a heavy work in progress branch. Many things will probably be broken and this readme will change frequently. Please pay close attention to commits to really understand what's happening. Please use the master branch unless you are brave or intentionally testing 'completed' functions to report bugs.
-
 # Heatmiser-for-home-assistant
 
 An integration for [Home Assistant](https://www.home-assistant.io/) to add support for [Heatmiser's Neo-Hub and 'Neo'](https://www.heatmiser.com/en/heatmiser-neo-overview/) range of products.
@@ -12,7 +9,7 @@ This is a work in progress for adding Heatmiser Neo-hub support to Home Assistan
 
 # Announcements
 
-This is a major new branch, Many things broken, change log as follows:
+Branch Version 1.5 now promoted to main, please see _Change Log_ below for further info
 
 ## Change log
 [Change Log](https://github.com/MindrustUK/Heatmiser-for-home-assistant/blob/dev/docs/changelog.md)
@@ -26,6 +23,10 @@ Please also note that the NeoStat WiFi does not have an API, and so cannot be us
 
 Neoplug devices are broken in the dev branch and are due to be fixed as soon as I get a chance to look into the details.
 
+## Bug Reporting:
+
+Please ensure that if you wish to report a bug that is not fixed in the [Dev Branch](https://github.com/MindrustUK/Heatmiser-for-home-assistant/tree/dev) before submitting your bug.
+
 # Installation:
 
 Before starting installation you should know the IP address of the Neo-hub. If you don't know the IP address, use one of the approaches suggested below to find your neo-hubs IP address.
@@ -35,21 +36,6 @@ It is suggested that you should allocate a static IP to the Heatmiser Neo-hub or
 The preferred method of installation is using HACS although the legacy, cut-and-paste method of installation can still be used and is described under Options below. Installing via HACS is a two-stage process. Firstly, add the Heatmiser repository to HACS, then secondly adding the Heatmiser Integration to Home Assistant.
 
 HACS is available from https://github.com/hacs and there are copious resorces available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assisant restarts! Once you have HACS running...
-
-## Dev branch only
-
-If you wish to install the development version of the code from the Dev branch please follow the instructions below. If not please continue to Stage 1.
-
-For Hass.io:
-Install and configure SSH server from the "Add-on store". Once you have shell run the following:
-```
-mkdir -p /config/custom_components
-cd /tmp/
-git clone -b dev https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
-mv /tmp/heatmiserneo/custom_components/heatmiserneo /config/custom_components/
-rm -rf /tmp/heatmiserneo/
-```
-Now restart your Home Assistant installation and the development verison of the plugin should load.
 
 ## Stage 1: Add to HACS
 

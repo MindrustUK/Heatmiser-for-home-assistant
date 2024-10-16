@@ -95,12 +95,14 @@ Note: If you discover the device via mdns/zeroconf then you can use the hostname
 For Hass.io:
 Install and configure SSH server from the "Add-on store". Once you have shell run the following:
 ```
-cd /config/
-mkdir custom_components
-cd /config/custom_components
+mkdir -p /config/custom_components
+cd /tmp/
 git clone https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
-mv /tmp/heatmiserneo/custom_components/heatmiserneo .
+mv /tmp/heatmiserneo/custom_components/heatmiserneo /config/custom_components/
+rm -rf /tmp/heatmiserneo/
 ```
+
+Restart Home Assistant and setup the integration.
 
 For Windows 10 Manual installation:
 Install and configure Samba Share from the "Add-on store". Change directory to config location then run the following:

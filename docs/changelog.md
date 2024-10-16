@@ -1,5 +1,15 @@
 # Change Log
 
+## 20241016
+- Version 1.5 Release to Default
+  - Current Default branch archived to branch Version 1.0
+  - Version 1.5 is a fork of the dev branch with the additional hold controls removed. This has been done as the default
+  branch is stale and prompting lots of reports for things fixed up stream that haven't made it to default yet. This 
+  should satisfy many requirements reported or requested recently.
+  - Known issues: Heatmiser Neo Plug functionality is broken. I've made the call that the benefits of getting this 
+  released even with the missing functionality outweighs the missing element. For anyone who desperately needs support
+  for the Neo Plug, please use the Version 1.0 branch. This is the top thing on my list to fix at present.
+
 ## 20241013
 - Allow calling hold service with float temperatures: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/175
 
@@ -45,7 +55,7 @@
 - Fixed hvac_mode vs hvac_action.
 - Added Identify button
 - Added Hold Active sensors
-- Added Input for Hold Hours and Mintues
+- Added Input for Hold Hours and Minutes
 - Added Hold State Switches (IE hold on or hold off)
 - Added Hold Temperature, or Hold by Time depending on Thermostat or TimeClocks / Neoplugs.
 - More stuff I forgot and will add later.

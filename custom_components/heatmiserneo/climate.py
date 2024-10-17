@@ -127,6 +127,7 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         self._unit_of_measurement = unit_of_measurement
         self._target_temperature_step = temperature_step
         self._hvac_modes = []
+        self._available = True
         if hasattr(neostat, "standby"):
             self._hvac_modes.append(HVAC_MODE_OFF)
         for mode in neostat.available_modes:
@@ -137,7 +138,12 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
         """Helper to get the data for the current thermostat."""
         (devices, _) = self._coordinator.data
         thermostats = {device.name: device for device in devices[THERMOSTATS]}
-        return thermostats[self.name]
+        if self.name in thermostats:
+            self._neostat = thermostats[self.name]
+            self._available = True
+        else:
+            self._available = False
+        return self._neostat
 
     @property
     def supported_features(self):
@@ -171,6 +177,11 @@ class NeoStatEntity(CoordinatorEntity, ClimateEntity):
     def unique_id(self):
         """Return a unique ID."""
         return self._neostat.name
+
+    @property
+    def available(self):
+        """Return true if the entity is available."""
+        return self._available
 
     @property
     def temperature_unit(self):

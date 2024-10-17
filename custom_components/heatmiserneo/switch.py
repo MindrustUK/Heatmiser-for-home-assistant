@@ -52,13 +52,19 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
         self._type = type
         self._state = timer.timer_on
         self._holdfor = 30
+        self._available = True
 
     @property
     def data(self):
         """Helper to get the data for the current thermostat. """
         (devices, _) = self._coordinator.data
         timers = {device.name : device for device in devices[TIMECLOCKS]}
-        return timers[self.name]
+        if self.name in timers:
+            self._timer = timers[self.name]
+            self._available = True
+        else:
+            self._available = False
+        return self._timer
         
     @property
     def should_poll(self):
@@ -88,7 +94,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     @property
     def available(self):
         """Return true if the entity is available."""
-        return True
+        return self._available
       
     @property
     def extra_state_attributes(self):

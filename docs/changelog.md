@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241018
+- Bumped dependency on neohubapi to 2.2, hopefully addresses wireless sensor behavior and repeaters in issue: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/176
+
 ## 20241016
 - Version 1.5 Release to Default
   - Current Default branch archived to branch Version 1.0

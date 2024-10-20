@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241020
+- Change hold service behaviour for: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/185 
+
 ## 20241018
 - Bumped dependency on neohubapi to 2.2, hopefully addresses wireless sensor behavior and repeaters in issue: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/176
 

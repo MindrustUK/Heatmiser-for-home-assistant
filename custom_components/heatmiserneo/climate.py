@@ -91,7 +91,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         SERVICE_HOLD_ON,
         {
             vol.Required(ATTR_HOLD_DURATION, default=1): object,
-            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): float,
+            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.Coerce(float),
         },
         "set_hold",
     )

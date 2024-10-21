@@ -18,13 +18,10 @@ This is a major new branch, Many things broken, change log as follows:
 [Change Log](https://github.com/MindrustUK/Heatmiser-for-home-assistant/blob/dev/docs/changelog.md)
 
 # Known issues - Read me first!
-Heatmiser have labeled the primary API used by this integration as "Legacy API". Please note if your integration stops working, or doesn't work on initial installation, please check the phone app and enable "Legacy API" support.
-
-Support for adding Token based authentication is present in the underlying noehubapi and will be coming to this plugin natively at a future date.
-
-Please also note that the NeoStat WiFi does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
-
-Neoplug devices are broken in the dev branch and are due to be fixed as soon as I get a chance to look into the details.
+- Heatmiser have labeled the primary API used by this integration as "Legacy API". Please see [Troubleshooting](#troubleshooting) for further details.
+- Support for adding Token based authentication is present in the underlying noehubapi and will be coming to this plugin natively at a future date.
+- Note specifically the NeoStat WiFi device does not have an API, and so cannot be used with this (or any) NeoHub-based integration.
+- Neoplug devices are broken in the dev and 1.5 branch and are due to be fixed as soon as I get a chance to look into the details.
 
 # Installation:
 
@@ -34,22 +31,7 @@ It is suggested that you should allocate a static IP to the Heatmiser Neo-hub or
 
 The preferred method of installation is using HACS although the legacy, cut-and-paste method of installation can still be used and is described under Options below. Installing via HACS is a two-stage process. Firstly, add the Heatmiser repository to HACS, then secondly adding the Heatmiser Integration to Home Assistant.
 
-HACS is available from https://github.com/hacs and there are copious resorces available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assisant restarts! Once you have HACS running...
-
-## Dev branch only
-
-If you wish to install the development version of the code from the Dev branch please follow the instructions below. If not please continue to Stage 1.
-
-For Hass.io:
-Install and configure SSH server from the "Add-on store". Once you have shell run the following:
-```
-mkdir -p /config/custom_components
-cd /tmp/
-git clone -b dev https://github.com/MindrustUK/Heatmiser-for-home-assistant /tmp/heatmiserneo
-mv /tmp/heatmiserneo/custom_components/heatmiserneo /config/custom_components/
-rm -rf /tmp/heatmiserneo/
-```
-Now restart your Home Assistant installation and the development verison of the plugin should load.
+HACS is available from https://github.com/hacs and there are copious resources available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assistant restarts! Once you have HACS running...
 
 ## Stage 1: Add to HACS
 
@@ -63,7 +45,7 @@ Search for "Heatmiser Neo Integration", (it will probably be at the bottom!) sel
 
 ![CustomRepositories](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%232.png)
 
-When this message appears follow it by going to Configuraton -> Server Tools and then "Restart"
+When this message appears follow it by going to Configuration -> Server Tools and then "Restart"
 ![RestartNotice](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%233.png)
 
 ## Stage 2: Configure the integration in HA:
@@ -79,16 +61,6 @@ When the integration starts you may need to enter the Neo-hub IP address. The po
 If you are successful, after restarting HA you will see the results under Configuration -> Entities 
 
 ![Entities](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%235.png)
-
-# Note on finding your heatmiser neohub
-
-Suggestions from Haakon Storm Heen, Use namp on your local network range:
-
-```nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open```
-
-Where supported by your network and machine you can use a tool such as ZeroConfServiceBrowser or "Discovery - DNS-SD Browser" (iPhone) to detect the mDNS broadcast from the hub.  Look for "_hap._tcp." and the "Heatmiser neoHub" should be listed as a device.
-
-Note: If you discover the device via mdns/zeroconf then you can use the hostname advertised by the service.
 
 # (Optional) Legacy Installation:
 
@@ -113,6 +85,74 @@ Now create a subdirectory under custom_components called heatmiserneo.
 Download all the files from the Heatmiser-for-home-assistant Github repository.
 Copy and paste all thoese files into the new Home Assistant heatmiserneo sub-directory.
 ```
+
+# Troubleshooting
+
+## I can't find my Neohub
+
+### Try discovery using nmap
+
+As suggested by Haakon Storm Heen, try namp on your local network range:
+
+```nmap -Pn -p4242 -oG - 192.168.1.0/24 | grep 4242 | grep -i open```
+
+Where supported by your network and machine you can use a tool such as ZeroConfServiceBrowser or "Discovery - DNS-SD 
+Browser" (iPhone) to detect the mDNS broadcast from the hub.  Look for "_hap._tcp." and the "Heatmiser neoHub" should be
+listed as a device.
+
+Note: If you discover the device via mdns/zeroconf then you can use the hostname advertised by the service.
+
+### Using Heatmiser Discovery
+
+Note: This will eventually be part of the setup process and done internally.
+
+- Start a listener in a terminal: ```nc -ulk -p 19790```
+- Issue the discovery command ```echo -n "hubseek" | nc -b -u 255.255.255.255 19790```
+
+A response such as ```hubseek{"ip":"192.168.0.2","device_id":"nn:nn:nn:nn:nn:nn"}``` should then be rendered in the 
+listening terminal.
+
+## I can't connect to my Neohub
+
+- If you are not using token based authentication;
+  - Check the Heatmiser Mobile App and under _SETTINGS_ -> _API_ -> _API TOKENS_ ensure that _Legacy API_ is enabled.
+
+  - After checking the above please try testing with the hub using the following commands from the Home Assistant 
+  terminal (Provided by the addon "Terminal & SSH");
+  - ```printf '{"INFO":0}\0' | nc YOUR_DEVICE_IP_HERE 4242```
+
+- If you are trying to authenticate using token based authentication;
+  - The following instructions are a placeholder for now and will be further expanded on once the integration better 
+  - supports token based authentication via web sockets.
+  - Ensure you are applying this configuration to a Heatmiser NeoHub 2 or later. The Version 1 Hub does not support this 
+  authentication mechanism.
+  - Ensure that your token is correct, this can be checked in the Heatmiser mobile app under _SETTINGS_ -> _API_ ->
+  _API TOKENS_
+  - Use postman to troubleshoot.
+
+### The info command times out
+- Have you tried to ping the neohub? ```ping IP_ADDRESSS_HERE``` if this fails the Neohub is likely unreachable for some 
+reason.
+
+## Other common troubleshooting steps to try
+
+- Try restarting Home Assistant.
+- Check the logs: Within Home Assistant, from the _Settings_ menu navigate to _Logs_ and look for anything relating to 
+_Heatmiser_.
+- Enable debugging and check the logs again:
+  - Within Home Assistant, from the _Settings_ menu navigate to _Devices & Services_ and then to  
+  _Heatmiser Neo Climate_ and from the left side menu select _Enable debug logging_.
+  - Now navigate to _Developer Tools_ and then to _RESTART_, when prompted select _Restart Home Assistant_ follow the 
+  steps above to check the logs again.
+- Remove the existing installation and re-install: To ensure total removal of the _Heatmiser Neo Climate_ integration 
+using Home Assistant terminal (Provided by the addon "Terminal & SSH") issue the following command; 
+```rm -rf /config/custom_components/heatmiserneo``` restart Home Assistant and install from fresh.
+
+## Bug Reporting and asking for help:
+- Please ensure that if you wish to report a bug that is not fixed in the [Dev Branch](https://github.com/MindrustUK/Heatmiser-for-home-assistant/tree/dev) before submitting your bug.
+- Include logs, versions, any troubleshooting attempted, outputs and expected vs observed behaviour. 
+- Please note "It doesn't work" and other vague "It's broken" messages will only prompt a lot of questions to understand 
+why things are broken, the more information upfront will help expedite any advice and resolution.
 
 # Services
 This integration provides two services that can be called from home assistant.

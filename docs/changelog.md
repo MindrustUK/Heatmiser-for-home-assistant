@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241021
+- Updating README.md with improved troubleshooting steps.
+
 ## 20241020
 - Change hold service behaviour for: https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/185 
 

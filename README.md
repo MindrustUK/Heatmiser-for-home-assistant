@@ -162,6 +162,11 @@ You can apply a hold using the `heatmiserneo.hold_on` service.  This can be used
 If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
 ## Release Hold
 You can release any existing hold on a NeoStat specified by entity, device or area.  There are no other parameters.
+## Timer Hold
+You can apply a hold to a timer entity using the `heatmiserneo.timer_hold_on` service.  This can be used to target an entity, device or area operating in timer mode and also accepts the following parameters:
+- `hold_duration` - how long to hold the specified temperature.  This is given in Home Assistant duration format (hh:mm e.g. `hold_duration: 01:30`)
+
+If there is an existing hold on any device targeted by the service call, it is replaced by the new hold.
 
 ## Related Attributes
 NeoStat climate entities reads the following attributes that are relevant to the Hold functionality:

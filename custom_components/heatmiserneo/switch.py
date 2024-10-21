@@ -9,8 +9,12 @@ homeassistant.components.switch.heatmiserneo
 from datetime import time
 import logging
 
+import voluptuous as vol
 from homeassistant.const import EntityCategory
+from homeassistant.components.siren import SirenEntityFeature
 from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
+from homeassistant.helpers import entity_platform
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -18,6 +22,10 @@ from homeassistant.helpers.update_coordinator import (
 
 from neohubapi.neohub import NeoHub, NeoStat
 from .const import COORDINATOR, DOMAIN, HUB, HEATMISER_PRODUCT_LIST
+from .const import (
+    ATTR_HOLD_DURATION,
+    SERVICE_TIMER_HOLD_ON,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,11 +62,23 @@ async def async_setup_entry(hass, entry, async_add_entities):
             # Neo plugs and Thermostats in Time Clock mode
             if (neo_device.device_type in [1, 2, 7, 12, 13]) and neo_device.time_clock_mode:
                 # Switch to control standby mode
+                list_of_neo_devices.append(NeoTimerEntity(neo_device, coordinator, hub))
                 list_of_neo_devices.append(HeatmiserTimerDeviceStandbySwitch(neo_device, coordinator, hub))
 
 
     _LOGGER.info(f"Adding neoPlug switches: {list_of_neo_devices}")
     async_add_entities(list_of_neo_devices, True)
+
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_TIMER_HOLD_ON,
+        {
+            vol.Required(ATTR_HOLD_DURATION, default=1): cv.positive_time_period,
+        },
+        "async_turn_on",
+        [SirenEntityFeature.DURATION],
+    )
 
 
 class HeatmiserNeoPlugPowerSwitch(CoordinatorEntity, SwitchEntity):
@@ -388,4 +408,122 @@ class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
         _LOGGER.info(f"{self.name} : Called set_frost with: False (response: {response})")
         self.data.standby = False
         self.async_write_ha_state()
-        
+
+
+class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
+    """Represents a Heatmiser neoStat thermostat acting in TimeClock mode."""
+
+    def __init__(
+        self, neostat: NeoStat, coordinator: DataUpdateCoordinator, hub: NeoHub
+    ):
+        super().__init__(coordinator)
+        _LOGGER.debug(
+            f"Creating {type(self).__name__} for {neostat.name} {neostat.device_id}"
+        )
+
+        self._neostat = neostat
+        self._coordinator = coordinator
+        self._hub = hub
+        # Needed to filter the switches in the service call entity selector. This was the least worse option
+        self._attr_supported_features = SirenEntityFeature.DURATION
+
+    @property
+    def data(self):
+        """Helper to get the data for the current thermostat."""
+        (devices, _) = self._coordinator.data
+        neo_devices = {device.name: device for device in devices["neo_devices"]}
+        return neo_devices[self.name]
+
+    @property
+    def available(self):
+        """Return true if the entity is available."""
+        if self.data.offline:
+            return False
+        return True
+
+    @property
+    def device_class(self):
+        return SwitchDeviceClass.SWITCH
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {
+                (
+                    DOMAIN,
+                    f"{self._coordinator.serial_number}_{self._neostat.serial_number}",
+                )
+            },
+            "name": self._neostat.name,
+            "manufacturer": "Heatmiser",
+            "model": f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            "serial_number": self._neostat.serial_number,
+            "suggested_area": self._neostat.name,
+            "sw_version": self.data.stat_version,
+            "via_device": (DOMAIN, self._coordinator.serial_number),
+        }
+
+    @property
+    def extra_state_attributes(self):
+        """Return the additional state attributes."""
+        return {
+            "device_id": self._neostat.device_id,
+            "device_type": self._neostat.device_type,
+            "offline": self.data.offline,
+            "hold_on": self.data.hold_on,
+            "hold_time": ":".join(str(self.data.hold_time).split(":")[:2]),
+        }
+
+    @property
+    def name(self):
+        """Returns the name."""
+        return self._neostat.name
+
+    @property
+    def is_on(self):
+        """Return is_on status."""
+        return self.data.timer_on
+
+    async def async_turn_on(self, **kwargs):
+        """Turn on Timer"""
+        hold_minutes = 30
+        if ATTR_HOLD_DURATION in kwargs:
+            hold_duration = kwargs.get(ATTR_HOLD_DURATION)
+            hold_minutes = int(hold_duration.total_seconds() / 60)
+
+        _LOGGER.info(
+            f"Device ID: {self._neostat.device_id} - {self._neostat.name}: Executing turn_on() with:"
+            f"Total Hold Minutes: {hold_minutes}"
+        )
+        result = await self._hub.set_timer_hold(True, hold_minutes, [self._neostat])
+
+        hold_hours, remainder = divmod(hold_minutes, 60)
+        self.data.timer_on = hold_minutes > 0
+        self.data.hold_on = hold_minutes > 0
+        self.data.hold_time = str(f"{hold_hours!s}:{str(remainder).ljust(2, '0')}")
+        self.async_schedule_update_ha_state(False)
+        return result
+
+    async def async_turn_off(self, **kwargs):
+        """Turn off Timer."""
+
+        _LOGGER.info(
+            f"Device ID: {self._neostat.device_id} - {self._neostat.name}: Executing turn_off()"
+        )
+        result = await self._hub.set_timer_hold(False, 0, [self._neostat])
+        self.data.timer_on = False
+        self.data.hold_on = False
+        self.data.hold_time = "0:00"
+        self.async_schedule_update_ha_state(False)
+        return result
+
+    @property
+    def should_poll(self):
+        """Don't poll - we fetch the data from the hub all at once"""
+        return False
+
+    @property
+    def unique_id(self):
+        """Return a unique ID"""
+        # Use both the Hub and Device serial numbers as you can have orphaned devices still present in hub configuration.
+        return f"{self._neostat.name}_{self._coordinator.serial_number}_{self._neostat.serial_number}_heatmiser_neotimer"

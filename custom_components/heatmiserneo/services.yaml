@@ -31,3 +31,20 @@ hold_off:
     entity:
       integration: heatmiserneo
       domain: climate
+timer_hold_on:
+  name: Timer Hold On
+  description: Instruct the NeoStat in TimeClock mode or NeoPlug to 'hold' for a specified period of time.
+  target:
+    entity:
+      integration: heatmiserneo
+      domain: switch
+      supported_features:
+        - siren.SirenEntityFeature.DURATION
+  fields:
+    hold_duration:
+      name: Hold Duration
+      description: Set the duration for the hold (hh:mm:ss).
+      default: '01:00:00'
+      example: '01:00:00'
+      selector:
+        duration:

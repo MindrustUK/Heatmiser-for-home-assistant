@@ -16,6 +16,8 @@ CONF_HVAC_MODES = "hvac_modes"
 
 SERVICE_HOLD_ON = "hold_on"
 SERVICE_HOLD_OFF = "hold_off"
+SERVICE_TIMER_HOLD_ON = "timer_hold_on"
+SERVICE_TIMER_HOLD_OFF = "timer_hold_off"
 ATTR_HOLD_DURATION = "hold_duration"
 ATTR_HOLD_TEMPERATURE = "hold_temperature"
 

@@ -38,8 +38,6 @@ timer_hold_on:
     entity:
       integration: heatmiserneo
       domain: switch
-      supported_features:
-        - siren.SirenEntityFeature.DURATION
   fields:
     hold_duration:
       name: Hold Duration

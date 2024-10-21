@@ -11,7 +11,6 @@ import logging
 
 import voluptuous as vol
 from homeassistant.const import EntityCategory
-from homeassistant.components.siren import SirenEntityFeature
 from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
@@ -77,7 +76,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             vol.Required(ATTR_HOLD_DURATION, default=1): cv.positive_time_period,
         },
         "async_turn_on",
-        [SirenEntityFeature.DURATION],
     )
 
 
@@ -424,15 +422,13 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
         self._neostat = neostat
         self._coordinator = coordinator
         self._hub = hub
-        # Needed to filter the switches in the service call entity selector. This was the least worse option
-        self._attr_supported_features = SirenEntityFeature.DURATION
 
     @property
     def data(self):
         """Helper to get the data for the current thermostat."""
         (devices, _) = self._coordinator.data
         neo_devices = {device.name: device for device in devices["neo_devices"]}
-        return neo_devices[self.name]
+        return neo_devices[self._neostat.name]
 
     @property
     def available(self):
@@ -477,7 +473,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     @property
     def name(self):
         """Returns the name."""
-        return self._neostat.name
+        return f"{self._neostat.name} Heatmiser {HEATMISER_PRODUCT_LIST[self._neostat.device_type]} Timer Override"
 
     @property
     def is_on(self):
@@ -492,7 +488,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
             hold_minutes = int(hold_duration.total_seconds() / 60)
 
         _LOGGER.info(
-            f"Device ID: {self._neostat.device_id} - {self._neostat.name}: Executing turn_on() with:"
+            f"Device Unique ID: {self.unique_id} - {self._neostat.name}: Executing turn_on() with:"
             f"Total Hold Minutes: {hold_minutes}"
         )
         result = await self._hub.set_timer_hold(True, hold_minutes, [self._neostat])
@@ -508,7 +504,7 @@ class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
         """Turn off Timer."""
 
         _LOGGER.info(
-            f"Device ID: {self._neostat.device_id} - {self._neostat.name}: Executing turn_off()"
+            f"Device Unique ID: {self.unique_id} - {self._neostat.name}: Executing turn_off()"
         )
         result = await self._hub.set_timer_hold(False, 0, [self._neostat])
         self.data.timer_on = False

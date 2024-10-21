@@ -28,7 +28,7 @@ It is suggested that you should allocate a static IP to the Heatmiser Neo-hub or
 
 The preferred method of installation is using HACS although the legacy, cut-and-paste method of installation can still be used and is described under Options below. Installing via HACS is a two-stage process. Firstly, add the Heatmiser repository to HACS, then secondly adding the Heatmiser Integration to Home Assistant.
 
-HACS is available from https://github.com/hacs and there are copious resorces available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assistant restarts! Once you have HACS running...
+HACS is available from https://github.com/hacs and there are copious resources available (e.g. http://hacs.xyz) about its installation. This will involve lots of Home Assistant restarts! Once you have HACS running...
 
 ## Stage 1: Add to HACS
 
@@ -42,7 +42,7 @@ Search for "Heatmiser Neo Integration", (it will probably be at the bottom!) sel
 
 ![CustomRepositories](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%232.png)
 
-When this message appears follow it by going to Configuraton -> Server Tools and then "Restart"
+When this message appears follow it by going to Configuration -> Server Tools and then "Restart"
 ![RestartNotice](https://github.com/PhillyGilly/Heatmiser-for-home-assistant/blob/master/%233.png)
 
 ## Stage 2: Configure the integration in HA:

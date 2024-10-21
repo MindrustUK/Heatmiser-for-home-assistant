@@ -149,7 +149,7 @@ using Home Assistant terminal (Provided by the addon "Terminal & SSH") issue the
 - Please ensure that if you wish to report a bug that is not fixed in the [Dev Branch](https://github.com/MindrustUK/Heatmiser-for-home-assistant/tree/dev) before submitting your bug.
 - Include logs, versions, any troubleshooting attempted, outputs and expected vs observed behaviour. 
 - Please note "It doesn't work" and other vague "It's broken" messages will only prompt a lot of questions to understand 
-why things are broken, the more information upfront will help expiate any advice and resolution.
+why things are broken, the more information upfront will help expedite any advice and resolution.
 
 # Services
 This integration provides two services that can be called from home assistant.

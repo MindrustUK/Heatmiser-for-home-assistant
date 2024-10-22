@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241022
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/187 should re-introduce version 1 style hold behaviour for timers.
+
 ## 20241021
 - Updating README.md with improved troubleshooting steps.
 

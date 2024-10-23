@@ -7,6 +7,7 @@ homeassistant.components.switch.heatmiserneo
 """
 
 from datetime import time
+from enum import IntFlag
 import logging
 
 import voluptuous as vol
@@ -76,7 +77,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
             vol.Required(ATTR_HOLD_DURATION, default=1): cv.positive_time_period,
         },
         "async_turn_on",
+        [HeatmiseerNeoSwitchEntityFeature.HOLD],
     )
+
+
+class HeatmiseerNeoSwitchEntityFeature(IntFlag):
+    """Supported features of the heatmiser neo switches entity."""
+
+    HOLD = 1
 
 
 class HeatmiserNeoPlugPowerSwitch(CoordinatorEntity, SwitchEntity):
@@ -410,6 +418,8 @@ class HeatmiserTimerDeviceStandbySwitch(CoordinatorEntity, SwitchEntity):
 
 class NeoTimerEntity(CoordinatorEntity, SwitchEntity):
     """Represents a Heatmiser neoStat thermostat acting in TimeClock mode."""
+
+    _attr_supported_features = HeatmiseerNeoSwitchEntityFeature.HOLD
 
     def __init__(
         self, neostat: NeoStat, coordinator: DataUpdateCoordinator, hub: NeoHub

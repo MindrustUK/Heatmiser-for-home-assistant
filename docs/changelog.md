@@ -1,5 +1,8 @@
 # Change Log
 
+## 20241024
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/191 - Should cleanup dev branch.
+
 ## 20241023
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/190 - Should improve hold behaviour.
 

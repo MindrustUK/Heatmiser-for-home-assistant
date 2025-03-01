@@ -2,9 +2,11 @@
 
 """Config flow for Heatmiser Neo."""
 
+from __future__ import annotations
+
 from copy import deepcopy
 import logging
-from typing import Any
+from typing import Any, Self
 
 from neohubapi.neohub import NeoHub, NeoHubConnectionError
 import voluptuous as vol
@@ -14,6 +16,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.selector import (
     DurationSelector,
     DurationSelectorConfig,
@@ -25,8 +28,10 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+from homeassistant.helpers.typing import DiscoveryInfoType
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
+from .api.discovery import NeoHubDetails
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,
@@ -43,14 +48,23 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_TIMER_HOLD_DURATION,
     DEFAULT_WEBSOCKET_PORT,
+    DISCOVER_SCAN_TIMEOUT,
     DOMAIN,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
     AvailableMode,
     GlobalSystemType,
 )
+from .discovery import (
+    async_discover_device,
+    async_discover_devices,
+    async_update_entry_from_discovery,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+
+CONF_DEVICE = "device"
 
 
 class FlowHandler(ConfigFlow, domain=DOMAIN):
@@ -61,43 +75,33 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize Heatmiser Neo options flow."""
-        self._host = None
+        self.host = None
         self._port = None
         self._token = None
+        self._discovered_device: NeoHubDetails | None = None
+        self._discovered_devices: dict[str, NeoHubDetails] = {}
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
     ) -> ConfigFlowResult:
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconfig discovered %s", discovery_info)
-        self._host = discovery_info.host
-        self._port = DEFAULT_PORT
 
-        await self.async_set_unique_id(f"{self._host}:{self._port}")
-        self._abort_if_unique_id_configured()
-        return await self.async_step_zeroconf_confirm()
+        if device := await async_discover_device(self.hass, discovery_info.host):
+            self._discovered_device = device
+            _LOGGER.debug(
+                "NeoHub discovered from zeroconf discovery: %s", self._discovered_device
+            )
+            return await self._async_handle_discovery()
+        self.host = discovery_info.host
 
-    async def async_step_zeroconf_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle a flow initiated by zeroconf."""
-        _LOGGER.debug("context %s", self.context)
-        if user_input is not None:
-            conn_error = await self.try_connection()
-            if not conn_error:
-                return self._async_get_entry()
-            return self.async_abort(reason="cannot_connect")
-
-        return self.async_show_form(
-            step_id="zeroconf_confirm",
-            description_placeholders={"name": self._host},
-        )
+        return await self.async_step_choose_conn_method()
 
     async def try_connection(self):
         """Try connection to NeoHub."""
         _LOGGER.debug("Trying connection to NeoHub")
         try:
-            hub = NeoHub(self._host, self._port, token=self._token)
+            hub = NeoHub(self.host, self._port, token=self._token)
             await hub.firmware()
             await hub.disconnect()
         except NeoHubConnectionError:
@@ -107,11 +111,11 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
     @callback
     def _async_get_entry(self) -> ConfigFlowResult:
-        data = {CONF_HOST: self._host, CONF_PORT: self._port}
+        data = {CONF_HOST: self.host, CONF_PORT: self._port}
         if self._token:
             data[CONF_API_TOKEN] = self._token
         return self.async_create_entry(
-            title=f"{self._host}:{self._port}",
+            title=f"{self.host}:{self._port}",
             data=data,
         )
 
@@ -119,11 +123,25 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> tuple[ConfigFlowResult, dict[str, str]]:
         errors = {}
-        self._host = user_input[CONF_HOST]
+
+        if (
+            not self._discovered_device
+            or user_input[CONF_HOST] != self._discovered_device.ip_address
+        ):
+            if device := await async_discover_device(self.hass, user_input[CONF_HOST]):
+                self._discovered_device = device
+
+        self.host = user_input[CONF_HOST]
         self._port = user_input[CONF_PORT]
         self._token = user_input.get(CONF_API_TOKEN)
 
-        await self.async_set_unique_id(f"{self._host}:{self._port}")
+        if self._discovered_device:
+            await self.async_set_unique_id(
+                dr.format_mac(self._discovered_device.mac_address),
+                raise_on_progress=False,
+            )
+        else:
+            await self.async_set_unique_id(f"{self.host}:{self._port}")
         self._abort_if_unique_id_configured()
 
         conn_error = await self.try_connection()
@@ -136,19 +154,57 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle a flow initialized by the user."""
-        return self.async_show_menu(
+        """Handle the initial step."""
+        if user_input is not None:
+            if mac := user_input[CONF_DEVICE]:
+                await self.async_set_unique_id(mac, raise_on_progress=False)
+                self._discovered_device = self._discovered_devices[mac]
+            return await self.async_step_choose_conn_method()
+
+        current_unique_ids = self._async_current_ids()
+        current_hosts = {
+            entry.data[CONF_HOST]
+            for entry in self._async_current_entries(include_ignore=False)
+        }
+        discovered_devices = await async_discover_devices(
+            self.hass, DISCOVER_SCAN_TIMEOUT
+        )
+        self._discovered_devices = {
+            dr.format_mac(device.mac_address): device for device in discovered_devices
+        }
+        devices_name: dict[str | None, str] = {
+            mac: f"{device.mac_address} ({device.ip_address})"
+            for mac, device in self._discovered_devices.items()
+            if mac not in current_unique_ids and device.ip_address not in current_hosts
+        }
+        if not devices_name:
+            return await self.async_step_choose_conn_method()
+        devices_name[None] = "Manual Entry"
+        return self.async_show_form(
             step_id="user",
+            data_schema=vol.Schema({vol.Required(CONF_DEVICE): vol.In(devices_name)}),
+        )
+
+    async def async_step_choose_conn_method(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show menu to select websocket or legacy api."""
+        return self.async_show_menu(
+            step_id="choose_conn_method",
             menu_options=[CONF_CONN_METHOD_WEBSOCKET, CONF_CONN_METHOD_LEGACY],
+            # description_placeholders=_placeholders_from_device(self._discovered_device)
+            # if self._discovered_device
+            # else None,
         )
 
     async def async_step_conn_method_websocket(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle a flow initialized by the user."""
+        """Handle connection to websocket api."""
 
         errors = {}
         if user_input is not None:
+            user_input[CONF_PORT] = DEFAULT_WEBSOCKET_PORT
             result, errors = await self._configure_entry(user_input)
             if not errors:
                 return result
@@ -157,12 +213,13 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_HOST, default=self._host if self._host else DEFAULT_HOST
+                        CONF_HOST,
+                        default=self._discovered_device.ip_address
+                        if self._discovered_device
+                        else self.host
+                        if self.host
+                        else DEFAULT_HOST,
                     ): str,
-                    vol.Required(
-                        CONF_PORT,
-                        default=self._port if self._port else DEFAULT_WEBSOCKET_PORT,
-                    ): int,
                     vol.Required(CONF_API_TOKEN, default=self._token): str,
                 }
             ),
@@ -172,9 +229,18 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_conn_method_legacy(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle a flow initialized by the user."""
+        """Handle connection to legacy api."""
         errors = {}
-        if user_input is not None:
+
+        if self._discovered_device:
+            user_input = user_input if user_input else {}
+            user_input[CONF_HOST] = self._discovered_device.ip_address
+            user_input[CONF_PORT] = DEFAULT_PORT
+            result, errors = await self._configure_entry(user_input)
+            if not errors:
+                return result
+        elif user_input is not None:
+            user_input[CONF_PORT] = DEFAULT_PORT
             result, errors = await self._configure_entry(user_input)
             if not errors:
                 return result
@@ -184,15 +250,53 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_HOST, default=self._host if self._host else DEFAULT_HOST
-                    ): str,
-                    vol.Required(
-                        CONF_PORT, default=self._port if self._port else DEFAULT_PORT
-                    ): int,
+                        CONF_HOST,
+                        default=self._discovered_device.ip_address
+                        if self._discovered_device
+                        else self.host
+                        if self.host
+                        else DEFAULT_HOST,
+                    ): str
                 }
             ),
             errors=errors,
         )
+
+    async def async_step_integration_discovery(
+        self, discovery_info: DiscoveryInfoType
+    ) -> ConfigFlowResult:
+        """Handle integration discovery."""
+        self._discovered_device = NeoHubDetails(
+            discovery_info["mac_address"], discovery_info["ip_address"]
+        )
+        _LOGGER.debug(
+            "NeoHub discovered from integration discovery: %s", self._discovered_device
+        )
+        return await self._async_handle_discovery()
+
+    async def _async_handle_discovery(self) -> ConfigFlowResult:
+        """Handle any discovery."""
+        device = self._discovered_device
+        assert device is not None
+        mac = dr.format_mac(device.mac_address)
+        host = device.ip_address
+        await self.async_set_unique_id(mac)
+        for entry in self._async_current_entries(include_ignore=False):
+            if entry.unique_id == mac or entry.data[CONF_HOST] == host:
+                if async_update_entry_from_discovery(self.hass, entry, device):
+                    self.hass.config_entries.async_schedule_reload(entry.entry_id)
+                return self.async_abort(reason="already_configured")
+        self.host = host
+        if self.hass.config_entries.flow.async_has_matching_flow(self):
+            return self.async_abort(reason="already_in_progress")
+        # Handled ignored case since _async_current_entries
+        # is called with include_ignore=False
+        self._abort_if_unique_id_configured()
+        return await self.async_step_choose_conn_method()
+
+    def is_matching(self, other_flow: Self) -> bool:
+        """Return True if other_flow is matching this flow."""
+        return other_flow.host == self.host
 
     @staticmethod
     @callback

@@ -2,7 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Heatmiser Neo",
+        "description": "Select a discovered device, or Manual Entry",
+        "data": {
+          "device": "NeoHub"
+        }
+      },
+      "choose_conn_method": {
         "description": "Choose connection method",
         "menu_options": {
           "conn_method_websocket": "Use Websocket API",
@@ -11,37 +16,31 @@
       },
       "conn_method_websocket": {
         "description": "Set up Heatmiser Neo integration. Obtain an API Token from the Heatmiser app (Settings -> API).",
-        "title": "Heatmiser Neo",
         "data": {
           "host": "Host",
-          "port": "Port",
           "api_token": "API Token"
         },
         "data_description": {
           "host": "The hostname or IP address of the NeoHub to connect to.",
-          "port": "The TCP port of the NeoHub to connect to (4243 for the Websocket API).",
           "api_token": "The API token to access the NeoHub API"
         }
       },
       "conn_method_legacy": {
         "description": "Set up Heatmiser Neo integration. Enable Legacy API in the Heatmiser app (Settings -> API).",
-        "title": "Heatmiser Neo",
         "data": {
-          "host": "Host",
-          "port": "Port"
+          "host": "Host"
         },
         "data_description": {
-          "host": "The hostname or IP address of the NeoHub to connect to.",
-          "port": "The TCP port of the NeoHub to connect to (4242 for the Legacy API)."
+          "host": "The hostname or IP address of the NeoHub to connect to."
         }
-      },
-      "zeroconf_confirm": {
-        "description": "Do you want to add the Heatmiser Neo `{name}` to Home Assistant?",
-        "title": "Heatmiser Neo"
       }
     },
     "error": {
       "cannot_connect": "Failed to connect"
+    },
+    "abort": {
+      "already_in_progress": "Configuration flow is already in progress",
+      "already_configured": "This Hub is already configured"
     }
   },
   "options": {

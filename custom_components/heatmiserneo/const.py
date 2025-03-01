@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Constants used by multiple Heatmiser Neo modules."""
 
+from datetime import timedelta
 import enum
 
 from homeassistant.components.climate import (
@@ -21,6 +22,9 @@ DEFAULT_WEBSOCKET_PORT = 4243
 DEFAULT_TIMER_HOLD_DURATION = 30
 DEFAULT_NEOSTAT_HOLD_DURATION = 30
 DEFAULT_NEOSTAT_TEMPERATURE_BOOST = 2
+
+DISCOVER_SCAN_TIMEOUT = 3
+DISCOVERY_INTERVAL = timedelta(minutes=15)
 
 CONF_CONN_METHOD_WEBSOCKET = "conn_method_websocket"
 CONF_CONN_METHOD_LEGACY = "conn_method_legacy"

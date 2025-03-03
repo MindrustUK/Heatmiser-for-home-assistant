@@ -27,7 +27,10 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
-from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+from homeassistant.helpers.service_info.zeroconf import (
+    ATTR_PROPERTIES_ID,
+    ZeroconfServiceInfo,
+)
 from homeassistant.helpers.typing import DiscoveryInfoType
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
@@ -87,15 +90,13 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconfig discovered %s", discovery_info)
 
-        if device := await async_discover_device(self.hass, discovery_info.host):
-            self._discovered_device = device
-            _LOGGER.debug(
-                "NeoHub discovered from zeroconf discovery: %s", self._discovered_device
-            )
-            return await self._async_handle_discovery()
-        self.host = discovery_info.host
-
-        return await self.async_step_choose_conn_method()
+        self._discovered_device = NeoHubDetails(
+            discovery_info.properties.get(ATTR_PROPERTIES_ID), discovery_info.host
+        )
+        _LOGGER.debug(
+            "NeoHub discovered from zeroconf discovery: %s", self._discovered_device
+        )
+        return await self._async_handle_discovery()
 
     async def try_connection(self):
         """Try connection to NeoHub."""

@@ -1,5 +1,13 @@
 # Change Log
 
+## 20250303
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/272 by @ocrease, fix for Zeroconf discovery
+
+## 20250301
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/270 by @ocrease, implement discovery using udp broadcast on port 19790
+
 ## 20250225
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/268 by @ocrease, use NeoHubAPI 2.8 to benefit from improved connection handling

@@ -543,13 +543,13 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Select entities")
 
     async_add_entities(
-        HeatmiserNeoHubSelectEntity(coordinator, hub, description)
+        HeatmiserNeoHubSelectEntity(coordinator, hub, description, entry)
         for description in HUB_SELECT
         if description.setup_filter_fn(coordinator)
     )
 
     async_add_entities(
-        HeatmiserNeoSelectEntity(neodevice, coordinator, hub, description)
+        HeatmiserNeoSelectEntity(neodevice, coordinator, hub, description, entry)
         for description in SELECT
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -585,14 +585,10 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
         coordinator: DataUpdateCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoSelectEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo select entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(neostat, coordinator, hub, entity_description, config_entry)
         if entity_description.options_fn:
             self._attr_options = entity_description.options_fn(self)
         self._attr_current_option = entity_description.value_fn(self)
@@ -621,13 +617,10 @@ class HeatmiserNeoHubSelectEntity(HeatmiserNeoHubEntity, SelectEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoHubSelectEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo select entity."""
-        super().__init__(
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(coordinator, hub, entity_description, config_entry)
         self._attr_current_option = entity_description.value_fn(coordinator)
 
     async def async_select_option(self, option: str) -> None:

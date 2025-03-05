@@ -56,7 +56,7 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Device Numbers")
 
     async_add_entities(
-        HeatmiserNeoNumber(neodevice, coordinator, hub, description)
+        HeatmiserNeoNumber(neodevice, coordinator, hub, description, entry)
         for description in NUMBERS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -175,14 +175,10 @@ class HeatmiserNeoNumber(HeatmiserNeoEntity, NumberEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoNumberEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo number entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(neostat, coordinator, hub, entity_description, config_entry)
 
     @property
     def native_value(self) -> float | None:

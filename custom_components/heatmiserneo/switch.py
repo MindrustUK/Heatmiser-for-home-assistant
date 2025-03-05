@@ -39,7 +39,7 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Switches")
 
     async_add_entities(
-        HeatmiserNeoHubSwitch(coordinator, hub, description)
+        HeatmiserNeoHubSwitch(coordinator, hub, description, entry)
         for description in HUB_SWITCHES
         if description.setup_filter_fn(coordinator)
     )
@@ -80,13 +80,10 @@ class HeatmiserNeoHubSwitch(HeatmiserNeoHubEntity, SwitchEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoHubSwitchEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo binary entity."""
-        super().__init__(
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(coordinator, hub, entity_description, config_entry)
 
     @property
     def is_on(self) -> bool | None:

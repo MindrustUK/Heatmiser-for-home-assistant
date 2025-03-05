@@ -43,7 +43,7 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Locks")
 
     async_add_entities(
-        HeatmiserNeoLockEntity(neodevice, coordinator, hub, description)
+        HeatmiserNeoLockEntity(neodevice, coordinator, hub, description, entry)
         for description in LOCKS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -113,6 +113,7 @@ class HeatmiserNeoLockEntity(HeatmiserNeoEntity, LockEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoLockEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo lock entity."""
         super().__init__(
@@ -120,6 +121,7 @@ class HeatmiserNeoLockEntity(HeatmiserNeoEntity, LockEntity):
             coordinator,
             hub,
             entity_description,
+            config_entry,
         )
         self._update()
 

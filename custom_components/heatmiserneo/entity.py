@@ -15,10 +15,11 @@ from propcache import cached_property
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import ServiceCall
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import HeatmiserNeoConfigEntry, unique_id_is_mac
 from .const import (
     DOMAIN,
     HEATMISER_HUB_PRODUCT_LIST,
@@ -80,6 +81,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize the HeatmiserNeo entity."""
         super().__init__(coordinator)
@@ -94,6 +96,30 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         self._neodevice = neodevice
         self._hub = hub
         self.entity_description = entity_description
+        self._attr_should_poll = False
+        self._attr_unique_id = (
+            f"{config_entry.unique_id}_{self._neodevice.serial_number}_{self._key}"
+        )
+
+        via_device_identifier_key = DOMAIN
+        if unique_id_is_mac(config_entry.unique_id):
+            via_device_identifier_key = CONNECTION_NETWORK_MAC
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={
+                (
+                    DOMAIN,
+                    f"{config_entry.unique_id}_{self._neodevice.serial_number}",
+                )
+            },
+            name=self._neodevice.name,
+            manufacturer="Heatmiser",
+            model=f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            suggested_area=self._neodevice.name,
+            serial_number=self._neodevice.serial_number,
+            sw_version=self.data.stat_version,
+            via_device=(via_device_identifier_key, config_entry.unique_id),
+        )
 
     @property
     def data(self) -> NeoStat | None:
@@ -115,30 +141,6 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         return False
 
     @property
-    def unique_id(self) -> str:
-        """Return the unique ID for this entity."""
-        return f"{self._neodevice.name}_{self.coordinator.serial_number}_{self._neodevice.serial_number}_{self._key}"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information about this Heatmiser Neo instance."""
-        return DeviceInfo(
-            identifiers={
-                (
-                    DOMAIN,
-                    f"{self.coordinator.serial_number}_{self._neodevice.serial_number}",
-                )
-            },
-            name=self._neodevice.name,
-            manufacturer="Heatmiser",
-            model=f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
-            suggested_area=self._neodevice.name,
-            serial_number=self._neodevice.serial_number,
-            sw_version=self.data.stat_version,
-            via_device=(DOMAIN, self.coordinator.serial_number),
-        )
-
-    @property
     def extra_state_attributes(self):
         """Return the additional state attributes."""
         return {
@@ -146,11 +148,6 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             "device_type": self._neodevice.device_type,
             "offline": self.data.offline,
         }
-
-    @property
-    def should_poll(self) -> bool:
-        """Don't poll - we fetch the data from the hub all at once."""
-        return False
 
     @property
     def icon(self) -> str | None:
@@ -216,6 +213,7 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoHubEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize the HeatmiserNeoHub entity."""
         super().__init__(coordinator)
@@ -227,38 +225,30 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         self._key = entity_description.key
         self._hub = hub
         self.entity_description = entity_description
+        self._attr_should_poll = False
+        self._attr_unique_id = f"{config_entry.unique_id}_{self._key}"
 
-    @property
-    def available(self):
-        """Returns whether the entity is available or not."""
-        return True
+        identifier_key = DOMAIN
+        if unique_id_is_mac(config_entry.unique_id):
+            identifier_key = CONNECTION_NETWORK_MAC
 
-    @property
-    def unique_id(self) -> str:
-        """Return the unique ID for this entity."""
-        return f"{self.coordinator.serial_number}_{self._key}"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information about this Heatmiser Neo instance."""
-        return DeviceInfo(
+        self._attr_device_info = DeviceInfo(
             identifiers={
                 (
-                    DOMAIN,
-                    f"{self.coordinator.serial_number}",
+                    identifier_key,
+                    config_entry.unique_id,
                 )
             },
             name=f"NeoHub - {self._hub._host}",  # noqa: SLF001
             manufacturer="Heatmiser",
             model=f"{HEATMISER_HUB_PRODUCT_LIST[self.coordinator.system_data.HUB_TYPE]}",
-            serial_number=self.coordinator.serial_number,
             sw_version=self.coordinator.system_data.HUB_VERSION,
         )
 
     @property
-    def should_poll(self) -> bool:
-        """Don't poll - we fetch the data from the hub all at once."""
-        return False
+    def available(self):
+        """Returns whether the entity is available or not."""
+        return True
 
     @property
     def icon(self) -> str | None:

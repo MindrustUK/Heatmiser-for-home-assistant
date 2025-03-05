@@ -21,7 +21,19 @@ class NeoHubDetails:
     ip_address: str
 
 
+@dataclass
+class NeoHubConnectDetails:
+    """NeoHub details."""
+
+    mac_address: str
+    ip_address: str
+    token: str
+    version: str
+    direct_link_token: str | None
+
+
 DISCOVERY_PORT = 19790
+DISCOVERY_AUTO_CONNECT_PORT = 1979
 
 
 def create_udp_socket(discovery_port: int) -> socket.socket:
@@ -64,6 +76,26 @@ def decode_data(raw_response: bytes) -> NeoHubDetails | None:
                 mac_address=response["device_id"], ip_address=response["ip"]
             )
         _LOGGER.warning("Invalid device format: %s", response)
+    except json.JSONDecodeError:
+        _LOGGER.exception("Failed to decode response")
+    return None
+
+
+def decode_auto_connect_data(
+    raw_response: bytes, from_address: tuple[str, int]
+) -> NeoHubConnectDetails | None:
+    """Decode a Heatmiser connect response packet."""
+    try:
+        response = json.loads(raw_response.decode())
+        if {"MAC", "token", "version"} <= response.keys():
+            return NeoHubConnectDetails(
+                mac_address=response["MAC"],
+                ip_address=from_address[0],
+                version=response["version"],
+                token=response["token"],
+                direct_link_token=response.get("directlinktoken"),
+            )
+        _LOGGER.warning("Invalid auto connect format: %s", response)
     except json.JSONDecodeError:
         _LOGGER.exception("Failed to decode response")
     return None
@@ -136,10 +168,14 @@ class AIOHeatmiserDiscovery:
             remain_time = quit_time - time.monotonic()
 
     async def async_scan(
-        self, timeout: int = 10, address: str | None = None
+        self,
+        timeout: int = 10,
+        address: str | None = None,
+        targetted_address: bool = True,
     ) -> list[NeoHubDetails]:
         """Discover NeoHub devices."""
         _LOGGER.debug("Starting NeoHub discovery with timeout %ds", timeout)
+
         sock = create_udp_socket(DISCOVERY_PORT)
         destination = self._destination_from_address(address)
         found_all_future: asyncio.Future[bool] = asyncio.Future()
@@ -147,7 +183,7 @@ class AIOHeatmiserDiscovery:
 
         def _on_response(data: bytes, addr: tuple[str, int]) -> None:
             _LOGGER.debug("discover: %s <= %s", addr, data)
-            if self._process_response(data, addr, response_list, address is not None):
+            if self._process_response(data, addr, response_list, targetted_address):
                 found_all_future.set_result(True)
 
         transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(
@@ -174,3 +210,72 @@ class AIOHeatmiserDiscovery:
             self.found_devices,
         )
         return self.found_devices
+
+
+class AIOHeatmiserAutoConnect:
+    """Asynchronous listener for Heatmiser Neo Hubs connect."""
+
+    def __init__(self) -> None:
+        """Initialize the AIOHeatmiserDiscovery scanner."""
+        self.found_device: NeoHubConnectDetails | None = None
+
+    def _process_response(
+        self, data: bytes | None, from_address: tuple[str, int]
+    ) -> NeoHubDetails | None:
+        """Process a response.
+
+        Returns True if processing should stop
+        """
+        if data is None:
+            return None
+        try:
+            return decode_auto_connect_data(data, from_address)
+        except Exception:
+            _LOGGER.exception("Failed to decode response from %s", from_address)
+            return None
+
+    async def _async_run_scan(
+        self,
+        timeout: int,
+        found_future: asyncio.Future[bool],
+    ) -> None:
+        try:
+            await asyncio.wait_for(asyncio.shield(found_future), timeout=timeout)
+        except TimeoutError:
+            return
+
+    async def async_scan(self, timeout: int = 120) -> NeoHubConnectDetails:
+        """Discover NeoHub devices."""
+        _LOGGER.debug(
+            "Starting NeoHub Auto Connect discovery with timeout %ds", timeout
+        )
+
+        sock = create_udp_socket(DISCOVERY_AUTO_CONNECT_PORT)
+        found_future: asyncio.Future[bool] = asyncio.Future()
+
+        def _on_response(data: bytes, addr: tuple[str, int]) -> None:
+            _LOGGER.debug("discover auto connect: %s <= %s", addr, data)
+            self.found_device = self._process_response(data, addr)
+            if self.found_device:
+                found_future.set_result(True)
+
+        transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(
+            lambda: HeatmiserDiscovery(
+                destination=None,
+                on_response=_on_response,
+            ),
+            sock=sock,
+        )
+        try:
+            await self._async_run_scan(
+                timeout,
+                found_future,
+            )
+        finally:
+            transport.close()
+
+        _LOGGER.debug(
+            "Received connect button press: %s",
+            self.found_device,
+        )
+        return self.found_device

@@ -25,9 +25,16 @@ DEFAULT_NEOSTAT_TEMPERATURE_BOOST = 2
 
 DISCOVER_SCAN_TIMEOUT = 3
 DISCOVERY_INTERVAL = timedelta(minutes=15)
+DISCOVER_AUTO_CONNECT_TIMEOUT = 120
 
 CONF_CONN_METHOD_WEBSOCKET = "conn_method_websocket"
 CONF_CONN_METHOD_LEGACY = "conn_method_legacy"
+
+
+CONF_DISCOVERY_METHOD_AUTO_CONNECT = "discovery_method_auto_connect"
+CONF_DISCOVERY_METHOD_HUBSEEK = "discovery_method_hubseek"
+CONF_DISCOVERY_METHOD_MANUAL = "discovery_method_manual"
+
 
 CONF_DEFAULTS = "defaults"
 CONF_HVAC_MODES = "hvac_modes"

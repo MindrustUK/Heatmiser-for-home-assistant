@@ -148,13 +148,13 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Binary Sensors")
 
     async_add_entities(
-        HeatmiserNeoHubBinarySensor(coordinator, hub, description)
+        HeatmiserNeoHubBinarySensor(coordinator, hub, description, entry)
         for description in HUB_BINARY_SENSORS
         if description.setup_filter_fn(coordinator)
     )
 
     async_add_entities(
-        HeatmiserNeoBinarySensor(neodevice, coordinator, hub, description)
+        HeatmiserNeoBinarySensor(neodevice, coordinator, hub, description, entry)
         for description in BINARY_SENSORS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -307,14 +307,10 @@ class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoBinarySensorEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo binary entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(neostat, coordinator, hub, entity_description, config_entry)
 
     @property
     def is_on(self) -> bool | None:
@@ -330,13 +326,10 @@ class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoHubBinarySensorEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo binary entity."""
-        super().__init__(
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(coordinator, hub, entity_description, config_entry)
 
     @property
     def is_on(self) -> bool | None:

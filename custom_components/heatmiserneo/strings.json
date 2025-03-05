@@ -1,8 +1,16 @@
 {
   "config": {
     "step": {
-      "user": {
-        "description": "Select a discovered device, or Manual Entry",
+      "choose_discovery_method": {
+        "description": "Choose discovery method",
+        "menu_options": {
+          "discovery_method_auto_connect": "Connect Button",
+          "discovery_method_hubseek": "Hub Discovery",
+          "discovery_method_manual": "Manual"
+        }
+      },
+      "discovery_method_hubseek": {
+        "description": "Select a discovered device",
         "data": {
           "device": "NeoHub"
         }
@@ -10,6 +18,7 @@
       "choose_conn_method": {
         "description": "Choose connection method",
         "menu_options": {
+          "conn_method_auto_connect": "Use Connect Button on Hub",
           "conn_method_websocket": "Use Websocket API",
           "conn_method_legacy": "Use Legacy API"
         }
@@ -40,7 +49,14 @@
     },
     "abort": {
       "already_in_progress": "[%key:common::config_flow::abort::already_in_progress%]",
-      "already_configured": "This Hub is already configured"
+      "already_configured": "This Hub is already configured",
+      "auto_connect_timeout": "Connect button press not detected",
+      "auto_connect_mismatch": "Connect button pressed on different hub. Expected hub {mac_address_expected}({ip_address_expected}), received {mac_address_received}({ip_address_received})",
+      "no_devices_discovered": "No Hubs were discovered",
+      "no_new_devices_discovered": "No new Hubs were discovered"
+    },
+    "progress": {
+      "press_connect_button": "Press the Connect button on the hub in the next {timeout} seconds"
     }
   },
   "options": {

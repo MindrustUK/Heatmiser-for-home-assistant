@@ -275,7 +275,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         if not devices_name:
             return self.async_abort(reason="no_new_devices_discovered")
         return self.async_show_form(
-            step_id="user",
+            step_id=CONF_DISCOVERY_METHOD_HUBSEEK,
             data_schema=vol.Schema({vol.Required(CONF_DEVICE): vol.In(devices_name)}),
         )
 

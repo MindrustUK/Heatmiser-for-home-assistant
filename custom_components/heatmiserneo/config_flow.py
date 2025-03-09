@@ -315,18 +315,23 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
-        return await self.async_step_choose_conn_method()
+        return await self.async_step_choose_conn_method(
+            user_input={CONF_DISCOVERY_METHOD_AUTO_CONNECT: False}
+        )
 
     async def async_step_choose_conn_method(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Show menu to select websocket or legacy api."""
+        menu_options = [
+            CONF_CONN_METHOD_WEBSOCKET,
+            CONF_CONN_METHOD_LEGACY,
+        ]
+        if not user_input or user_input.get(CONF_DISCOVERY_METHOD_AUTO_CONNECT):
+            menu_options.insert(0, CONF_DISCOVERY_METHOD_AUTO_CONNECT)
         return self.async_show_menu(
             step_id="choose_conn_method",
-            menu_options=[
-                CONF_CONN_METHOD_WEBSOCKET,
-                CONF_CONN_METHOD_LEGACY,
-            ],
+            menu_options=menu_options,
         )
 
     async def async_step_conn_method_websocket(

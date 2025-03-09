@@ -52,6 +52,7 @@
       "already_configured": "This Hub is already configured",
       "auto_connect_timeout": "Connect button press not detected",
       "auto_connect_mismatch": "Connect button pressed on different hub. Expected hub {mac_address_expected}({ip_address_expected}), received {mac_address_received}({ip_address_received})",
+      "connect_mismatch": "MAC address of Hub does not match discovery. Expected hub {mac_address_expected}({ip_address_expected}), connected to {mac_address_connected}({ip_address_connected})",
       "no_devices_discovered": "No Hubs were discovered",
       "no_new_devices_discovered": "No new Hubs were discovered"
     },

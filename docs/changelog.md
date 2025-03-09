@@ -4,6 +4,7 @@
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/273 by @ocrease, implement discovery and connection using connect button. Stop using fake serial number, use mac address instead
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/274 by @ocrease, fix config flow error for hubseek discovery
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/275 by @ocrease, use mac address from web socket connection if not already retrieved via discovery
 
 ## 20250303
 

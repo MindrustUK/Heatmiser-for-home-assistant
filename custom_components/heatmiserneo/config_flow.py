@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from copy import deepcopy
 import logging
 from typing import Any, Self
@@ -34,11 +35,14 @@ from homeassistant.helpers.service_info.zeroconf import (
 from homeassistant.helpers.typing import DiscoveryInfoType
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
-from .api.discovery import NeoHubDetails
+from .api.discovery import NeoHubConnectDetails, NeoHubDetails
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,
     CONF_DEFAULTS,
+    CONF_DISCOVERY_METHOD_AUTO_CONNECT,
+    CONF_DISCOVERY_METHOD_HUBSEEK,
+    CONF_DISCOVERY_METHOD_MANUAL,
     CONF_HVAC_MODES,
     CONF_STAT_HOLD_DURATION,
     CONF_STAT_HOLD_TEMP,
@@ -51,6 +55,7 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_TIMER_HOLD_DURATION,
     DEFAULT_WEBSOCKET_PORT,
+    DISCOVER_AUTO_CONNECT_TIMEOUT,
     DISCOVER_SCAN_TIMEOUT,
     DOMAIN,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
@@ -59,7 +64,7 @@ from .const import (
     GlobalSystemType,
 )
 from .discovery import (
-    async_discover_device,
+    async_discover_device_connection_details,
     async_discover_devices,
     async_update_entry_from_discovery,
 )
@@ -75,6 +80,8 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     MINOR_VERSION = 1
+
+    auto_connect_task: asyncio.Task | None = None
 
     def __init__(self) -> None:
         """Initialize Heatmiser Neo options flow."""
@@ -125,13 +132,6 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     ) -> tuple[ConfigFlowResult, dict[str, str]]:
         errors = {}
 
-        if (
-            not self._discovered_device
-            or user_input[CONF_HOST] != self._discovered_device.ip_address
-        ):
-            if device := await async_discover_device(self.hass, user_input[CONF_HOST]):
-                self._discovered_device = device
-
         self.host = user_input[CONF_HOST]
         self._port = user_input[CONF_PORT]
         self._token = user_input.get(CONF_API_TOKEN)
@@ -156,6 +156,98 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
+        return await self.async_step_choose_discovery_method()
+
+    async def async_step_choose_discovery_method(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show menu to select websocket or legacy api."""
+        return self.async_show_menu(
+            step_id="choose_discovery_method",
+            menu_options=[
+                CONF_DISCOVERY_METHOD_AUTO_CONNECT,
+                CONF_DISCOVERY_METHOD_HUBSEEK,
+                CONF_DISCOVERY_METHOD_MANUAL,
+            ],
+        )
+
+    async def async_step_discovery_method_auto_connect(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle connection using connect button on hub."""
+
+        if not self.auto_connect_task:
+            self.auto_connect_task = self.hass.async_create_task(
+                async_discover_device_connection_details(self.hass)
+            )
+
+        if not self.auto_connect_task.done():
+            return self.async_show_progress(
+                progress_action="press_connect_button",
+                progress_task=self.auto_connect_task,
+                description_placeholders={"timeout": DISCOVER_AUTO_CONNECT_TIMEOUT},
+            )
+
+        connect_details = await self.auto_connect_task
+
+        if connect_details and isinstance(connect_details, NeoHubConnectDetails):
+            return self.async_show_progress_done(
+                next_step_id=CONF_DISCOVERY_METHOD_AUTO_CONNECT + "_finish"
+            )
+
+        return self.async_show_progress_done(
+            next_step_id=CONF_DISCOVERY_METHOD_AUTO_CONNECT + "_failed"
+        )
+
+    async def async_step_discovery_method_auto_connect_finish(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle connection using connect button on hub."""
+        connect_details: NeoHubConnectDetails = await self.auto_connect_task
+        self.auto_connect_task = None
+        user_input = user_input if user_input else {}
+        user_input[CONF_PORT] = DEFAULT_PORT
+        ws_token = connect_details.direct_link_token
+        if ws_token:
+            user_input[CONF_API_TOKEN] = ws_token
+            user_input[CONF_PORT] = DEFAULT_WEBSOCKET_PORT
+
+        if CONF_HOST not in user_input:
+            user_input[CONF_HOST] = connect_details.ip_address
+
+        if not self._discovered_device:
+            self._discovered_device = NeoHubDetails(
+                mac_address=connect_details.mac_address,
+                ip_address=connect_details.ip_address,
+            )
+        elif self._discovered_device.mac_address != connect_details.mac_address:
+            return self.async_abort(
+                reason="auto_connect_mismatch",
+                description_placeholders={
+                    "mac_address_expected": self._discovered_device.mac_address,
+                    "ip_address_expected": self._discovered_device.ip_address,
+                    "mac_address_received": connect_details.mac_address,
+                    "ip_address_received": connect_details.ip_address,
+                },
+            )
+
+        if user_input:
+            result, errors = await self._configure_entry(user_input)
+            if not errors:
+                return result
+        return self.async_abort(reason="auto_connect_timeout")
+
+    async def async_step_discovery_method_auto_connect_failed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Abort auto connect failed."""
+        self.auto_connect_task = None
+        return self.async_abort(reason="auto_connect_timeout")
+
+    async def async_step_discovery_method_hubseek(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle the initial step."""
         if user_input is not None:
             if mac := user_input[CONF_DEVICE]:
                 await self.async_set_unique_id(mac, raise_on_progress=False)
@@ -173,18 +265,25 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         self._discovered_devices = {
             dr.format_mac(device.mac_address): device for device in discovered_devices
         }
+        if not discovered_devices:
+            return self.async_abort(reason="no_devices_discovered")
         devices_name: dict[str | None, str] = {
             mac: f"{device.mac_address} ({device.ip_address})"
             for mac, device in self._discovered_devices.items()
             if mac not in current_unique_ids and device.ip_address not in current_hosts
         }
         if not devices_name:
-            return await self.async_step_choose_conn_method()
-        devices_name[None] = "Manual Entry"
+            return self.async_abort(reason="no_new_devices_discovered")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({vol.Required(CONF_DEVICE): vol.In(devices_name)}),
         )
+
+    async def async_step_discovery_method_manual(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle the initial step."""
+        return await self.async_step_choose_conn_method()
 
     async def async_step_choose_conn_method(
         self, user_input: dict[str, Any] | None = None
@@ -192,10 +291,10 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         """Show menu to select websocket or legacy api."""
         return self.async_show_menu(
             step_id="choose_conn_method",
-            menu_options=[CONF_CONN_METHOD_WEBSOCKET, CONF_CONN_METHOD_LEGACY],
-            # description_placeholders=_placeholders_from_device(self._discovered_device)
-            # if self._discovered_device
-            # else None,
+            menu_options=[
+                CONF_CONN_METHOD_WEBSOCKET,
+                CONF_CONN_METHOD_LEGACY,
+            ],
         )
 
     async def async_step_conn_method_websocket(

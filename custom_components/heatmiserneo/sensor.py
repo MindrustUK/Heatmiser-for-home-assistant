@@ -162,13 +162,13 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Sensors")
 
     async_add_entities(
-        HeatmiserNeoHubSensor(coordinator, hub, description)
+        HeatmiserNeoHubSensor(coordinator, hub, description, entry)
         for description in HUB_SENSORS
         if description.setup_filter_fn(coordinator)
     )
 
     async_add_entities(
-        HeatmiserNeoSensor(neodevice, coordinator, hub, description)
+        HeatmiserNeoSensor(neodevice, coordinator, hub, description, entry)
         for description in SENSORS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -767,14 +767,10 @@ class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoSensorEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(neostat, coordinator, hub, entity_description, config_entry)
 
     @property
     def native_value(self):
@@ -800,13 +796,10 @@ class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoSensorEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""
-        super().__init__(
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(coordinator, hub, entity_description, config_entry)
 
     @property
     def native_value(self):

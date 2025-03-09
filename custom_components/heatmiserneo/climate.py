@@ -103,6 +103,7 @@ async def async_setup_entry(
             coordinator,
             hub,
             description,
+            entry,
             temperature_unit,
             float(temperature_step),
             hvac_config.get(name, None),
@@ -164,18 +165,14 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
         coordinator: DataUpdateCoordinator,
         hub: NeoHub,
         entity_descriptor: HeatmiserNeoClimateEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
         unit_of_measurement: UnitOfTemperature,
         temperature_step: float,
         hvac_modes_override: list[str],
         defaults: dict[str, Any],
     ) -> None:
         """Initialize Heatmiser Neo Climate entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_descriptor,
-        )
+        super().__init__(neostat, coordinator, hub, entity_descriptor, config_entry)
 
         self._attr_temperature_unit = unit_of_measurement
         self._attr_target_temperature_step = temperature_step

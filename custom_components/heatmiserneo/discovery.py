@@ -11,8 +11,13 @@ from homeassistant.components import network
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, discovery_flow
 
-from .api.discovery import AIOHeatmiserDiscovery, NeoHubDetails
-from .const import DISCOVER_SCAN_TIMEOUT, DOMAIN
+from .api.discovery import (
+    AIOHeatmiserAutoConnect,
+    AIOHeatmiserDiscovery,
+    NeoHubConnectDetails,
+    NeoHubDetails,
+)
+from .const import DISCOVER_AUTO_CONNECT_TIMEOUT, DISCOVER_SCAN_TIMEOUT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,8 +46,10 @@ async def async_discover_devices(
     """Discover NeoHub devices."""
 
     async with _discovery_lock:  # Use the module-level lock
+        targetted_address = False
         if address:
             targets = [address]
+            targetted_address = True
         else:
             targets = [
                 str(broadcast_address)
@@ -56,7 +63,11 @@ async def async_discover_devices(
         for idx, discovered in enumerate(
             await asyncio.gather(
                 *[
-                    scanner.async_scan(timeout=timeout, address=target_address)
+                    scanner.async_scan(
+                        timeout=timeout,
+                        address=target_address,
+                        targetted_address=targetted_address,
+                    )
                     for target_address in targets
                 ],
                 return_exceptions=True,
@@ -98,3 +109,18 @@ def async_trigger_discovery(
             context={"source": config_entries.SOURCE_INTEGRATION_DISCOVERY},
             data=asdict(device),
         )
+
+
+async def async_discover_device_connection_details(
+    hass: HomeAssistant,
+) -> NeoHubConnectDetails | None:
+    """Listen for connect response."""
+    async with _discovery_lock:  # Use the module-level lock
+        scanner = AIOHeatmiserAutoConnect()
+        discovered = await scanner.async_scan(timeout=DISCOVER_AUTO_CONNECT_TIMEOUT)
+        if isinstance(discovered, BaseException):
+            raise discovered from None
+        if discovered:
+            assert isinstance(discovered, NeoHubConnectDetails)
+            return discovered
+    return None

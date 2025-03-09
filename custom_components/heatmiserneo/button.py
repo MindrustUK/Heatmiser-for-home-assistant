@@ -46,13 +46,13 @@ async def async_setup_entry(
     _LOGGER.info("Adding Neo Device Buttons")
 
     async_add_entities(
-        HeatmiserNeoHubButton(coordinator, hub, description)
+        HeatmiserNeoHubButton(coordinator, hub, description, entry)
         for description in HUB_BUTTONS
         if description.setup_filter_fn(coordinator)
     )
 
     async_add_entities(
-        HeatmiserNeoButton(neodevice, coordinator, hub, description)
+        HeatmiserNeoButton(neodevice, coordinator, hub, description, entry)
         for description in BUTTONS
         for neodevice in neo_devices.values()
         if description.setup_filter_fn(neodevice, system_data)
@@ -127,14 +127,10 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoButtonEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""
-        super().__init__(
-            neostat,
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(neostat, coordinator, hub, entity_description, config_entry)
 
     async def async_press(self) -> None:
         """Handle the button press."""
@@ -149,13 +145,10 @@ class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoButtonEntityDescription,
+        config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""
-        super().__init__(
-            coordinator,
-            hub,
-            entity_description,
-        )
+        super().__init__(coordinator, hub, entity_description, config_entry)
 
     async def async_press(self) -> None:
         """Handle the button press."""

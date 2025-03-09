@@ -34,7 +34,15 @@ Go to Configuration -> Integrations and click on the orange icon in the bottom r
 
 ![HowToIntegrate](/images/installation_4.png)
 
-You will have the option of using the Websocket API or the Legacy API.
+You will have the option of how to discover the hub
+
+![DiscoveryOptions](/images/installation_5_discovery.png)
+
+- Connect Button - Select this option to connect to the hub by pressing the Connect button on the hub within 2 minutes
+- Hub Discovery - Select this option to attempt to discover any hubs on your network
+- Manual - Select this option to set up the hub with its ip address or hostname
+
+Using Connect Button, the hub connection will be established automatically using the Websocket API if available (not available on older Hub firmwares) or the Legacy API. With the other two options (discovery or manual), you will have to select which connection method you want to use.
 
 ![ConnectionOptions](/images/installation_5_menu.png)
 

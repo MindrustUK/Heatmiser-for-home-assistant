@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250309
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/273 by @ocrease, implement discovery and connection using connect button. Stop using fake serial number, use mac address instead
+
 ## 20250303
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/272 by @ocrease, fix for Zeroconf discovery

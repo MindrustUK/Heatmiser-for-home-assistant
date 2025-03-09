@@ -105,17 +105,19 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         )
         return await self._async_handle_discovery()
 
-    async def try_connection(self):
+    async def try_connection(self) -> tuple[str | None, str]:
         """Try connection to NeoHub."""
         _LOGGER.debug("Trying connection to NeoHub")
+        mac_address = None
         try:
             hub = NeoHub(self.host, self._port, token=self._token)
             await hub.firmware()
+            mac_address = hub.mac_address
             await hub.disconnect()
         except NeoHubConnectionError:
-            return "cannot_connect"
+            return None, "cannot_connect"
         _LOGGER.debug("Connection Worked!")
-        return None
+        return mac_address, None
 
     @callback
     def _async_get_entry(self) -> ConfigFlowResult:
@@ -145,8 +147,34 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(f"{self.host}:{self._port}")
         self._abort_if_unique_id_configured()
 
-        conn_error = await self.try_connection()
+        mac_address, conn_error = await self.try_connection()
         if not conn_error:
+            if mac_address:
+                if not self._discovered_device:
+                    _LOGGER.debug(
+                        "Using MAC address %s from websocket connection as unique id",
+                        mac_address,
+                    )
+                    await self.async_set_unique_id(
+                        dr.format_mac(mac_address),
+                        raise_on_progress=False,
+                    )
+                    self._abort_if_unique_id_configured()
+                elif dr.format_mac(mac_address) != dr.format_mac(
+                    self._discovered_device.mac_address
+                ):
+                    return self.async_abort(
+                        reason="connect_mismatch",
+                        description_placeholders={
+                            "mac_address_expected": dr.format_mac(
+                                self._discovered_device.mac_address
+                            ),
+                            "ip_address_expected": self._discovered_device.ip_address,
+                            "mac_address_connected": dr.format_mac(mac_address),
+                            "ip_address_connected": self.host,
+                        },
+                    ), None
+
             return self._async_get_entry(), None
 
         errors["base"] = conn_error
@@ -220,13 +248,17 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                 mac_address=connect_details.mac_address,
                 ip_address=connect_details.ip_address,
             )
-        elif self._discovered_device.mac_address != connect_details.mac_address:
+        elif dr.format_mac(self._discovered_device.mac_address) != dr.format_mac(
+            connect_details.mac_address
+        ):
             return self.async_abort(
                 reason="auto_connect_mismatch",
                 description_placeholders={
-                    "mac_address_expected": self._discovered_device.mac_address,
+                    "mac_address_expected": dr.format_mac(
+                        self._discovered_device.mac_address
+                    ),
                     "ip_address_expected": self._discovered_device.ip_address,
-                    "mac_address_received": connect_details.mac_address,
+                    "mac_address_received": dr.format_mac(connect_details.mac_address),
                     "ip_address_received": connect_details.ip_address,
                 },
             )

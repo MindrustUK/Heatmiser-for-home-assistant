@@ -18,7 +18,7 @@
       "choose_conn_method": {
         "description": "Choose connection method",
         "menu_options": {
-          "conn_method_auto_connect": "Use Connect Button on Hub",
+          "discovery_method_auto_connect": "Use Connect Button on Hub",
           "conn_method_websocket": "Use Websocket API",
           "conn_method_legacy": "Use Legacy API"
         }

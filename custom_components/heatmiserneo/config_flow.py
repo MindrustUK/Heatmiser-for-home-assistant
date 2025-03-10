@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 from copy import deepcopy
 import logging
+import socket
 from typing import Any, Self
 
 from neohubapi.neohub import NeoHub, NeoHubConnectionError
@@ -18,6 +19,7 @@ from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.network import is_ip_address
 from homeassistant.helpers.selector import (
     DurationSelector,
     DurationSelectorConfig,
@@ -175,6 +177,9 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                         },
                     ), None
 
+            for entry in self._async_current_entries(include_ignore=False):
+                if _host_is_same(entry.data[CONF_HOST], self.host):
+                    return self.async_abort(reason="already_configured"), None
             return self._async_get_entry(), None
 
         errors["base"] = conn_error
@@ -288,7 +293,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
         current_unique_ids = self._async_current_ids()
         current_hosts = {
-            entry.data[CONF_HOST]
+            _resolve_ip_address(entry.data[CONF_HOST])
             for entry in self._async_current_entries(include_ignore=False)
         }
         discovered_devices = await async_discover_devices(
@@ -419,7 +424,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         host = device.ip_address
         await self.async_set_unique_id(mac)
         for entry in self._async_current_entries(include_ignore=False):
-            if entry.unique_id == mac or entry.data[CONF_HOST] == host:
+            if entry.unique_id == mac or _host_is_same(entry.data[CONF_HOST], host):
                 if async_update_entry_from_discovery(self.hass, entry, device):
                     self.hass.config_entries.async_schedule_reload(entry.entry_id)
                 return self.async_abort(reason="already_configured")
@@ -440,6 +445,17 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
+
+
+def _resolve_ip_address(host: str) -> str:
+    """Check if host1 and host2 are the same."""
+    host = host.split(":")[0]
+    return host if is_ip_address(host) else socket.gethostbyname(host)
+
+
+def _host_is_same(host1: str, host2: str) -> bool:
+    """Check if host1 and host2 are the same."""
+    return _resolve_ip_address(host1) == _resolve_ip_address(host2)
 
 
 class OptionsFlowHandler(OptionsFlow):

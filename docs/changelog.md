@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250310
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/277 by @ocrease, check host is not already configured. Also documentation updates for Discovery
+
 ## 20250309
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/273 by @ocrease, implement discovery and connection using connect button. Stop using fake serial number, use mac address instead

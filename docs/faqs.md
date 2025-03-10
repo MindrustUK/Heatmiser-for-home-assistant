@@ -5,6 +5,24 @@ nav_order: 10
 
 # Troubleshooting
 
+## Automated discovery issues
+
+Automated discovery works using UPD broadcasts. If your Hub is on a different subnet/network to Home Assistant, this
+integration will not detect your hub unless your router unless the UDP broadcasts are specifically forwarded/relayed
+from the Hub subnet to the Home Assistant subnet. Details for each method are below:
+
+### Connect Button
+
+Hub discovery and auto connect using the connect button on the hub relies on UDP broadcasts from the hub on UDP port 1979
+
+### Heatmiser Discovery (eg hubseek)
+
+Heatmiser discovery relies on UDP broadcasts from the hub on UDP port 19790
+
+### Zeroconf/MDNS
+
+Zeroconf/MDNS discovery works on UDP port 5353
+
 ## I can't find my Neohub
 
 ### Try discovery using nmap
@@ -21,8 +39,6 @@ Note: If you discover the device via mdns/zeroconf then you can use the hostname
 
 ### Using Heatmiser Discovery
 
-Note: This will eventually be part of the setup process and done internally.
-
 - Start a listener in a terminal: `nc -ulk -p 19790`
 - Issue the discovery command `echo -n "hubseek" | nc -b -u 255.255.255.255 19790`
 
@@ -30,6 +46,8 @@ A response such as `hubseek{"ip":"192.168.0.2","device_id":"nn:nn:nn:nn:nn:nn"}`
 listening terminal.
 
 ## I can't connect to my Neohub
+
+- If you are using the "Connect Button" method and your hub is on a different subnet, make sure UDP broadcasts on port 1979 are forwarded to the Home Assistant subnet.
 
 - If you are not using token based authentication;
 
@@ -40,8 +58,6 @@ listening terminal.
   - `printf '{"INFO":0}\0' | nc YOUR_DEVICE_IP_HERE 4242`
 
 - If you are trying to authenticate using token based authentication;
-  - The following instructions are a placeholder for now and will be further expanded on once the integration better
-  - supports token based authentication via web sockets.
   - Ensure you are applying this configuration to a Heatmiser NeoHub 2 or later. The Version 1 Hub does not support this
     authentication mechanism.
   - Ensure that your token is correct, this can be checked in the Heatmiser mobile app under _SETTINGS_ -> _API_ ->

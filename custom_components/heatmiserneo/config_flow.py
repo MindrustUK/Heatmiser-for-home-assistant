@@ -10,6 +10,7 @@ import logging
 import socket
 from typing import Any, Self
 
+from neohubapi.discovery import NeoHubConnectDetails, NeoHubDetails
 from neohubapi.neohub import NeoHub, NeoHubConnectionError
 import voluptuous as vol
 
@@ -37,7 +38,6 @@ from homeassistant.helpers.service_info.zeroconf import (
 from homeassistant.helpers.typing import DiscoveryInfoType
 
 from . import HeatmiserNeoConfigEntry, hold_duration_validation
-from .api.discovery import NeoHubConnectDetails, NeoHubDetails
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,

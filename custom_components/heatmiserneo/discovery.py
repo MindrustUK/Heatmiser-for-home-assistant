@@ -6,17 +6,18 @@ import asyncio
 from dataclasses import asdict
 import logging
 
-from homeassistant import config_entries
-from homeassistant.components import network
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr, discovery_flow
-
-from .api.discovery import (
+from neohubapi.discovery import (
     AIOHeatmiserAutoConnect,
     AIOHeatmiserDiscovery,
     NeoHubConnectDetails,
     NeoHubDetails,
 )
+
+from homeassistant import config_entries
+from homeassistant.components import network
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr, discovery_flow
+
 from .const import DISCOVER_AUTO_CONNECT_TIMEOUT, DISCOVER_SCAN_TIMEOUT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

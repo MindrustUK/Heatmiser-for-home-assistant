@@ -236,6 +236,11 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
         _LOGGER.info("%s : Executing set_hvac_mode() with: %s", self.name, hvac_mode)
+
+        if self.hvac_mode == hvac_mode:
+            _LOGGER.debug("hvac_mode is already %s", hvac_mode)
+            return None
+
         _LOGGER.debug("self.data: %s", self.data)
 
         ## HVACMode.OFF is now PRESET_STANDBY. Adding this for backwards compatibility temporarily.

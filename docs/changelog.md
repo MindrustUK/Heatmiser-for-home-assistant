@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250418
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/282 by @ocrease, skip set_hvac_mode if already set to requested value
+
 ## 20250310
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/277 by @ocrease, check host is not already configured. Also documentation updates for Discovery

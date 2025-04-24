@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250425
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/286 by @ocrease, improve robustness of diagnostics
+
 ## 20250418
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/282 by @ocrease, skip set_hvac_mode if already set to requested value

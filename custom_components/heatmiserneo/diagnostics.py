@@ -38,9 +38,9 @@ async def async_get_config_entry_diagnostics(
     timer_profiles_0 = coordinator.timer_profiles_0
     engineers_data = await hub.get_engineers()
     raw_live_data = await hub.get_live_data()
-    raw_live_data = vars(raw_live_data)
+    raw_live_data = to_dict(raw_live_data)
     raw_live_data["devices"] = [
-        async_redact_data(dict(vars(dev)), TO_REDACT_RAW_DATA)
+        async_redact_data(to_dict(dev), TO_REDACT_RAW_DATA)
         for dev in raw_live_data.get("devices", [])
     ]
     devices = await hub.get_devices()
@@ -57,9 +57,9 @@ async def async_get_config_entry_diagnostics(
         "devices_data": [
             convert_to_dict(device, devices_sns) for device in neo_devices.values()
         ],
-        "live_data": vars(live_data),
-        "system_data": vars(system_data),
-        "engineers": [vars(device) for _, device in engineers_data.__dict__.items()],
+        "live_data": to_dict(live_data),
+        "system_data": to_dict(system_data),
+        "engineers": to_dict(engineers_data),
         "devices": devices.result if devices else None,
         "device_list": device_list,
         "zones": zones,
@@ -76,7 +76,7 @@ def convert_to_dict(device: NeoStat, device_sns: dict[str, str]) -> dict:
 
     dev_diagnostics = device.__dict__.copy()
     dev_diagnostics["raw_data"] = async_redact_data(
-        dict(vars(device._data_)), TO_REDACT_RAW_DATA
+        to_dict(device._data_), TO_REDACT_RAW_DATA
     )
     del dev_diagnostics["_hub"]
     del dev_diagnostics["_data_"]
@@ -86,11 +86,11 @@ def convert_to_dict(device: NeoStat, device_sns: dict[str, str]) -> dict:
     dev_diagnostics["raw_data"]["SERIAL_NUMBER"] = device_sns.get(
         dev_diagnostics["raw_data"].get("SERIAL_NUMBER", ""), "REDACTED-SN-UNKNOWN"
     )
-    return async_redact_data(dict(dev_diagnostics), TO_REDACT_DEVICES)
+    return async_redact_data(to_dict(dev_diagnostics), TO_REDACT_DEVICES)
 
 
 async def retrieve_zone_device_list(zone: str, hub: NeoHub):
     """Get device list for each zone."""
     response = await hub._send({"GET_DEVICE_LIST": zone})  # noqa: SLF001
     _LOGGER.debug("Response for GET_DEVICE_LIST on zone %s: %s", zone, response)
-    return dict(vars(response)).get(zone, {})
+    return to_dict(response).get(zone, {})

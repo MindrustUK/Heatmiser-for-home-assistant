@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Constants used by multiple Heatmiser Neo modules."""
 
+from datetime import timedelta
+from enum import Enum
+
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
@@ -233,6 +236,14 @@ def to_dict(item):
             return {key: to_dict(value) for key, value in item.items()}
         case list() | tuple():
             return [to_dict(x) for x in item]
+        case Enum():
+            return item.name
+        case timedelta():
+            return {
+                "days": item.days,
+                "seconds": item.seconds,
+                "microseconds": item.microseconds,
+            }
         case object(__dict__=_):
             return {key: to_dict(value) for key, value in vars(item).items()}
         case _:

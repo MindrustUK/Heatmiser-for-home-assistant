@@ -99,6 +99,7 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
             and not device.time_clock_mode
         ),
         value_fn=lambda dev: dev._data_.FROST_TEMP,
+        property_exists_fn=lambda device: hasattr(device._data_, "FROST_TEMP"),
         set_value_fn=async_set_frost_temperature,
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
@@ -119,6 +120,7 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
             and not device.time_clock_mode
         ),
         value_fn=lambda dev: dev._data_.OUTPUT_DELAY,
+        property_exists_fn=lambda device: hasattr(device._data_, "OUTPUT_DELAY"),
         set_value_fn=async_set_output_delay,
         native_min_value=0,
         native_max_value=15,
@@ -137,6 +139,7 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
             and device.current_floor_temperature < 127
         ),
         value_fn=lambda dev: dev._data_.ENG_FLOOR_LIMIT,
+        property_exists_fn=lambda device: hasattr(device._data_, "ENG_FLOOR_LIMIT"),
         set_value_fn=async_set_floor_limit,
         native_step=1,
         unit_of_measurement_fn=lambda _, sys_data: (
@@ -154,6 +157,7 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
             and not device.time_clock_mode
         ),
         value_fn=lambda dev: dev._data_.USER_LIMIT,
+        property_exists_fn=lambda device: hasattr(device._data_, "USER_LIMIT"),
         set_value_fn=async_set_user_limit,
         native_step=1,
         native_min_value=0,

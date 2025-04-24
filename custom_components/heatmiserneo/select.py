@@ -410,6 +410,9 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         value_fn=lambda entity: str(
             getattr(entity.data._data_, "SWITCHING DIFFERENTIAL")
         ),
+        property_exists_fn=lambda device: hasattr(
+            device._data_, "SWITCHING DIFFERENTIAL"
+        ),
         set_value_fn=async_set_switching_differential,
         translation_key="switching_differential",
     ),
@@ -423,6 +426,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
             and not device.time_clock_mode
         ),
         value_fn=lambda entity: str(entity.data._data_.MAX_PREHEAT),
+        property_exists_fn=lambda device: hasattr(device._data_, "MAX_PREHEAT"),
         set_value_fn=async_set_preheat,
         translation_key="preheat_time",
     ),
@@ -591,7 +595,8 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
         super().__init__(neostat, coordinator, hub, entity_description, config_entry)
         if entity_description.options_fn:
             self._attr_options = entity_description.options_fn(self)
-        self._attr_current_option = entity_description.value_fn(self)
+        if self.available:
+            self._attr_current_option = entity_description.value_fn(self)
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
@@ -603,7 +608,8 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
         """Handle updated data from the coordinator."""
         if self.entity_description.options_fn:
             self._attr_options = self.entity_description.options_fn(self)
-        self._attr_current_option = self.entity_description.value_fn(self)
+        if self.available:
+            self._attr_current_option = self.entity_description.value_fn(self)
         super()._handle_coordinator_update()
 
 

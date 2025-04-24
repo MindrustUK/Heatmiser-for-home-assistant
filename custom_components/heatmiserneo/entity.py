@@ -38,6 +38,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
 
     setup_filter_fn: Callable[[NeoStat, Any], bool] = lambda dev, sys_data: True
     availability_fn: Callable[[NeoStat], bool] = lambda device: not device.offline
+    property_exists_fn: Callable[[NeoStat], bool] = lambda device: True
     enabled_by_default_fn: Callable[[HeatmiserNeoEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
@@ -136,7 +137,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def available(self):
         """Returns whether the entity is available or not."""
-        if self.data:
+        if self.data and self.entity_description.property_exists_fn(self.data):
             return self.entity_description.availability_fn(self.data)
         return False
 

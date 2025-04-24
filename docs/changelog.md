@@ -2,6 +2,10 @@
 
 ## 20250425
 
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/287 by @ocrease, handle case when engineers data is not reported by the hub
+
+## 20250425
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/286 by @ocrease, improve robustness of diagnostics
 
 ## 20250418

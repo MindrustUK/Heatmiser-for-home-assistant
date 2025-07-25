@@ -621,9 +621,7 @@ class OptionsFlowHandler(OptionsFlow):
                         CONF_DEFAULTS: self._defaults_config,
                     },
                 )
-        temperature_step = (
-            await self.config_entry.runtime_data.coordinator.hub.target_temperature_step
-        )
+        temperature_step = await self.config_entry.runtime_data.coordinator.hub.target_temperature_step()
         options_schema = vol.Schema(
             {
                 vol.Required(CONF_THERMOSTAT_OPTIONS): section(

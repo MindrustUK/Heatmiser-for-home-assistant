@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250725
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/292 by @ocrease, workaround for non unique serial numbers
+
 ## 20250425
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/287 by @ocrease, handle case when engineers data is not reported by the hub

@@ -9,7 +9,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues",
   "loggers": ["neohub"],
-  "requirements": ["neohubapi==3.0"],
+  "requirements": ["neohubapi==3.1"],
   "version": "v0.0.0",
   "zeroconf": [{ "type": "_hap._tcp.local.", "name": "heatmiser neohub*" }]
 }

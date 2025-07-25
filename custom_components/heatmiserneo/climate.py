@@ -93,7 +93,7 @@ async def async_setup_entry(
     temperature_unit = HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(
         system_data.CORF, UnitOfTemperature.CELSIUS
     )
-    temperature_step = await hub.target_temperature_step
+    temperature_step = await hub.target_temperature_step()
 
     _LOGGER.info("Adding Neo Climate Entities")
 

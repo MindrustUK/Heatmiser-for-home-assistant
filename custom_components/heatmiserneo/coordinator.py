@@ -56,13 +56,6 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
             devices = {device.name: device for device in all_live_data[ATTR_DEVICES]}
             return devices, all_live_data
 
-    def _get_device_sn(self, device_id: int) -> str:
-        """Get a device serial number by its device id."""
-
-        return self._device_serial_numbers.get(device_id, {}).get(
-            "serial_number", "UNKNOWN"
-        )
-
     def update_in_memory_state(
         self, action: Callable[[NeoStat], None], filter: Callable[[NeoStat], bool]
     ) -> None:

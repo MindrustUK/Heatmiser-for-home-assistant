@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250726
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/293 by @ocrease, remove backwards compatibility code for HVAC Mode
+
 ## 20250725
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/292 by @ocrease, workaround for non unique serial numbers

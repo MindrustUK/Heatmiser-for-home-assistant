@@ -243,33 +243,8 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
 
         _LOGGER.debug("self.data: %s", self.data)
 
-        ## HVACMode.OFF is now PRESET_STANDBY. Adding this for backwards compatibility temporarily.
-        ## HA 2025.4 will remove the ability to set invalid HVAC modes anyway
-        if hvac_mode is HVACMode.OFF:
-            _LOGGER.warning(
-                "Standby is now a preset. Please use set_preset_mode instead"
-            )
-            return await self.async_set_preset_mode(PRESET_STANDBY)
-
         if self.data.device_type not in HEATMISER_TYPE_IDS_HC:
-            if self.data.standby:
-                _LOGGER.warning(
-                    "Standby is now a preset. Please use set_preset_mode instead"
-                )
-                await self.data.set_frost(False)
-                self.data.standby = False
-                self.coordinator.async_update_listeners()
-                return None
             raise HomeAssistantError("Only NeoStat HC devices allow changing HVAC_MODE")
-
-        if hvac_mode not in self.hvac_modes:
-            modes_str = ", ".join(self.hvac_modes)
-            _LOGGER.warning(
-                "Mode %s is not supported. Supported modes are [%s]",
-                hvac_mode,
-                modes_str,
-            )
-            return None
 
         hc_mode: HCMode = None
         if hvac_mode == HVACMode.HEAT:

@@ -1,5 +1,9 @@
 # Change Log
 
+## 20250731
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/295 by @ocrease, raise issue and offer fix when old device entries are detected
+
 ## 20250726
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/293 by @ocrease, remove backwards compatibility code for HVAC Mode

@@ -3,6 +3,10 @@ title: Upgrade Guide
 nav_order: 9
 ---
 
+# Upgrade to 3.2.x
+
+[Issue 294](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/294) was raised soon after the release of v3.2.1. There are still installations where the advice of the release on 20240928 to delete and re-configure the hub was not followed and this can cause an issue when upgrading to this version. In later releases (eg after v3.2.1), an issue is raised and a fix is offered to the user to automatically cleanup the old device entries. Users just need to accept the fix and the integration will start working again.
+
 # Upgrade 1.6 to 3.0
 
 This is a major upgrade with a lot of changes. The recommendation is to delete and re-add the integration config entry. This will be the cleanest solution, though you might need to clean up any existing references to old entities that have been renamed or replaced. The main climate entities (eg thermostats) should not have changed. You can choose to simply upgrade and then manually delete any entities that are not longer provided by the integration.

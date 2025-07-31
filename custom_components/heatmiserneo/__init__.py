@@ -12,14 +12,21 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import CoreState, HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 import homeassistant.helpers.config_validation as cv
 import homeassistant.helpers.device_registry as dr
 import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
+import homeassistant.helpers.issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DISCOVER_SCAN_TIMEOUT, DISCOVERY_INTERVAL, DOMAIN
+from .const import (
+    DISCOVER_SCAN_TIMEOUT,
+    DISCOVERY_INTERVAL,
+    DOMAIN,
+    ISSUE_ID_CLEANUP_OLD_DEVICES,
+)
 from .coordinator import HeatmiserNeoCoordinator
 from .discovery import (
     async_discover_device,
@@ -169,6 +176,22 @@ async def _async_migrate_unique_ids(
 
     # Migrate
     hub_updated = False
+
+    num_hub_devices = len([d for d in registry_devices.values() if not d.via_device_id])
+    if num_hub_devices > 1:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            ISSUE_ID_CLEANUP_OLD_DEVICES.format(entry_id=entry.entry_id),
+            is_fixable=True,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="cleanup_old_devices",
+            data={"entry_id": entry.entry_id},
+        )
+        raise HomeAssistantError(
+            f"Heatmiser Hub at {entry.data[CONF_HOST]}:{entry.data[CONF_PORT]} can't be configured because there are invalid devices"
+        )
+
     for reg_device in registry_devices.values():
         if not reg_device.via_device_id:
             identifier_key = None

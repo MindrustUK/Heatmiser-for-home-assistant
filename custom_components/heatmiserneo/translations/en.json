@@ -334,5 +334,18 @@
         "vent": "Fan Only"
       }
     }
+  },
+  "issues": {
+    "cleanup_old_devices": {
+      "title": "Found old devices",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Found old devices",
+            "description": "Old versions of the integration set up devices incorrectly.\n\nSelect **Submit** to delete the old devices"
+          }
+        }
+      }
+    }
   }
 }

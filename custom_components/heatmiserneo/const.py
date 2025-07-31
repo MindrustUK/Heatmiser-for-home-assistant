@@ -155,6 +155,8 @@ HEATMISER_TYPE_IDS_IDENTIFY = HEATMISER_TYPE_IDS_THERMOSTAT.union(
 ).difference(HEATMISER_TYPE_IDS_PLUG)
 HEATMISER_TYPE_IDS_LOCK = HEATMISER_TYPE_IDS_IDENTIFY
 
+ISSUE_ID_CLEANUP_OLD_DEVICES = "cleanup_old_devices_{entry_id}"
+
 
 # This should be in the neohubapi.neohub enums code
 class AvailableMode(str, enum.Enum):

@@ -2,6 +2,10 @@
 
 ## 20250731
 
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/297 by @ocrease, add support for NeoStat Pro
+
+## 20250731
+
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/295 by @ocrease, raise issue and offer fix when old device entries are detected
 
 ## 20250726

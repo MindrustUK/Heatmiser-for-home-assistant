@@ -1,6 +1,10 @@
 # Change Log
 
-## 20250731
+## 20251104
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/299 by @ocrease, add support for NeoStat Touch
+
+## 20251103
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/297 by @ocrease, add support for NeoStat Pro
 

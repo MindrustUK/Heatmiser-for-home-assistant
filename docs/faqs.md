@@ -50,7 +50,6 @@ listening terminal.
 - If you are using the "Connect Button" method and your hub is on a different subnet, make sure UDP broadcasts on port 1979 are forwarded to the Home Assistant subnet.
 
 - If you are not using token based authentication;
-
   - Check the Heatmiser Mobile App and under _SETTINGS_ -> _API_ -> _API TOKENS_ ensure that _Legacy API_ is enabled.
 
   - After checking the above please try testing with the hub using the following commands from the Home Assistant

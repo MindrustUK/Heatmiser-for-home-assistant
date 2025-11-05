@@ -26,8 +26,22 @@ Full documentation is available here - [Heatmiser for Home Assistant](https://mi
 # Supporting this project
 
 As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133) a few users found this useful and
-wanted to support my work. I'm very grateful and humbled, thanks for the show of support! As such I've setup the
-following to accept donations to support my work;
+wanted to support the project. I'm very grateful and humbled, thanks for the show of support! 
+
+This is not a completely solo project, and credit is due to anyone who contributed. Please see the GitHub commits
+to support these awesome devs if there was any work that you would like to say thanks for.
+
+I'd particularly like to call out
+
+- ocrease: [https://github.com/ocrease](https://github.com/ocrease) for massive contributions to code clean up,
+  feature enhancement and lots of bug fixes.
+
+- Andrius Štikonas: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/) or [https://stikonas.eu/](https://stikonas.eu/) for migrating the
+  original API calls to a Home Assistant compatible library, and maintaining its release.
+
+Please consider supporting their efforts!
+
+I've setup the following to accept donations to support my work;
 
 [https://ko-fi.com/MindrustUK](https://ko-fi.com/MindrustUK)
 
@@ -35,15 +49,3 @@ following to accept donations to support my work;
 
 If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure
 coverage would really help the project. Feel free to reach out if you want to help with this.
-
-This is not a completely solo project, and credit is due to anyone who contributed. Please see the GitHub commits
-to support these awesome devs if there was any work that you would like to say thanks for.
-
-I'd particularly like to call out
-
-- Andrius Štikonas: [https://gitlab.com/neohubapi/neohubapi/](https://gitlab.com/neohubapi/neohubapi/) or [https://stikonas.eu/](https://stikonas.eu/) for migrating the
-  original API calls to a Home Assistant compatible library, and maintaining its release.
-- ocrease: [https://github.com/ocrease](https://github.com/ocrease) for massive contributions to code clean up and
-  feature enhancement.
-
-Please consider supporting their efforts!

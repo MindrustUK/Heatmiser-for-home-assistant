@@ -3,10 +3,10 @@
 github: mindrustuk
 patreon: # Replace with a single Patreon username
 open_collective: # Replace with a single Open Collective username
-ko_fi: mindrustuk
-liberapay: mindrustuk
+ko_fi: # mindrustuk
+liberapay: # mindrustuk
 tidelift: # Replace with a single Tidelift platform-name/package-name e.g., npm/babel
 community_bridge: # Replace with a single Community Bridge project-name e.g., cloud-foundry
 issuehunt: # Replace with a single IssueHunt username
 otechie: # Replace with a single Otechie username
-custom: # Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
+custom: ['https://github.com/MindrustUK/Heatmiser-for-home-assistant?tab=readme-ov-file#supporting-this-project']

@@ -3,6 +3,7 @@
 ## 20251112
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/303 by @ocrease, fix issue with timer profiles where some days are empty
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/305 by @ocrease, make sure api token is redacted in diagnostics
 
 ## 20251104
 

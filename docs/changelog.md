@@ -1,5 +1,9 @@
 # Change Log
 
+## 20251112
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/303 by @ocrease, fix issue with timer profiles where some days are empty
+
 ## 20251104
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/299 by @ocrease, add support for NeoStat Touch

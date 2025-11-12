@@ -23,7 +23,7 @@ from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry
+from . import HeatmiserNeoConfigEntry, TimerProfileLevel
 from .const import (
     ATTR_AWAY_END,
     ATTR_AWAY_STATE,
@@ -340,6 +340,6 @@ class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
 def _profile_current_state(profile_id, entity: HeatmiserNeoEntity) -> bool | None:
     """Convert a profile id to current temperature."""
     level = profile_level(profile_id, entity.data, entity.coordinator)
-    if level:
-        return level[1]
+    if isinstance(level, TimerProfileLevel):
+        return level.state
     return None

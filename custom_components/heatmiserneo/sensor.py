@@ -33,7 +33,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.util.dt as dt_util
 
-from . import HeatmiserNeoConfigEntry
+from . import HeatmiserNeoConfigEntry, ProfileLevel, TemperatureProfileLevel
 from .const import (
     ATTR_CREATE_MODE,
     ATTR_FRIDAY_OFF_TIMES,
@@ -810,26 +810,26 @@ class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
 def _profile_current_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
     """Convert a profile id to current temperature."""
     level = profile_level(profile_id, entity.data, entity.coordinator)
-    if level:
-        return float(level[1])
+    if isinstance(level, TemperatureProfileLevel):
+        return level.temperature
     return None
 
 
 def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
-    _, temp = _profile_next_level(profile_id, entity)
-    if temp:
-        return float(temp)
+    level = _profile_next_level(profile_id, entity)
+    if isinstance(level, TemperatureProfileLevel) and level.temperature:
+        return level.temperature
     return None
 
 
 def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
-    t, _ = _profile_next_level(profile_id, entity)
-    if not t:
+    level = _profile_next_level(profile_id, entity)
+    if not level:
         return None
     device_time = entity.data._data_.TIME
     if len(device_time) == 4:
         device_time = f"0{device_time}"
-    profile_time = datetime.datetime.strptime(t, "%H:%M")
+    profile_time = datetime.datetime.strptime(level.time, "%H:%M")
     tz = entity.coordinator.system_data.TIME_ZONE
     if entity.coordinator.system_data.DST_ON:
         tz = tz + 1
@@ -840,17 +840,14 @@ def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
         microsecond=0,
         tzinfo=datetime.timezone(datetime.timedelta(minutes=tz * 60)),
     )
-    if t < device_time:
+    if level.time < device_time:
         return profile_datetime + datetime.timedelta(days=1)
     return profile_datetime
 
 
-def _profile_next_level(profile_id, entity: HeatmiserNeoSensor):
+def _profile_next_level(profile_id, entity: HeatmiserNeoSensor) -> ProfileLevel | None:
     """Convert a profile id to next level."""
-    lv = profile_level(profile_id, entity.data, entity.coordinator, True)
-    if lv:
-        return lv[0], lv[1]
-    return None, None
+    return profile_level(profile_id, entity.data, entity.coordinator, True)
 
 
 def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | None:

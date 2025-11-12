@@ -61,6 +61,42 @@ class HeatmiserNeoData:
     coordinator: HeatmiserNeoCoordinator
 
 
+@dataclass
+class ProfileLevel:
+    """Base class for a profile level with a time."""
+
+    time: str
+
+
+@dataclass
+class TemperatureProfileLevel(ProfileLevel):
+    """Profile level for temperature settings."""
+
+    temperature: float
+
+
+@dataclass
+class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
+    """Profile level for temperature settings."""
+
+    cool_temperature: float
+    enabled: bool
+
+
+@dataclass
+class TimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    state: bool
+
+
+@dataclass
+class RawTimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    end_time: str
+
+
 async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:
     """Set up the Heatmiser Neo integration."""
 

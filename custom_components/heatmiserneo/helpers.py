@@ -246,6 +246,8 @@ def profile_level(
         if flatten_fn:
             levels = flatten_fn(levels)
         if len(levels) == 0:
+            if data.time_clock_mode and not next:
+                return TimerProfileLevel(time="00:00", state=False)
             return None
         current_level = levels[0 if next else -1]
         if data.time_clock_mode and not next:
@@ -263,6 +265,8 @@ def profile_level(
         levels = _profile_levels(profile, alt_key, data.time_clock_mode, levels_filter)
         if flatten_fn:
             levels = flatten_fn(levels)
+        if len(levels) == 0:
+            return current_level
         previous_level = levels[-1]
         if (
             previous_level.time < current_level.time

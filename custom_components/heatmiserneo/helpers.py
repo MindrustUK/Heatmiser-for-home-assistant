@@ -7,6 +7,13 @@ from enum import Enum
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
+from . import (
+    HeatCoolTemperatureProfileLevel,
+    ProfileLevel,
+    RawTimerProfileLevel,
+    TemperatureProfileLevel,
+    TimerProfileLevel,
+)
 from .coordinator import HeatmiserNeoCoordinator
 
 
@@ -93,7 +100,9 @@ def _profile_previous_day_key(current_weekday: str, format: ScheduleFormat) -> W
                     return Weekday.SATURDAY
 
 
-def _profile_levels(profile, key: Weekday, filter) -> list:
+def _profile_levels(
+    profile, key: Weekday, timeclock: bool, filter
+) -> list[ProfileLevel]:
     info = None
     if hasattr(profile, "info"):
         info = profile.info
@@ -101,26 +110,45 @@ def _profile_levels(profile, key: Weekday, filter) -> list:
         # Profile 0
         info = profile.profiles[0]
     key_val = key.value
-    levels = getattr(info, key_val)
-    levels = [lv for lv in levels.__dict__.values() if filter(lv)]
-    return sorted(levels, key=lambda lv: lv[0])
+    tmpLevels = getattr(info, key_val)
+    levels: list[ProfileLevel]
+    if timeclock:
+        timerLevels = [
+            RawTimerProfileLevel(time=lv[0], end_time=lv[1])
+            for lv in tmpLevels.__dict__.values()
+        ]
+        levels = [lv for lv in timerLevels if filter(lv)]
+    else:
+        temperatureLevels = [
+            TemperatureProfileLevel(time=lv[0], temperature=float(lv[1]))
+            if len(lv) == 2
+            else HeatCoolTemperatureProfileLevel(
+                time=lv[0],
+                temperature=float(lv[1]),
+                cool_temperature=float(lv[2]),
+                enabled=bool(lv[3]),
+            )
+            for lv in tmpLevels.__dict__.values()
+        ]
+        levels = [lv for lv in temperatureLevels if filter(lv)]
+    return sorted(levels, key=lambda lv: lv.time)
 
 
-def _timer_level_filter(level):
-    if not _is_valid_time(level[0]):
+def _timer_level_filter(level: RawTimerProfileLevel):
+    if not _is_valid_time(level.time):
         return False
-    if level[0] == level[1]:
+    if level.time == level.end_time:
         return False
     return True
 
 
-def _heating_level_filter(level):
-    if not _is_valid_time(level[0]):
+def _heating_level_filter(level: TemperatureProfileLevel):
+    if not _is_valid_time(level.time):
         return False
-    if level[1] < 5:
+    if level.temperature < 5:
         return False
-    if len(level) > 2:
-        if level[2] < 5 and level[3]:
+    if isinstance(level, HeatCoolTemperatureProfileLevel):
+        if level.cool_temperature < 5 and level.enabled:
             return False
     return True
 
@@ -129,34 +157,43 @@ def _is_valid_time(time) -> bool:
     return not (time == "24:00" or time > "24:00")
 
 
-def _flatten_timer_levels(levels):
-    levels = [[[lv[0], True], [lv[1], False]] for lv in levels]
-    return [x for lvs in levels for x in lvs]
+def _flatten_timer_levels(
+    levels: list[ProfileLevel],
+) -> list[ProfileLevel]:
+    tmp_levels = [
+        [
+            TimerProfileLevel(time=lv.time, state=True),
+            TimerProfileLevel(time=lv.end_time, state=False),
+        ]
+        for lv in levels
+        if isinstance(lv, RawTimerProfileLevel)
+    ]
+    return [x for lvs in tmp_levels for x in lvs]
 
 
-def _current_level(time: str, levels):
+def _current_level(time: str, levels: list[ProfileLevel]) -> ProfileLevel | None:
     current = None
     for lv in levels:
-        if time < lv[0]:
+        if time < lv.time:
             return current
         current = lv
     return current
 
 
-def _next_level(time: str, levels):
+def _next_level(time: str, levels: list[ProfileLevel]) -> ProfileLevel | None:
     previous_time = None
     for lv in levels:
-        if previous_time and lv[0] < previous_time:
+        if previous_time and lv.time < previous_time:
             return lv
-        if time < lv[0]:
+        if time < lv.time:
             return lv
-        previous_time = lv[0]
+        previous_time = lv.time
     return None
 
 
 def profile_level(
     profile_id, data: NeoStat, coordinator: HeatmiserNeoCoordinator, next: bool = False
-) -> str | None:
+) -> ProfileLevel | None:
     """Convert a profile id to a name."""
     profile_format = coordinator.system_data.FORMAT
     device_time = data._data_.TIME
@@ -189,7 +226,9 @@ def profile_level(
         return None
 
     current_day_key = _profile_current_day_key(device_weekday, profile_format)
-    levels = _profile_levels(profile, current_day_key, levels_filter)
+    levels = _profile_levels(
+        profile, current_day_key, data.time_clock_mode, levels_filter
+    )
     if flatten_fn:
         levels = flatten_fn(levels)
     current_level = (
@@ -203,7 +242,7 @@ def profile_level(
             if next
             else _profile_previous_day_key(device_weekday, profile_format)
         )
-        levels = _profile_levels(profile, alt_key, levels_filter)
+        levels = _profile_levels(profile, alt_key, data.time_clock_mode, levels_filter)
         if flatten_fn:
             levels = flatten_fn(levels)
         if len(levels) == 0:
@@ -211,18 +250,24 @@ def profile_level(
         current_level = levels[0 if next else -1]
         if data.time_clock_mode and not next:
             previous_level = levels[-2]
-            if current_level[0] < previous_level[0] and current_level[0] > device_time:
+            if (
+                current_level.time < previous_level.time
+                and current_level.time > device_time
+            ):
                 ## Its just after midnight and we haven't reached the last profile time
                 ## so look at the one before
                 current_level = previous_level
-    elif data.time_clock_mode and next and current_level[0] == levels[0][0]:
+    elif data.time_clock_mode and next and current_level.time == levels[0].time:
         ## need to check previous day as well if its the first level
         alt_key = _profile_previous_day_key(device_weekday, profile_format)
-        levels = _profile_levels(profile, alt_key, levels_filter)
+        levels = _profile_levels(profile, alt_key, data.time_clock_mode, levels_filter)
         if flatten_fn:
             levels = flatten_fn(levels)
         previous_level = levels[-1]
-        if previous_level[0] < current_level[0] and previous_level[0] > device_time:
+        if (
+            previous_level.time < current_level.time
+            and previous_level.time > device_time
+        ):
             ## Its just after midnight and we haven't reached the last profile time
             ## so that is the next level
             current_level = previous_level

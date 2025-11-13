@@ -82,10 +82,14 @@
             "name": "Thermostat Options",
             "description": "Options for thermostat devices",
             "data": {
+              "stat_max_temp": "Max Temperature",
+              "stat_min_temp": "Min Temperature",
               "stat_hold_duration": "Boost Duration",
               "stat_hold_temp": "Boost Temperature"
             },
             "data_description": {
+              "stat_max_temp": "The maximum temperature that can be set on the device",
+              "stat_min_temp": "The minimum temperature that can be set on the device",
               "stat_hold_duration": "Default duration when setting Boost preset",
               "stat_hold_temp": "Default temperature increase from programmed value when setting Boost preset"
             }

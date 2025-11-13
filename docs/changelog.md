@@ -1,5 +1,9 @@
 # Change Log
 
+## 20251113
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/308 by @ocrease, support setting custom min/max temperatures - see https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/302
+
 ## 20251112
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/303 by @ocrease, fix issue with timer profiles where some days are empty

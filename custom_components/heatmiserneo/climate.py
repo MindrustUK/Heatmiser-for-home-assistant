@@ -44,8 +44,12 @@ from .const import (
     CONF_HVAC_MODES,
     CONF_STAT_HOLD_DURATION,
     CONF_STAT_HOLD_TEMP,
+    CONF_STAT_MAX_TEMPERATURE,
+    CONF_STAT_MIN_TEMPERATURE,
     CONF_THERMOSTAT_OPTIONS,
     DEFAULT_NEOSTAT_HOLD_DURATION,
+    DEFAULT_NEOSTAT_MAX_TEMPERATURE,
+    DEFAULT_NEOSTAT_MIN_TEMPERATURE,
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
     DOMAIN,
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
@@ -85,6 +89,8 @@ async def async_setup_entry(
         {
             CONF_STAT_HOLD_DURATION: DEFAULT_NEOSTAT_HOLD_DURATION,
             CONF_STAT_HOLD_TEMP: DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
+            CONF_STAT_MAX_TEMPERATURE: DEFAULT_NEOSTAT_MAX_TEMPERATURE,
+            CONF_STAT_MIN_TEMPERATURE: DEFAULT_NEOSTAT_MIN_TEMPERATURE,
         },
     )
 
@@ -176,8 +182,12 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
 
         self._attr_temperature_unit = unit_of_measurement
         self._attr_target_temperature_step = temperature_step
-        self._attr_max_temp = neostat.max_temperature_limit
-        self._attr_min_temp = neostat.min_temperature_limit
+        self._attr_max_temp = defaults.get(
+            CONF_STAT_MAX_TEMPERATURE, neostat.max_temperature_limit
+        )
+        self._attr_min_temp = defaults.get(
+            CONF_STAT_MIN_TEMPERATURE, neostat.min_temperature_limit
+        )
         self._attr_preset_modes = [
             PRESET_HOME,
             PRESET_BOOST,

@@ -48,11 +48,15 @@ from .const import (
     CONF_HVAC_MODES,
     CONF_STAT_HOLD_DURATION,
     CONF_STAT_HOLD_TEMP,
+    CONF_STAT_MAX_TEMPERATURE,
+    CONF_STAT_MIN_TEMPERATURE,
     CONF_THERMOSTAT_OPTIONS,
     CONF_TIMER_HOLD_DURATION,
     CONF_TIMER_OPTIONS,
     DEFAULT_HOST,
     DEFAULT_NEOSTAT_HOLD_DURATION,
+    DEFAULT_NEOSTAT_MAX_TEMPERATURE,
+    DEFAULT_NEOSTAT_MIN_TEMPERATURE,
     DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
     DEFAULT_PORT,
     DEFAULT_TIMER_HOLD_DURATION,
@@ -469,6 +473,8 @@ class OptionsFlowHandler(OptionsFlow):
                 CONF_DEFAULTS,
                 {
                     CONF_STAT_HOLD_DURATION: {"minutes": DEFAULT_NEOSTAT_HOLD_DURATION},
+                    CONF_STAT_MAX_TEMPERATURE: DEFAULT_NEOSTAT_MAX_TEMPERATURE,
+                    CONF_STAT_MIN_TEMPERATURE: DEFAULT_NEOSTAT_MIN_TEMPERATURE,
                     CONF_STAT_HOLD_TEMP: DEFAULT_NEOSTAT_TEMPERATURE_BOOST,
                     CONF_TIMER_HOLD_DURATION: {"minutes": DEFAULT_TIMER_HOLD_DURATION},
                 },
@@ -627,6 +633,40 @@ class OptionsFlowHandler(OptionsFlow):
                 vol.Required(CONF_THERMOSTAT_OPTIONS): section(
                     vol.Schema(
                         {
+                            vol.Required(
+                                CONF_STAT_MAX_TEMPERATURE,
+                                default=self._defaults_config.get(
+                                    CONF_THERMOSTAT_OPTIONS, {}
+                                ).get(
+                                    CONF_STAT_MAX_TEMPERATURE,
+                                    DEFAULT_NEOSTAT_MAX_TEMPERATURE,
+                                ),
+                            ): NumberSelector(
+                                NumberSelectorConfig(
+                                    min=1,
+                                    max=100,
+                                    step=temperature_step,
+                                    mode=NumberSelectorMode.BOX,
+                                    unit_of_measurement=self._unit_of_measurement,
+                                )
+                            ),
+                            vol.Required(
+                                CONF_STAT_MIN_TEMPERATURE,
+                                default=self._defaults_config.get(
+                                    CONF_THERMOSTAT_OPTIONS, {}
+                                ).get(
+                                    CONF_STAT_MIN_TEMPERATURE,
+                                    DEFAULT_NEOSTAT_MIN_TEMPERATURE,
+                                ),
+                            ): NumberSelector(
+                                NumberSelectorConfig(
+                                    min=1,
+                                    max=100,
+                                    step=temperature_step,
+                                    mode=NumberSelectorMode.BOX,
+                                    unit_of_measurement=self._unit_of_measurement,
+                                )
+                            ),
                             vol.Required(
                                 CONF_STAT_HOLD_DURATION,
                                 default={

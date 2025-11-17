@@ -1,6 +1,6 @@
 ---
 title: Upgrade Guide
-nav_order: 9
+nav_order: 10
 ---
 
 # Upgrade to 3.2.x

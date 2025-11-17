@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 import logging
 import socket
@@ -16,7 +17,7 @@ import voluptuous as vol
 
 from homeassistant.components.climate import UnitOfTemperature
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import device_registry as dr
@@ -46,6 +47,8 @@ from .const import (
     CONF_DISCOVERY_METHOD_HUBSEEK,
     CONF_DISCOVERY_METHOD_MANUAL,
     CONF_HVAC_MODES,
+    CONF_PAIRING,
+    CONF_PAIRING_REPEATER,
     CONF_STAT_HOLD_DURATION,
     CONF_STAT_HOLD_TEMP,
     CONF_STAT_MAX_TEMPERATURE,
@@ -465,6 +468,8 @@ def _host_is_same(host1: str, host2: str) -> bool:
 class OptionsFlowHandler(OptionsFlow):
     """Handles options flow for the component."""
 
+    _progress_task: asyncio.Task | None = None
+
     def __init__(self, config_entry: HeatmiserNeoConfigEntry) -> None:
         """Initialize options flow."""
         self._hvac_config = deepcopy(config_entry.options.get(CONF_HVAC_MODES, {}))
@@ -481,13 +486,14 @@ class OptionsFlowHandler(OptionsFlow):
             )
         )
 
-        devices, _ = config_entry.runtime_data.coordinator.data
+        self._devices, _ = config_entry.runtime_data.coordinator.data
+        self._new_devices = None
         system_data = config_entry.runtime_data.coordinator.system_data
 
         self.neostat_hcs = sorted(
             [
                 k
-                for k, v in devices.items()
+                for k, v in self._devices.items()
                 if v.device_type in HEATMISER_TYPE_IDS_HC and not v.time_clock_mode
             ]
         )
@@ -514,21 +520,25 @@ class OptionsFlowHandler(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the flow initiated by the user."""
-        if len(self.neostat_hcs) == 0:
-            return await self.async_step_defaults(user_input=user_input)
-
         return await self.async_step_choose_options(user_input=user_input)
 
     async def async_step_choose_options(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle local vs cloud mode selection step."""
+
+        menu_options = {
+            CONF_DEFAULTS: "Configure default settings for devices",
+            CONF_HVAC_MODES: "Configure HVAC modes for NeoStatHC",
+            "choose_advanced": "Advanced options",
+        }
+
+        if len(self.neostat_hcs) == 0:
+            del menu_options[CONF_HVAC_MODES]
+
         return self.async_show_menu(
             step_id="choose_options",
-            menu_options={
-                CONF_DEFAULTS: "Configure default settings for devices",
-                CONF_HVAC_MODES: "Configure HVAC modes for NeoStatHC",
-            },
+            menu_options=menu_options,
         )
 
     async def async_step_hvac_modes(
@@ -732,4 +742,140 @@ class OptionsFlowHandler(OptionsFlow):
 
         return self.async_show_form(
             step_id=CONF_DEFAULTS, data_schema=options_schema, errors=errors
+        )
+
+    async def async_step_choose_advanced(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle local vs cloud mode selection step."""
+
+        menu_options = {
+            CONF_PAIRING: "Pair a new device",
+            CONF_PAIRING_REPEATER: "Pair a new repeater",
+        }
+
+        return self.async_show_menu(
+            step_id="choose_advanced",
+            menu_options=menu_options,
+        )
+
+    async def async_step_pairing(
+        self, user_input: dict[str, str] | None = None
+    ) -> ConfigFlowResult:
+        """Flow to pair new device."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            _LOGGER.debug("user_input: %s", user_input)
+
+            async def device_join(hub: NeoHub, timeout: int) -> None:
+                return await hub.permit_join(
+                    name=user_input[CONF_NAME], timeout_s=timeout
+                )
+
+            return await self._async_initiate_pairing(
+                device_join, "waiting_for_device_connect", "device_added"
+            )
+
+        options_schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME): str,
+            }
+        )
+
+        if self._progress_task and self._progress_task.done():
+            return self.async_show_progress_done(next_step_id="device_added")
+
+        return self.async_show_form(
+            step_id=CONF_PAIRING, data_schema=options_schema, errors=errors
+        )
+
+    async def async_step_pairing_repeater(
+        self, user_input: dict[str, str] | None = None
+    ) -> ConfigFlowResult:
+        """Flow to pair new device."""
+
+        async def repeater_join(hub: NeoHub, timeout: int) -> None:
+            return await hub.permit_repeater_join(timeout)
+
+        return await self._async_initiate_pairing(
+            repeater_join, "waiting_for_repeater_connect", "repeater_added"
+        )
+
+    async def _async_initiate_pairing(
+        self,
+        join_command: Callable[[NeoHub, int], Awaitable[Any]],
+        progress_action: str,
+        next_step_id: str,
+        timeout: int = 120,
+    ) -> ConfigFlowResult:
+        if not self._progress_task:
+            self._progress_task = self.hass.async_create_task(
+                self._async_await_device_join(float(timeout))
+            )
+            hub: NeoHub = self.config_entry.runtime_data.coordinator.hub
+            await join_command(hub, timeout)
+        if not self._progress_task.done():
+            # Show initial progress UI
+            return self.async_show_progress(
+                progress_action=progress_action,
+                progress_task=self._progress_task,
+                description_placeholders={"timeout": timeout},
+            )
+
+        return self.async_show_progress_done(next_step_id=next_step_id)
+
+    async def _async_await_device_join(
+        self, timeout: float = 120.0, poll_interval: float = 10.0
+    ) -> str | None:
+        """Background task to handle the timer and progress updates."""
+        # try:
+        start_time = asyncio.get_running_loop().time()
+        last_poll_time = start_time
+        while True:
+            current_time = asyncio.get_running_loop().time()
+            elapsed = current_time - start_time
+
+            # Calculate and update progress percentage (fills the bar over time)
+            progress = elapsed / timeout
+            self.async_update_progress(1 - progress)
+
+            if elapsed >= timeout or current_time - last_poll_time >= poll_interval:
+                await self.config_entry.runtime_data.coordinator.async_request_refresh()
+                last_poll_time = current_time
+
+            self._new_devices, _ = self.config_entry.runtime_data.coordinator.data
+
+            if len(self._new_devices) > len(self._devices):
+                return
+
+            if elapsed >= timeout:
+                return
+            # Sleep briefly to update progress smoothly
+            await asyncio.sleep(timeout / 100)
+
+    async def async_step_repeater_added(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Check repeater added."""
+        if not self._new_devices or len(self._new_devices) == len(self._devices):
+            return self.async_abort(reason="repeater_add_failed")
+        self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        new_keys = self._new_devices.keys() - self._devices.keys()
+        return self.async_abort(
+            reason="repeater_added",
+            description_placeholders={"repeater_name": ",".join(new_keys)},
+        )
+
+    async def async_step_device_added(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Check device added."""
+        if not self._new_devices or len(self._new_devices) == len(self._devices):
+            return self.async_abort(reason="device_add_failed")
+        self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
+        new_keys = self._new_devices.keys() - self._devices.keys()
+        return self.async_abort(
+            reason="device_added",
+            description_placeholders={"device_name": ",".join(new_keys)},
         )

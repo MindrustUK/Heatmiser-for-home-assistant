@@ -4,7 +4,7 @@
   "codeowners": ["@MindrustUK"],
   "config_flow": true,
   "dependencies": ["network"],
-  "documentation": "https://github.com/MindrustUK/Heatmiser-for-home-assistant",
+  "documentation": "https://mindrustuk.github.io/Heatmiser-for-home-assistant/",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues",

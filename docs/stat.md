@@ -50,3 +50,33 @@ There are three preset modes:
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode
 - Floor Limit Reached - shows if the output is off because the floor limit temperature has been reached
+
+# Configuration Options
+
+You can edit a few options for thermostats by going into the settings for the hub entry:
+![Configure](/images/configure.png)
+From the options, choose _Configure default settings for devices_ and you can configure the following:
+
+- Min and Max Temperature - The default range is 5 to 35 degrees C. You can modify this range, but note that increasing the range is not normally supported by the devices themselves.
+  {: .note }
+
+  > This setting applies to all thermostats. You can use a standard home assistant feature to reduce the range on a specific thermostat
+
+  > In your `configuration.yaml` add:
+
+  > ```yaml
+  > homeassistant:
+  >   customize: !include customize.yaml
+  > ```
+
+  > Then in a `customize.yaml` add an entry for the thermostat you want to adjust
+
+  > ```yaml
+  > climate.landing:
+  >   max_temp: 25
+  >   min_temp: 10
+  > ```
+
+- Boost duration and boost temperature - When the profile is set to Boost, the default duration is 30 minutes and an increase in set temperature of 2 degrees. This can be configured here.
+
+![Configure](/images/stat_options_1.png)

@@ -50,3 +50,13 @@ NeoPlugs are similar to TimeClocks, but have the ability to be set to ON or OFF 
 - Away - if the hub is away or on holiday
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode
+
+# Configuration Options
+
+You can edit a few options for timeclocks and neo plugs by going into the settings for the hub entry:
+![Configure](/images/configure.png)
+From the options, choose _Configure default settings for devices_ and you can configure the following:
+
+- Boost duration - When the profile is set to Override On or Off, the default duration is 30 minutes. This can be configured here.
+
+![Configure](/images/timer_options_1.png)

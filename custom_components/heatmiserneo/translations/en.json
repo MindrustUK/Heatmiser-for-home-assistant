@@ -65,6 +65,9 @@
       "choose_options": {
         "description": "Configuration options"
       },
+      "choose_advanced": {
+        "description": "Advanced options"
+      },
       "hvac_modes": {
         "title": "Configure HVAC Modes",
         "description": "Select all to revert to default behaviour"
@@ -105,9 +108,29 @@
             }
           }
         }
+      },
+      "pairing": {
+        "title": "Pair a new device",
+        "description": "Puts the hub in pairing mode. Set the name of the new device to set up and follow the steps on the device itself",
+        "data": {
+          "name": "Zone name"
+        },
+        "data_description": {
+          "name": "Zone name of the new device to pair"
+        }
       }
     },
-    "error": {}
+    "error": {},
+    "progress": {
+      "waiting_for_device_connect": "To actually join network, follow the instructions for the specific device. Do this within {timeout} seconds",
+      "waiting_for_repeater_connect": "To actually join network, press and hold the connect button for 5 seconds. Do this within {timeout} seconds"
+    },
+    "abort": {
+      "device_add_failed": "New device not detected",
+      "device_added": "New device {device_name} added",
+      "repeater_add_failed": "New repeater not detected",
+      "repeater_added": "New repeater {repeater_name} added"
+    }
   },
   "entity": {
     "climate": {

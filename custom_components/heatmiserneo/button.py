@@ -17,7 +17,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
-from .const import HEATMISER_TYPE_IDS_IDENTIFY, HEATMISER_TYPE_IDS_REPEATER
+from .const import (
+    HEATMISER_TYPE_IDS_IDENTIFY,
+    HEATMISER_TYPE_IDS_REPEATER,
+    HEATMISER_TYPE_IDS_THERMOSTAT,
+)
 from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
@@ -85,6 +89,11 @@ async def async_remove_repeater(entity: HeatmiserNeoEntity):
     return await entity.coordinator.hub.remove_repeater(entity.data.device_id)
 
 
+async def async_remove_device(entity: HeatmiserNeoEntity):
+    """Handle repeater removal."""
+    return await entity.data.remove()
+
+
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
         key="heatmiser_neo_identify_button",
@@ -104,6 +113,16 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_REPEATER
         ),
         press_fn=async_remove_repeater,
+    ),
+    HeatmiserNeoButtonEntityDescription(
+        key="heatmiser_remove",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        name="Remove",
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
+        ),
+        press_fn=async_remove_device,
     ),
 )
 

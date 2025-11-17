@@ -86,12 +86,14 @@ class HeatmiserNeoHubButtonEntityDescription(
 
 async def async_remove_repeater(entity: HeatmiserNeoEntity):
     """Handle repeater removal."""
-    return await entity.coordinator.hub.remove_repeater(entity.data.device_id)
+    await entity.coordinator.hub.remove_repeater(entity.data.device_id)
+    return await entity.coordinator.async_request_refresh()
 
 
 async def async_remove_device(entity: HeatmiserNeoEntity):
     """Handle repeater removal."""
-    return await entity.data.remove()
+    await entity.data.remove()
+    return await entity.coordinator.async_request_refresh()
 
 
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (

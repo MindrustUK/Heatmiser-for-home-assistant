@@ -860,7 +860,7 @@ class OptionsFlowHandler(OptionsFlow):
         """Check repeater added."""
         if not self._new_devices or len(self._new_devices) == len(self._devices):
             return self.async_abort(reason="repeater_add_failed")
-        self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
+        self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
         new_keys = self._new_devices.keys() - self._devices.keys()
         return self.async_abort(
             reason="repeater_added",
@@ -873,7 +873,7 @@ class OptionsFlowHandler(OptionsFlow):
         """Check device added."""
         if not self._new_devices or len(self._new_devices) == len(self._devices):
             return self.async_abort(reason="device_add_failed")
-        self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
+        self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
         new_keys = self._new_devices.keys() - self._devices.keys()
         return self.async_abort(
             reason="device_added",

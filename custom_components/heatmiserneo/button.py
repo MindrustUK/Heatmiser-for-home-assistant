@@ -14,6 +14,7 @@ from homeassistant.components.button import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
@@ -87,13 +88,22 @@ class HeatmiserNeoHubButtonEntityDescription(
 async def async_remove_repeater(entity: HeatmiserNeoEntity):
     """Handle repeater removal."""
     await entity.coordinator.hub.remove_repeater(entity.data.device_id)
-    return await entity.coordinator.async_request_refresh()
+    _async_remove_from_registry(entity)
 
 
 async def async_remove_device(entity: HeatmiserNeoEntity):
-    """Handle repeater removal."""
+    """Handle device removal."""
     await entity.data.remove()
-    return await entity.coordinator.async_request_refresh()
+    _async_remove_from_registry(entity)
+
+
+def _async_remove_from_registry(entity: HeatmiserNeoEntity):
+    """Handle device removal from registry."""
+    device_registry = dr.async_get(entity.hass)
+    device_registry.async_update_device(
+        device_id=entity.device_entry.id,
+        remove_config_entry_id=entity.coordinator.config_entry.entry_id,
+    )
 
 
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (

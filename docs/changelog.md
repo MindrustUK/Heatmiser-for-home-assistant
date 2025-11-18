@@ -1,5 +1,13 @@
 # Change Log
 
+## 20251118
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/310 by @ocrease, improve device removal flow
+
+## 20251117
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/309 by @ocrease, add support for adding/removing devices
+
 ## 20251113
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/308 by @ocrease, support setting custom min/max temperatures - see https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/302

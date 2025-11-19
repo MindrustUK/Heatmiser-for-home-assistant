@@ -38,7 +38,7 @@ from homeassistant.helpers.service_info.zeroconf import (
 )
 from homeassistant.helpers.typing import DiscoveryInfoType
 
-from . import HeatmiserNeoConfigEntry, hold_duration_validation
+from . import hold_duration_validation
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,
@@ -72,6 +72,7 @@ from .const import (
     AvailableMode,
     GlobalSystemType,
 )
+from .coordinator import HeatmiserNeoConfigEntry
 from .discovery import (
     async_discover_device_connection_details,
     async_discover_devices,
@@ -139,8 +140,8 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         )
 
     async def _configure_entry(
-        self, user_input: dict[str, Any] | None = None
-    ) -> tuple[ConfigFlowResult, dict[str, str]]:
+        self, user_input: dict[str, Any]
+    ) -> tuple[ConfigFlowResult | None, dict[str, str] | None]:
         errors = {}
 
         self.host = user_input[CONF_HOST]
@@ -225,7 +226,9 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             return self.async_show_progress(
                 progress_action="press_connect_button",
                 progress_task=self.auto_connect_task,
-                description_placeholders={"timeout": DISCOVER_AUTO_CONNECT_TIMEOUT},
+                description_placeholders={
+                    "timeout": str(DISCOVER_AUTO_CONNECT_TIMEOUT)
+                },
             )
 
         connect_details = await self.auto_connect_task
@@ -243,6 +246,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle connection using connect button on hub."""
+        assert self.auto_connect_task
         connect_details: NeoHubConnectDetails = await self.auto_connect_task
         self.auto_connect_task = None
         user_input = user_input if user_input else {}
@@ -278,6 +282,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input:
             result, errors = await self._configure_entry(user_input)
             if not errors:
+                assert result
                 return result
         return self.async_abort(reason="auto_connect_timeout")
 
@@ -356,6 +361,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             user_input[CONF_PORT] = DEFAULT_WEBSOCKET_PORT
             result, errors = await self._configure_entry(user_input)
             if not errors:
+                assert result
                 return result
         return self.async_show_form(
             step_id=CONF_CONN_METHOD_WEBSOCKET,
@@ -387,11 +393,13 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             user_input[CONF_PORT] = DEFAULT_PORT
             result, errors = await self._configure_entry(user_input)
             if not errors:
+                assert result
                 return result
         elif user_input is not None:
             user_input[CONF_PORT] = DEFAULT_PORT
             result, errors = await self._configure_entry(user_input)
             if not errors:
+                assert result
                 return result
 
         return self.async_show_form(
@@ -542,7 +550,7 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
     async def async_step_hvac_modes(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the options for the custom component."""
         errors: dict[str, str] = {}
@@ -595,7 +603,7 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
     async def async_step_defaults(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the defaults for the custom component."""
         errors: dict[str, str] = {}
@@ -760,7 +768,7 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
     async def async_step_pairing(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Flow to pair new device."""
         errors: dict[str, str] = {}
@@ -791,7 +799,7 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
     async def async_step_pairing_repeater(
-        self, user_input: dict[str, str] | None = None
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Flow to pair new device."""
 
@@ -820,7 +828,7 @@ class OptionsFlowHandler(OptionsFlow):
             return self.async_show_progress(
                 progress_action=progress_action,
                 progress_task=self._progress_task,
-                description_placeholders={"timeout": timeout},
+                description_placeholders={"timeout": str(timeout)},
             )
 
         return self.async_show_progress_done(next_step_id=next_step_id)

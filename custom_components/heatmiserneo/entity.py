@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 import logging
-from typing import Any
+from types import CoroutineType
+from typing import Any, Generic, TypeVar
 
 from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat, ScheduleFormat
 from propcache.api import cached_property
@@ -21,14 +22,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HeatmiserNeoConfigEntry, unique_id_is_mac
+from . import unique_id_is_mac
 from .const import (
     DOMAIN,
     HEATMISER_HUB_PRODUCT_LIST,
     HEATMISER_PRODUCT_LIST,
     HEATMISER_TYPE_IDS_AWAY,
 )
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .helpers import set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,9 +46,9 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     icon_fn: Callable[[NeoStat], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
-        dict[
+        Mapping[
             str,
-            Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[Any | None]],
+            Callable[[HeatmiserNeoEntity, ServiceCall], CoroutineType[Any, Any, Any]],
         ]
         | None
     ) = None
@@ -61,21 +62,30 @@ class HeatmiserNeoHubEntityDescription(EntityDescription):
         lambda coordinator: True
     )
     enabled_by_default_fn: Callable[[HeatmiserNeoHubEntity], bool] | None = None
-    icon_fn: Callable[[NeoStat], str | None] | None = None
+    icon_fn: Callable[[], str | None] | None = None
     # extra_attrs: list[str] | None = None
     custom_functions: (
-        dict[
+        Mapping[
             str,
-            Callable[[type[HeatmiserNeoEntity], ServiceCall], Awaitable[Any | None]],
+            Callable[
+                [HeatmiserNeoHubEntity, ServiceCall],
+                CoroutineType[Any, Any, Any],
+            ],
         ]
         | None
     ) = None
 
 
-class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
+DescriptionT = TypeVar("DescriptionT", bound=HeatmiserNeoEntityDescription)
+HubDescriptionT = TypeVar("HubDescriptionT", bound=HeatmiserNeoHubEntityDescription)
+
+
+class HeatmiserNeoEntity(
+    CoordinatorEntity[HeatmiserNeoCoordinator], Generic[DescriptionT]
+):
     """Defines a base HeatmiserNeo entity."""
 
-    entity_description: HeatmiserNeoEntityDescription
+    entity_description: DescriptionT
     _attr_has_entity_name = True
 
     def __init__(
@@ -83,11 +93,12 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         neodevice: NeoStat,
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
-        entity_description: HeatmiserNeoEntityDescription,
+        entity_description: DescriptionT,
         config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize the HeatmiserNeo entity."""
         super().__init__(coordinator)
+        assert config_entry.unique_id
         _LOGGER.debug(
             "Creating %s-%s for %s %s",
             type(self).__name__,
@@ -117,18 +128,20 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
             },
             name=self._neodevice.name,
             manufacturer="Heatmiser",
-            model=f"{HEATMISER_PRODUCT_LIST[self.data.device_type]}",
+            model=f"{HEATMISER_PRODUCT_LIST[self._neodevice.device_type]}",
             suggested_area=self._neodevice.name,
             serial_number=self._neodevice.serial_number,
-            sw_version=self.data.stat_version,
+            sw_version=self._neodevice.stat_version,
             via_device=(via_device_identifier_key, config_entry.unique_id),
         )
 
     @property
-    def data(self) -> NeoStat | None:
+    def data(self) -> NeoStat:
         """Helper to get the data for the current device."""
         (neo_devices, _) = self.coordinator.data
-        return neo_devices.get(self._neodevice.name, None)
+        device = neo_devices.get(self._neodevice.name)
+        assert device
+        return device
 
     @property
     def system_data(self):
@@ -139,7 +152,10 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     @property
     def available(self):
         """Returns whether the entity is available or not."""
-        if self.data and self.entity_description.property_exists_fn(self.data):
+        neo_devices, _ = self.coordinator.data
+        if neo_devices.get(
+            self._neodevice.name, None
+        ) and self.entity_description.property_exists_fn(self.data):
             return self.entity_description.availability_fn(self.data)
         return False
 
@@ -149,7 +165,7 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
         return {
             "device_id": self._neodevice.device_id,
             "device_type": self._neodevice.device_type,
-            "offline": self.data.offline,
+            "offline": self.data.offline if self.data else True,
         }
 
     @property
@@ -205,21 +221,24 @@ class HeatmiserNeoEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
                 )
 
 
-class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
+class HeatmiserNeoHubEntity(
+    CoordinatorEntity[HeatmiserNeoCoordinator], Generic[HubDescriptionT]
+):
     """Defines a base HeatmiserNeoHub entity."""
 
-    entity_description: HeatmiserNeoHubEntityDescription
+    entity_description: HubDescriptionT
     _attr_has_entity_name = True
 
     def __init__(
         self,
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
-        entity_description: HeatmiserNeoHubEntityDescription,
+        entity_description: HubDescriptionT,
         config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize the HeatmiserNeoHub entity."""
         super().__init__(coordinator)
+        assert config_entry.unique_id
         _LOGGER.debug(
             "Creating %s-%s",
             type(self).__name__,
@@ -257,7 +276,7 @@ class HeatmiserNeoHubEntity(CoordinatorEntity[HeatmiserNeoCoordinator]):
     def icon(self) -> str | None:
         """Call icon function if defined."""
         if self.entity_description.icon_fn:
-            return self.entity_description.icon_fn(self.data)
+            return self.entity_description.icon_fn()
         return None
 
     @cached_property

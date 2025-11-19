@@ -10,7 +10,6 @@ from typing import Any
 from neohubapi.neohub import NeoHub, NeoStat
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -29,7 +28,11 @@ from .const import (
     HEATMISER_TYPE_IDS_REPEATER,
     ISSUE_ID_CLEANUP_OLD_DEVICES,
 )
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import (
+    HeatmiserNeoConfigEntry,
+    HeatmiserNeoCoordinator,
+    HeatmiserNeoData,
+)
 from .discovery import (
     async_discover_device,
     async_discover_devices,
@@ -50,17 +53,7 @@ PLATFORMS = [
     Platform.SWITCH,
 ]
 
-type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
-
 _OLD_SERIAL_NUMBER_PREFIX = "NEOHUB-SN:000000"
-
-
-@dataclass
-class HeatmiserNeoData:
-    """Class to store Heatmiser Neo runtime data."""
-
-    hub: NeoHub
-    coordinator: HeatmiserNeoCoordinator
 
 
 @dataclass
@@ -145,7 +138,7 @@ async def async_setup_entry(
     else:
         hub = NeoHub(host, port)
 
-    coordinator = HeatmiserNeoCoordinator(hass, hub)
+    coordinator = HeatmiserNeoCoordinator(hass, entry, hub)
 
     entry.runtime_data = HeatmiserNeoData(hub, coordinator)
 
@@ -201,6 +194,7 @@ async def _async_migrate_unique_ids(
     hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
 ) -> None:
     """Migrate pre-config flow unique ids."""
+
     entity_registry = er.async_get(hass)
     device_registry = dr.async_get(hass)
 
@@ -242,6 +236,7 @@ async def _async_migrate_unique_ids(
                 else:
                     identifier_key = DOMAIN
             if identifier_key:
+                assert entry.unique_id
                 new_identifiers = {(identifier_key, entry.unique_id)}
                 _LOGGER.debug(
                     "Existing Hub device %s has identifiers %s and serial number %s. Updating to %s and removing serial number",
@@ -277,6 +272,8 @@ async def _async_migrate_unique_ids(
                     )
 
         for reg_entry in registry_entries:
+            if not reg_entry.device_id:
+                continue
             device = registry_devices.get(reg_entry.device_id)
             if not device:
                 continue
@@ -304,7 +301,9 @@ async def _async_migrate_unique_ids(
 
 def unique_id_is_mac(unique_id: str | None) -> bool:
     "Check if a unique id is a mac address."
-    return unique_id and unique_id.count(":") == 5 and len(unique_id) == 17
+    if not unique_id:
+        return False
+    return unique_id.count(":") == 5 and len(unique_id) == 17
 
 
 def _has_old_identifier(device: dr.DeviceEntry) -> bool:

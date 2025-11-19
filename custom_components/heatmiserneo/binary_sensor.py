@@ -23,7 +23,7 @@ from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry, TimerProfileLevel
+from . import TimerProfileLevel
 from .const import (
     ATTR_AWAY_END,
     ATTR_AWAY_STATE,
@@ -35,7 +35,7 @@ from .const import (
     HEATMISER_TYPE_IDS_TIMER,
     SERVICE_HUB_AWAY,
 )
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -87,7 +87,9 @@ SET_AWAY_MODE_SCHEMA = vol.Schema(
 )
 
 
-async def async_set_away_mode(entity: HeatmiserNeoEntity, service_call: ServiceCall):
+async def async_set_away_mode(
+    entity: HeatmiserNeoHubEntity, service_call: ServiceCall
+) -> None:
     """Set away mode on the hub."""
     state = service_call.data[ATTR_AWAY_STATE]
     holiday = None
@@ -183,7 +185,7 @@ class HeatmiserNeoBinarySensorEntityDescription(
 ):
     """Describes a button entity."""
 
-    value_fn: Callable[[HeatmiserNeoEntity], bool]
+    value_fn: Callable[[HeatmiserNeoEntity], bool | None]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -192,7 +194,7 @@ class HeatmiserNeoHubBinarySensorEntityDescription(
 ):
     """Describes a button entity."""
 
-    value_fn: Callable[[HeatmiserNeoCoordinator], bool]
+    value_fn: Callable[[HeatmiserNeoCoordinator], bool | None]
 
 
 BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
@@ -307,7 +309,9 @@ HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
 )
 
 
-class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
+class HeatmiserNeoBinarySensor(
+    HeatmiserNeoEntity[HeatmiserNeoBinarySensorEntityDescription], BinarySensorEntity
+):
     """Heatmiser Neo binary entity."""
 
     def __init__(
@@ -327,7 +331,10 @@ class HeatmiserNeoBinarySensor(HeatmiserNeoEntity, BinarySensorEntity):
         return self.entity_description.value_fn(self)
 
 
-class HeatmiserNeoHubBinarySensor(HeatmiserNeoHubEntity, BinarySensorEntity):
+class HeatmiserNeoHubBinarySensor(
+    HeatmiserNeoHubEntity[HeatmiserNeoHubBinarySensorEntityDescription],
+    BinarySensorEntity,
+):
     """Heatmiser Neo binary entity."""
 
     def __init__(

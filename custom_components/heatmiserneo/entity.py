@@ -16,6 +16,7 @@ from propcache.api import cached_property
 from homeassistant.const import ATTR_ENTITY_ID, Platform
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
+import homeassistant.helpers.device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -387,13 +388,27 @@ async def async_setup_entities(
         entry.async_on_unload(coordinator.async_add_listener(add_entities))
         add_entities()
 
-    deleted_entries = [
-        entity.entity_id
+    deleted_entries = {
+        entity.entity_id: entity.device_id
         for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id)
         if entity.domain == domain
         and entity.platform == DOMAIN
         and entity.unique_id
         and entity.unique_id not in entities_added
-    ]
+    }
+
     for entity_id in deleted_entries:
         entity_registry.async_remove(entity_id)
+
+    modified_devices = {
+        device_id for device_id in deleted_entries.values() if device_id
+    }
+
+    device_registry = dr.async_get(hass)
+    for device_id in modified_devices:
+        device_entities = er.async_entries_for_device(entity_registry, device_id)
+        if len(device_entities) == 0:
+            device_registry.async_update_device(
+                device_id=device_id,
+                remove_config_entry_id=entry.entry_id,
+            )

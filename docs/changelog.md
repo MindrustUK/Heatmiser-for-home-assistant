@@ -3,6 +3,8 @@
 ## 20251119
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/311 by @ocrease, Use standard HA remove device option and automatically add new devices
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/312 by @ocrease, type checking code cleanup
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/313 by @ocrease, clean up devices removed from hub while Home Assistant is down
 
 ## 20251118
 

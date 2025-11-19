@@ -19,9 +19,8 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, cal
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import HeatmiserNeoConfigEntry, hold_duration_validation
+from . import hold_duration_validation
 from .const import (
     ATTR_FRIENDLY_MODE,
     ATTR_HOLD_DURATION,
@@ -39,7 +38,7 @@ from .const import (
     SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -60,9 +59,9 @@ class HeatmiserNeoSelectEntityDescription(
 ):
     """Class to describe an Heatmiser Neo select entity."""
 
-    value_fn: Callable[[HeatmiserNeoSelectEntity], str]
-    set_value_fn: Callable[[str, HeatmiserNeoSelectEntity], Awaitable[None]]
-    options_fn: Callable[[HeatmiserNeoSelectEntity], list[str]] | None = None
+    value_fn: Callable[[HeatmiserNeoEntity], str | None]
+    set_value_fn: Callable[[str, HeatmiserNeoEntity], Awaitable[None]]
+    options_fn: Callable[[HeatmiserNeoEntity], list[str]] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -72,10 +71,10 @@ class HeatmiserNeoHubSelectEntityDescription(
     """Class to describe an Heatmiser Neo select entity."""
 
     value_fn: Callable[[HeatmiserNeoCoordinator], str]
-    set_value_fn: Callable[[str, HeatmiserNeoHubSelectEntity], Awaitable[None]]
+    set_value_fn: Callable[[str, HeatmiserNeoHubEntity], Awaitable[None]]
 
 
-async def set_timer_auto(entity: HeatmiserNeoSelectEntity):
+async def set_timer_auto(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
     if dev.standby:
@@ -85,7 +84,7 @@ async def set_timer_auto(entity: HeatmiserNeoSelectEntity):
     await entity.async_cancel_away_or_holiday()
 
 
-async def set_timer_away(entity: HeatmiserNeoSelectEntity):
+async def set_timer_away(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
     if dev.standby:
@@ -96,17 +95,19 @@ async def set_timer_away(entity: HeatmiserNeoSelectEntity):
 
 
 async def set_timer_override(
-    entity: HeatmiserNeoSelectEntity,
+    entity: HeatmiserNeoEntity,
     on: bool,
     duration: int | None = None,
 ):
     """Set timer override."""
+    assert entity.coordinator.config_entry
     if duration is None:
         duration = (
             entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
             .get(CONF_TIMER_OPTIONS, {})
             .get(CONF_TIMER_HOLD_DURATION, DEFAULT_TIMER_HOLD_DURATION)
         )
+    assert duration is not None
     dev = entity.data
     state = duration > 0
     if state:
@@ -121,7 +122,7 @@ async def set_timer_override(
     dev.hold_time = timedelta(minutes=duration)
 
 
-async def set_timer_standby(entity: HeatmiserNeoSelectEntity, state: bool = True):
+async def set_timer_standby(entity: HeatmiserNeoEntity, state: bool = True):
     """Set standby mode. Disable hold if set."""
     dev = entity.data
     if state and dev.hold_on:
@@ -132,10 +133,10 @@ async def set_timer_standby(entity: HeatmiserNeoSelectEntity, state: bool = True
         dev.timer_on = False
 
 
-async def set_plug_auto(entity: HeatmiserNeoSelectEntity):
+async def set_plug_auto(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
-    set_plug_override(entity, dev.hold_temp == 1, 0)
+    await set_plug_override(entity, dev.hold_temp == 1, 0)
     await entity.async_cancel_away_or_holiday()
 
 
@@ -147,12 +148,13 @@ async def set_plug_auto(entity: HeatmiserNeoSelectEntity):
 
 
 async def set_plug_override(
-    entity: HeatmiserNeoSelectEntity,
+    entity: HeatmiserNeoEntity,
     on: bool,
     duration: int | None = None,
     turn_off_manual: bool = True,
 ):
     """Set timer override. Disable manual if set."""
+    assert entity.coordinator.config_entry
     if duration is None:
         duration = (
             entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
@@ -161,6 +163,7 @@ async def set_plug_override(
         )
     dev = entity.data
     hub = entity.coordinator.hub
+    assert duration is not None
     state = duration > 0
     if turn_off_manual and not dev.manual_off:
         await hub.set_manual(False, [dev])
@@ -179,7 +182,7 @@ async def set_plug_manual(entity: HeatmiserNeoSelectEntity, on: bool):
     """Set standby mode. Disable hold if set."""
     dev = entity.data
     hub = entity.coordinator.hub
-    set_plug_override(entity, dev.hold_temp == 1, 0, False)
+    await set_plug_override(entity, dev.hold_temp == 1, 0, False)
     if dev.manual_off:
         await hub.set_manual(True, [dev])
         dev.manual_off = False
@@ -272,7 +275,7 @@ def _plug_icon(device: NeoStat) -> str | None:
     return "mdi:timer" if device.timer_on else "mdi:timer-outline"
 
 
-async def async_timer_hold(entity: HeatmiserNeoSelectEntity, service_call: ServiceCall):
+async def async_timer_hold(entity: HeatmiserNeoEntity, service_call: ServiceCall):
     """Set override with custom duration."""
     duration = service_call.data[ATTR_HOLD_DURATION]
     state = service_call.data[ATTR_HOLD_STATE]
@@ -281,7 +284,7 @@ async def async_timer_hold(entity: HeatmiserNeoSelectEntity, service_call: Servi
     await set_timer_override(entity, state, hold_minutes)
 
 
-async def async_plug_hold(entity: HeatmiserNeoSelectEntity, service_call: ServiceCall):
+async def async_plug_hold(entity: HeatmiserNeoEntity, service_call: ServiceCall):
     """Set override with custom duration."""
     duration = service_call.data[ATTR_HOLD_DURATION]
     state = service_call.data[ATTR_HOLD_STATE]
@@ -338,7 +341,7 @@ async def async_base_set_profile(
 
 
 async def _async_get_profile_definition(
-    entity: HeatmiserNeoSelectEntity, service_call: ServiceCall
+    entity: HeatmiserNeoEntity, service_call: ServiceCall
 ):
     """Set override with custom duration."""
     coordinator = entity.coordinator
@@ -368,6 +371,19 @@ PLUG_SET_MODE = {
     # ModeSelectOption.AWAY: set_plug_away,
 }
 
+
+def _timer_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
+    function = TIMER_SET_MODE.get(ModeSelectOption(mode))
+    assert function
+    return function(entity)
+
+
+def _plug_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
+    function = PLUG_SET_MODE.get(ModeSelectOption(mode))
+    assert function
+    return function(entity)
+
+
 SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_timer_mode_select",
@@ -379,9 +395,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
             and device.time_clock_mode
         ),
         value_fn=lambda entity: _timer_mode(entity.data).value,
-        set_value_fn=lambda mode, entity: TIMER_SET_MODE.get(ModeSelectOption(mode))(
-            entity
-        ),
+        set_value_fn=_timer_set_mode,
         icon_fn=_timer_icon,
         translation_key="timer_mode",
         custom_functions={SERVICE_TIMER_HOLD_ON: async_timer_hold},
@@ -392,9 +406,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         options=[c.value.lower() for c in PLUG_SET_MODE],
         setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_PLUG,
         value_fn=lambda entity: _plug_mode(entity.data).value,
-        set_value_fn=lambda mode, entity: PLUG_SET_MODE.get(ModeSelectOption(mode))(
-            entity
-        ),
+        set_value_fn=_plug_set_mode,
         icon_fn=_plug_icon,
         translation_key="plug_mode",
         custom_functions={SERVICE_TIMER_HOLD_ON: async_plug_hold},
@@ -582,7 +594,9 @@ async def async_setup_entry(
     )
 
 
-class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
+class HeatmiserNeoSelectEntity(
+    HeatmiserNeoEntity[HeatmiserNeoSelectEntityDescription], SelectEntity
+):
     """Define an Heatmiser Neo select."""
 
     entity_description: HeatmiserNeoSelectEntityDescription
@@ -590,7 +604,7 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_description: HeatmiserNeoSelectEntityDescription,
         config_entry: HeatmiserNeoConfigEntry,
@@ -617,7 +631,9 @@ class HeatmiserNeoSelectEntity(HeatmiserNeoEntity, SelectEntity):
         super()._handle_coordinator_update()
 
 
-class HeatmiserNeoHubSelectEntity(HeatmiserNeoHubEntity, SelectEntity):
+class HeatmiserNeoHubSelectEntity(
+    HeatmiserNeoHubEntity[HeatmiserNeoHubSelectEntityDescription], SelectEntity
+):
     """Define an Heatmiser Neo Hub select."""
 
     entity_description: HeatmiserNeoHubSelectEntityDescription
@@ -662,17 +678,6 @@ async def async_set_timezone(
 
 def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str | None:
     """Convert a profile id to a name."""
-    profile = coordinator.profiles.get(int(profile_id))
-    if profile:
-        return profile.name
-    profile = coordinator.timer_profiles.get(int(profile_id))
-    if profile:
-        return profile.name
-    return None
-
-
-def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str | None:
-    """Convert a profile id to a name."""
     if profile_id == 0:
         return PROFILE_0
     profile = coordinator.profiles.get(int(profile_id))
@@ -684,14 +689,14 @@ def _profile_id_to_name(profile_id, coordinator: HeatmiserNeoCoordinator) -> str
     return None
 
 
-def _profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str] | None:
+def _profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str]:
     """Convert a profile id to a name."""
     names = [p.name for p in coordinator.profiles.values()]
     names.insert(0, PROFILE_0)
     return names
 
 
-def _timer_profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str] | None:
+def _timer_profile_names(coordinator: HeatmiserNeoCoordinator) -> list[str]:
     """Convert a profile id to a name."""
     names = [p.name for p in coordinator.timer_profiles.values()]
     names.insert(0, PROFILE_0)

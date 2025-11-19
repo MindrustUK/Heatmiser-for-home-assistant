@@ -16,9 +16,8 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TYPE_IDS_IDENTIFY
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -106,7 +105,9 @@ HUB_BUTTONS: tuple[HeatmiserNeoHubButtonEntityDescription, ...] = (
 )
 
 
-class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
+class HeatmiserNeoButton(
+    HeatmiserNeoEntity[HeatmiserNeoButtonEntityDescription], ButtonEntity
+):
     """Heatmiser Neo button entity."""
 
     def __init__(
@@ -125,7 +126,9 @@ class HeatmiserNeoButton(HeatmiserNeoEntity, ButtonEntity):
         await self.entity_description.press_fn(self)
 
 
-class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):
+class HeatmiserNeoHubButton(
+    HeatmiserNeoHubEntity[HeatmiserNeoHubButtonEntityDescription], ButtonEntity
+):
     """Heatmiser Neo button entity."""
 
     def __init__(

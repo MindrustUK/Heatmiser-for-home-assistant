@@ -3,8 +3,10 @@
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import timedelta
 import logging
+from typing import Any
 
 from neohubapi.neohub import (
     ATTR_DEVICES,
@@ -18,6 +20,7 @@ from neohubapi.neohub import (
     NeoStat,
 )
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -26,13 +29,19 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
 
-class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
+type HeatmiserNeoCoordinatorData = tuple[dict[str, NeoStat], dict[str, Any]]
+
+
+class HeatmiserNeoCoordinator(DataUpdateCoordinator[HeatmiserNeoCoordinatorData]):
     """Coordinator Class for Heatmiser Neo Hub."""
 
     # _device_serial_numbers: dict[int, dict[str, str]]
 
-    def __init__(self, hass: HomeAssistant, hub: NeoHub) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry: HeatmiserNeoConfigEntry, hub: NeoHub
+    ) -> None:
         """Initialize the HeatmiserNeo Update Coordinator."""
         self.hub = hub
         super().__init__(
@@ -41,10 +50,12 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
             name=f"Heatmiser NeoHub : {hub._host}",  # noqa: SLF001
             update_interval=timedelta(seconds=30),
             always_update=True,
+            config_entry=entry,
         )
         self.previous_device_sns: set[str] = set()
+        assert self.config_entry
 
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> HeatmiserNeoCoordinatorData:
         """Fetch data from the Hub all at once and make it available for all devices."""
         _LOGGER.info("Executing update_data()")
         async with asyncio.timeout(30):
@@ -60,6 +71,7 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
             devices = {device.name: device for device in all_live_data[ATTR_DEVICES]}
             current_device_sns = {dev.serial_number for dev in devices.values()}
             if stale_devices := self.previous_device_sns - current_device_sns:
+                assert self.config_entry
                 device_registry = dr.async_get(self.hass)
                 for serial_number in stale_devices:
                     identifiers = {
@@ -121,3 +133,11 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[NeoHub]):
         """Helper to get the data for the current device."""
         (_, all_data) = self.data
         return all_data.get(ATTR_TIMER_PROFILES_0, {})
+
+
+@dataclass
+class HeatmiserNeoData:
+    """Class to store Heatmiser Neo runtime data."""
+
+    hub: NeoHub
+    coordinator: HeatmiserNeoCoordinator

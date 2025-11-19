@@ -10,15 +10,18 @@ from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
 
-from homeassistant.components.lock import DOMAIN, LockEntity, LockEntityDescription
+from homeassistant.components.lock import (
+    DOMAIN as LOCK_DOMAIN,
+    LockEntity,
+    LockEntityDescription,
+)
 from homeassistant.const import ATTR_CODE, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TYPE_IDS_LOCK
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -67,7 +70,7 @@ async def _async_lock_device(entity: HeatmiserNeoEntity, **kwargs):
     code = str(kwargs.get(ATTR_CODE, 0))
     if not pin_format_cmp.match(code):
         raise ServiceValidationError(
-            translation_domain=DOMAIN,
+            translation_domain=LOCK_DOMAIN,
             translation_key="add_default_code",
             translation_placeholders={
                 "entity_id": entity.entity_id,
@@ -109,7 +112,9 @@ LOCKS: tuple[HeatmiserNeoLockEntityDescription, ...] = (
 )
 
 
-class HeatmiserNeoLockEntity(HeatmiserNeoEntity, LockEntity):
+class HeatmiserNeoLockEntity(
+    HeatmiserNeoEntity[HeatmiserNeoLockEntityDescription], LockEntity
+):
     """Heatmiser Neo switch entity."""
 
     def __init__(

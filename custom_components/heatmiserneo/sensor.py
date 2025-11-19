@@ -33,7 +33,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.util.dt as dt_util
 
-from . import HeatmiserNeoConfigEntry, ProfileLevel, TemperatureProfileLevel
+from . import ProfileLevel, TemperatureProfileLevel
 from .const import (
     ATTR_CREATE_MODE,
     ATTR_FRIDAY_OFF_TIMES,
@@ -87,7 +87,7 @@ from .const import (
     SERVICE_RENAME_PROFILE,
     GlobalSystemType,
 )
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -755,14 +755,16 @@ HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
     HeatmiserNeoHubSensorEntityDescription(
         key="heatmiser_neohub_heating_levels",
         device_class=SensorDeviceClass.ENUM,
-        options=[4, 6],
-        value_fn=lambda coordinator: coordinator.system_data.HEATING_LEVELS,
+        options=["4", "6"],
+        value_fn=lambda coordinator: str(coordinator.system_data.HEATING_LEVELS),
         translation_key="hub_profile_heating_levels",
     ),
 )
 
 
-class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
+class HeatmiserNeoSensor(
+    HeatmiserNeoEntity[HeatmiserNeoSensorEntityDescription], SensorEntity
+):
     """Heatmiser Neo button entity."""
 
     def __init__(
@@ -792,7 +794,9 @@ class HeatmiserNeoSensor(HeatmiserNeoEntity, SensorEntity):
         return self.entity_description.native_unit_of_measurement
 
 
-class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
+class HeatmiserNeoHubSensor(
+    HeatmiserNeoHubEntity[HeatmiserNeoHubSensorEntityDescription], SensorEntity
+):
     """Heatmiser Neo button entity."""
 
     def __init__(
@@ -811,7 +815,7 @@ class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
         return self.entity_description.value_fn(self.coordinator)
 
 
-def _profile_current_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
+def _profile_current_temp(profile_id, entity: HeatmiserNeoEntity) -> float | None:
     """Convert a profile id to current temperature."""
     level = profile_level(profile_id, entity.data, entity.coordinator)
     if isinstance(level, TemperatureProfileLevel):
@@ -819,14 +823,16 @@ def _profile_current_temp(profile_id, entity: HeatmiserNeoSensor) -> float | Non
     return None
 
 
-def _profile_next_temp(profile_id, entity: HeatmiserNeoSensor) -> float | None:
+def _profile_next_temp(profile_id, entity: HeatmiserNeoEntity) -> float | None:
     level = _profile_next_level(profile_id, entity)
     if isinstance(level, TemperatureProfileLevel) and level.temperature:
         return level.temperature
     return None
 
 
-def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
+def _profile_next_time(
+    profile_id, entity: HeatmiserNeoEntity
+) -> datetime.datetime | None:
     level = _profile_next_level(profile_id, entity)
     if not level:
         return None
@@ -849,7 +855,7 @@ def _profile_next_time(profile_id, entity: HeatmiserNeoSensor) -> str | None:
     return profile_datetime
 
 
-def _profile_next_level(profile_id, entity: HeatmiserNeoSensor) -> ProfileLevel | None:
+def _profile_next_level(profile_id, entity: HeatmiserNeoEntity) -> ProfileLevel | None:
     """Convert a profile id to next level."""
     return profile_level(profile_id, entity.data, entity.coordinator, True)
 

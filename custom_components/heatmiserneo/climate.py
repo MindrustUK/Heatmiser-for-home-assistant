@@ -34,9 +34,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import HeatmiserNeoConfigEntry, hold_duration_validation
+from . import hold_duration_validation
 from .const import (
     ATTR_HOLD_DURATION,
     ATTR_HOLD_TEMPERATURE,
@@ -62,6 +61,7 @@ from .const import (
     AvailableMode,
     GlobalSystemType,
 )
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -165,7 +165,9 @@ CLIMATE: tuple[HeatmiserNeoClimateEntityDescription, ...] = (
 )
 
 
-class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
+class NeoStatEntity(
+    HeatmiserNeoEntity[HeatmiserNeoClimateEntityDescription], ClimateEntity
+):
     """Represents a Heatmiser neoStat thermostat."""
 
     _enable_turn_on_off_backwards_compatibility = False
@@ -174,7 +176,7 @@ class NeoStatEntity(HeatmiserNeoEntity, ClimateEntity):
     def __init__(
         self,
         neostat: NeoStat,
-        coordinator: DataUpdateCoordinator,
+        coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
         entity_descriptor: HeatmiserNeoClimateEntityDescription,
         config_entry: HeatmiserNeoConfigEntry,

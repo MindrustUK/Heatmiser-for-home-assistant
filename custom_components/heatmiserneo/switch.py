@@ -13,8 +13,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
@@ -78,7 +77,9 @@ HUB_SWITCHES: tuple[HeatmiserNeoHubSwitchEntityDescription, ...] = (
 )
 
 
-class HeatmiserNeoHubSwitch(HeatmiserNeoHubEntity, SwitchEntity):
+class HeatmiserNeoHubSwitch(
+    HeatmiserNeoHubEntity[HeatmiserNeoHubSwitchEntityDescription], SwitchEntity
+):
     """Heatmiser Neo binary entity."""
 
     def __init__(

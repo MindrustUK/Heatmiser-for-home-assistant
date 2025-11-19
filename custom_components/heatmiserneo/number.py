@@ -18,9 +18,8 @@ from homeassistant.const import EntityCategory, Platform, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TEMPERATURE_UNIT_HA_UNIT, HEATMISER_TYPE_IDS_THERMOSTAT
-from .coordinator import HeatmiserNeoCoordinator
+from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
@@ -86,7 +85,7 @@ async def async_set_floor_limit(entity: HeatmiserNeoEntity, val: float) -> None:
     setattr(entity.data._data_, "ENG_FLOOR_LIMIT", int(val))
 
 
-async def async_set_user_limit(entity: HeatmiserNeoEntity, val: int) -> None:
+async def async_set_user_limit(entity: HeatmiserNeoEntity, val: float) -> None:
     """Set the user limit temperature on a device."""
     await entity.data.set_user_limit(int(val))
     setattr(entity.data._data_, "USER_LIMIT", int(val))
@@ -175,7 +174,9 @@ NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (
 )
 
 
-class HeatmiserNeoNumber(HeatmiserNeoEntity, NumberEntity):
+class HeatmiserNeoNumber(
+    HeatmiserNeoEntity[HeatmiserNeoNumberEntityDescription], NumberEntity
+):
     """Heatmiser Neo number entity."""
 
     def __init__(

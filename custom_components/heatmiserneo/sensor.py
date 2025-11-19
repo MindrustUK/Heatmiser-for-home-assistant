@@ -25,8 +25,8 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import ATTR_NAME, EntityCategory, UnitOfTime
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.const import ATTR_NAME, EntityCategory, Platform, UnitOfTime
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
@@ -93,6 +93,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    async_setup_entities,
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
@@ -156,22 +157,25 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    neo_devices, _ = coordinator.data
-    system_data = coordinator.system_data
+    @callback
+    def hub_entities():
+        return [
+            HeatmiserNeoHubSensor(coordinator, hub, description, entry)
+            for description in HUB_SENSORS
+            if description.setup_filter_fn(coordinator)
+        ]
 
-    _LOGGER.info("Adding Neo Sensors")
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            HeatmiserNeoSensor(neodevice, coordinator, hub, description, entry)
+            for description in SENSORS
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    async_add_entities(
-        HeatmiserNeoHubSensor(coordinator, hub, description, entry)
-        for description in HUB_SENSORS
-        if description.setup_filter_fn(coordinator)
-    )
-
-    async_add_entities(
-        HeatmiserNeoSensor(neodevice, coordinator, hub, description, entry)
-        for description in SENSORS
-        for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.SENSOR, hub_entities, device_entities
     )
 
     platform = entity_platform.async_get_current_platform()
@@ -795,7 +799,7 @@ class HeatmiserNeoHubSensor(HeatmiserNeoHubEntity, SensorEntity):
         self,
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
-        entity_description: HeatmiserNeoSensorEntityDescription,
+        entity_description: HeatmiserNeoHubSensorEntityDescription,
         config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""

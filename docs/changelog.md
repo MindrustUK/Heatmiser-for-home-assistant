@@ -1,5 +1,9 @@
 # Change Log
 
+## 20251119
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/311 by @ocrease, Use standard HA remove device option and automatically add new devices
+
 ## 20251118
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/310 by @ocrease, improve device removal flow

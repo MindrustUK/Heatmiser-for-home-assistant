@@ -50,7 +50,6 @@ NeoPlugs are similar to TimeClocks, but have the ability to be set to ON or OFF 
 - Away - if the hub is away or on holiday
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode
-- Remove - A button to remove the device from the hub. It will no longer be reported to HA or be visible in the Heatmiser App. If you remove it, you will need to re-add it using the Heatmiser App or using the [advanced](advanced) configuration flow.
 
 # Configuration Options
 

@@ -29,8 +29,8 @@ from homeassistant.components.climate import (
     HVACMode,
     UnitOfTemperature,
 )
-from homeassistant.const import ATTR_TEMPERATURE
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_TEMPERATURE, Platform
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -62,7 +62,11 @@ from .const import (
     AvailableMode,
     GlobalSystemType,
 )
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    async_setup_entities,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,7 +84,6 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up climate entities")
         return
 
-    neo_devices, _ = coordinator.data
     system_data = coordinator.system_data
 
     hvac_config = entry.options.get(CONF_HVAC_MODES, {})
@@ -101,25 +104,28 @@ async def async_setup_entry(
     )
     temperature_step = await hub.target_temperature_step()
 
-    _LOGGER.info("Adding Neo Climate Entities")
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            NeoStatEntity(
+                neodevice,
+                coordinator,
+                hub,
+                description,
+                entry,
+                temperature_unit,
+                float(temperature_step),
+                hvac_config.get(neodevice.name, None),
+                defaults,
+            )
+            for description in CLIMATE
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    async_add_entities(
-        NeoStatEntity(
-            neodevice,
-            coordinator,
-            hub,
-            description,
-            entry,
-            temperature_unit,
-            float(temperature_step),
-            hvac_config.get(name, None),
-            defaults,
-        )
-        for description in CLIMATE
-        for name, neodevice in neo_devices.items()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.CLIMATE, None, device_entities
     )
-
     platform = entity_platform.async_get_current_platform()
 
     platform.async_register_entity_service(

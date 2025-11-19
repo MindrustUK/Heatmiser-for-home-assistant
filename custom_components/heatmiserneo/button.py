@@ -12,23 +12,19 @@ from homeassistant.components.button import (
     ButtonEntity,
     ButtonEntityDescription,
 )
-from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
+from homeassistant.const import EntityCategory, Platform
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
-from .const import (
-    HEATMISER_TYPE_IDS_IDENTIFY,
-    HEATMISER_TYPE_IDS_REPEATER,
-    HEATMISER_TYPE_IDS_THERMOSTAT,
-)
+from .const import HEATMISER_TYPE_IDS_IDENTIFY
 from .coordinator import HeatmiserNeoCoordinator
 from .entity import (
     HeatmiserNeoEntity,
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    async_setup_entities,
 )
 
 
@@ -45,22 +41,25 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    neo_devices, _ = coordinator.data
-    system_data = coordinator.system_data
+    @callback
+    def hub_entities():
+        return [
+            HeatmiserNeoHubButton(coordinator, hub, description, entry)
+            for description in HUB_BUTTONS
+            if description.setup_filter_fn(coordinator)
+        ]
 
-    _LOGGER.info("Adding Neo Device Buttons")
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            HeatmiserNeoButton(neodevice, coordinator, hub, description, entry)
+            for description in BUTTONS
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    async_add_entities(
-        HeatmiserNeoHubButton(coordinator, hub, description, entry)
-        for description in HUB_BUTTONS
-        if description.setup_filter_fn(coordinator)
-    )
-
-    async_add_entities(
-        HeatmiserNeoButton(neodevice, coordinator, hub, description, entry)
-        for description in BUTTONS
-        for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.BUTTON, hub_entities, device_entities
     )
 
 
@@ -85,27 +84,6 @@ class HeatmiserNeoHubButtonEntityDescription(
     press_fn: Callable[[HeatmiserNeoCoordinator], Awaitable[None]]
 
 
-async def async_remove_repeater(entity: HeatmiserNeoEntity):
-    """Handle repeater removal."""
-    await entity.coordinator.hub.remove_repeater(entity.data.device_id)
-    _async_remove_from_registry(entity)
-
-
-async def async_remove_device(entity: HeatmiserNeoEntity):
-    """Handle device removal."""
-    await entity.data.remove()
-    _async_remove_from_registry(entity)
-
-
-def _async_remove_from_registry(entity: HeatmiserNeoEntity):
-    """Handle device removal from registry."""
-    device_registry = dr.async_get(entity.hass)
-    device_registry.async_update_device(
-        device_id=entity.device_entry.id,
-        remove_config_entry_id=entity.coordinator.config_entry.entry_id,
-    )
-
-
 BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
     HeatmiserNeoButtonEntityDescription(
         key="heatmiser_neo_identify_button",
@@ -116,28 +94,7 @@ BUTTONS: tuple[HeatmiserNeoButtonEntityDescription, ...] = (
         ),
         press_fn=lambda dev: dev.data.identify(),
     ),
-    HeatmiserNeoButtonEntityDescription(
-        key="heatmiser_repeater_remove",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-        name="Remove",
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_REPEATER
-        ),
-        press_fn=async_remove_repeater,
-    ),
-    HeatmiserNeoButtonEntityDescription(
-        key="heatmiser_remove",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
-        name="Remove",
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
-        ),
-        press_fn=async_remove_device,
-    ),
 )
-
 
 HUB_BUTTONS: tuple[HeatmiserNeoHubButtonEntityDescription, ...] = (
     HeatmiserNeoHubButtonEntityDescription(
@@ -175,7 +132,7 @@ class HeatmiserNeoHubButton(HeatmiserNeoHubEntity, ButtonEntity):
         self,
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
-        entity_description: HeatmiserNeoButtonEntityDescription,
+        entity_description: HeatmiserNeoHubButtonEntityDescription,
         config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize Heatmiser Neo button entity."""

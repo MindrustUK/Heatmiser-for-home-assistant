@@ -9,7 +9,8 @@ import logging
 from neohubapi.neohub import NeoHub, NeoStat
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-from homeassistant.core import HomeAssistant
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
@@ -18,6 +19,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
+    async_setup_entities,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,12 +38,16 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    _LOGGER.info("Adding Neo Switches")
+    @callback
+    def hub_entities():
+        return [
+            HeatmiserNeoHubSwitch(coordinator, hub, description, entry)
+            for description in HUB_SWITCHES
+            if description.setup_filter_fn(coordinator)
+        ]
 
-    async_add_entities(
-        HeatmiserNeoHubSwitch(coordinator, hub, description, entry)
-        for description in HUB_SWITCHES
-        if description.setup_filter_fn(coordinator)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.SWITCH, hub_entities, None
     )
 
 

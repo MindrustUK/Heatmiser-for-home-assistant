@@ -17,8 +17,8 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.const import EntityCategory, Platform
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -42,6 +42,7 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
     _device_supports_away,
+    async_setup_entities,
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
@@ -142,22 +143,30 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up sensor entities")
         return
 
-    neo_devices, _ = coordinator.data
-    system_data = coordinator.system_data
+    @callback
+    def hub_entities():
+        return [
+            HeatmiserNeoHubBinarySensor(coordinator, hub, description, entry)
+            for description in HUB_BINARY_SENSORS
+            if description.setup_filter_fn(coordinator)
+        ]
 
-    _LOGGER.info("Adding Neo Binary Sensors")
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            HeatmiserNeoBinarySensor(neodevice, coordinator, hub, description, entry)
+            for description in BINARY_SENSORS
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    async_add_entities(
-        HeatmiserNeoHubBinarySensor(coordinator, hub, description, entry)
-        for description in HUB_BINARY_SENSORS
-        if description.setup_filter_fn(coordinator)
-    )
-
-    async_add_entities(
-        HeatmiserNeoBinarySensor(neodevice, coordinator, hub, description, entry)
-        for description in BINARY_SENSORS
-        for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass,
+        entry,
+        async_add_entities,
+        Platform.BINARY_SENSOR,
+        hub_entities,
+        device_entities,
     )
 
     platform = entity_platform.async_get_current_platform()

@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """The Heatmiser Neo integration."""
 
+import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
 from typing import Any
 
-from neohubapi.neohub import NeoHub
+from neohubapi.neohub import NeoHub, NeoStat
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -25,6 +26,7 @@ from .const import (
     DISCOVER_SCAN_TIMEOUT,
     DISCOVERY_INTERVAL,
     DOMAIN,
+    HEATMISER_TYPE_IDS_REPEATER,
     ISSUE_ID_CLEANUP_OLD_DEVICES,
 )
 from .coordinator import HeatmiserNeoCoordinator
@@ -314,3 +316,51 @@ def _has_old_identifier(device: dr.DeviceEntry) -> bool:
 
 def _has_mac_identifier(device: dr.DeviceEntry) -> bool:
     return any(ident[0] == dr.CONNECTION_NETWORK_MAC for ident in device.identifiers)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: HeatmiserNeoConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Remove devices from hub."""
+    if not device.via_device_id:
+        # Hub device can't be removed. Remove whole config entry instead
+        return False
+    sn = device.serial_number
+    devices, _ = config_entry.runtime_data.coordinator.data
+    matching_devices = [dev for dev in devices.values() if dev.serial_number == sn]
+    if matching_devices:
+        for dev in matching_devices:
+            if dev.device_type in HEATMISER_TYPE_IDS_REPEATER:
+                await config_entry.runtime_data.coordinator.hub.remove_repeater(
+                    dev.device_id
+                )
+            else:
+                await dev.remove()
+        return await _confirm_removal(
+            config_entry.runtime_data.coordinator, matching_devices
+        )
+    return True
+
+
+async def _confirm_removal(
+    coordinator: HeatmiserNeoCoordinator, devices: list[NeoStat]
+):
+    timeout = 30
+    poll_interval = 10
+    start_time = asyncio.get_running_loop().time()
+    removed_device_ids = {dev.device_id for dev in devices}
+    while True:
+        current_time = asyncio.get_running_loop().time()
+        elapsed = current_time - start_time
+
+        await coordinator.async_request_refresh()
+        updated_devices, _ = coordinator.data
+        updated_device_ids = {dev.device_id for dev in updated_devices.values()}
+
+        if len(removed_device_ids - updated_device_ids) == len(removed_device_ids):
+            return True
+
+        if elapsed >= timeout:
+            return False
+        # Sleep briefly to update progress smoothly
+        await asyncio.sleep(poll_interval)

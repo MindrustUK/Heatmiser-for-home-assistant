@@ -50,7 +50,6 @@ There are three preset modes:
 - Device Temperature - NeoStats in TimeClock mode still have access to the temperature
 - Identify - A button to flash the screen of a NeoStat in TimeClock mode
 - Floor Limit Reached - shows if the output is off because the floor limit temperature has been reached
-- Remove - A button to remove the device from the hub. It will no longer be reported to HA or be visible in the Heatmiser App. If you remove it, you will need to re-add it using the Heatmiser App or using the [advanced](advanced) configuration flow.
 
 # Configuration Options
 

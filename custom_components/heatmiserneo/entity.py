@@ -3,20 +3,22 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from functools import partial
 import logging
 from typing import Any
 
 from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat, ScheduleFormat
-from propcache import cached_property
+from propcache.api import cached_property
 
-from homeassistant.const import ATTR_ENTITY_ID
-from homeassistant.core import ServiceCall
+from homeassistant.const import ATTR_ENTITY_ID, Platform
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import HeatmiserNeoConfigEntry, unique_id_is_mac
@@ -312,3 +314,67 @@ def profile_sensor_enabled_by_default(entity: HeatmiserNeoEntity) -> bool:
     ):
         return True
     return False
+
+
+async def async_setup_entities(
+    hass: HomeAssistant,
+    entry: HeatmiserNeoConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    domain: Platform,
+    hub_entity_callback: Callable[[], Sequence[HeatmiserNeoHubEntity]] | None,
+    device_entity_callback: Callable[[list[NeoStat]], Sequence[HeatmiserNeoEntity]]
+    | None,
+) -> None:
+    """Set up Heatmiser Neo button entities."""
+    coordinator = entry.runtime_data.coordinator
+    entity_registry = er.async_get(hass)
+
+    devices_added: set[str] = set()
+    entities_added: set[str] = set()
+
+    if hub_entity_callback:
+        _LOGGER.info("Adding %s %s hub entities", DOMAIN, domain)
+        hub_entities = hub_entity_callback()
+        async_add_entities(hub_entities)
+        entities_added |= {
+            entity.unique_id for entity in hub_entities if entity.unique_id
+        }
+    if device_entity_callback:
+
+        @callback
+        def add_entities() -> None:
+            nonlocal devices_added
+            nonlocal entities_added
+
+            neo_devices, _ = coordinator.data
+
+            new_devices = [
+                dev
+                for dev in neo_devices.values()
+                if dev.serial_number not in devices_added
+            ]
+            if new_devices:
+                _LOGGER.info("Adding %s %s entities", DOMAIN, domain)
+                entities = device_entity_callback(new_devices)
+                async_add_entities(entities)
+                devices_added |= {dev.serial_number for dev in new_devices}
+                entities_added |= {
+                    entity.unique_id for entity in entities if entity.unique_id
+                }
+            if len(devices_added) > len(neo_devices):
+                devices_added.clear()
+                devices_added |= {dev.serial_number for dev in neo_devices.values()}
+
+        entry.async_on_unload(coordinator.async_add_listener(add_entities))
+        add_entities()
+
+    deleted_entries = [
+        entity.entity_id
+        for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+        if entity.domain == domain
+        and entity.platform == DOMAIN
+        and entity.unique_id
+        and entity.unique_id not in entities_added
+    ]
+    for entity_id in deleted_entries:
+        entity_registry.async_remove(entity_id)

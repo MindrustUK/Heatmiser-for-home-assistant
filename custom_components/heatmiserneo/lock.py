@@ -11,7 +11,7 @@ from typing import Any
 from neohubapi.neohub import NeoHub, NeoStat
 
 from homeassistant.components.lock import DOMAIN, LockEntity, LockEntityDescription
-from homeassistant.const import ATTR_CODE
+from homeassistant.const import ATTR_CODE, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -19,7 +19,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TYPE_IDS_LOCK
 from .coordinator import HeatmiserNeoCoordinator
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    async_setup_entities,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,16 +41,17 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up lock entities")
         return
 
-    neo_devices, _ = coordinator.data
-    system_data = coordinator.system_data
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            HeatmiserNeoLockEntity(neodevice, coordinator, hub, description, entry)
+            for description in LOCKS
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    _LOGGER.info("Adding Neo Locks")
-
-    async_add_entities(
-        HeatmiserNeoLockEntity(neodevice, coordinator, hub, description, entry)
-        for description in LOCKS
-        for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.LOCK, None, device_entities
     )
 
 

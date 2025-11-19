@@ -24,3 +24,11 @@ For other devices (thermostats, timers, plugs or other accessories), you first h
 Then again you have 120 seconds to perform the actions on the device itself. Consult the manual of the device to find out the steps that are required.
 
 If the new device is detected within the 120 seconds, you will get a confirmation and the integration will be reloaded to include the new device.
+
+Devices added using the Heatmiser App or other external method will automatically be added to the integration once they are detected.
+
+# Removing devices
+
+You can remove a device from the integrations device list or the device page itself. It will no longer be reported to HA or be visible in the Heatmiser App. If you remove it, you will need to re-add it using the Heatmiser App or using the pairing instructions above.
+
+If a device is removed using the Heatmiser App or other external method, it will automatically be removed from the integration.

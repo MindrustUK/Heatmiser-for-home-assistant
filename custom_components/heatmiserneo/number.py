@@ -14,14 +14,18 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EntityCategory, Platform, UnitOfTime
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HeatmiserNeoConfigEntry
 from .const import HEATMISER_TEMPERATURE_UNIT_HA_UNIT, HEATMISER_TYPE_IDS_THERMOSTAT
 from .coordinator import HeatmiserNeoCoordinator
-from .entity import HeatmiserNeoEntity, HeatmiserNeoEntityDescription
+from .entity import (
+    HeatmiserNeoEntity,
+    HeatmiserNeoEntityDescription,
+    async_setup_entities,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,16 +54,17 @@ async def async_setup_entry(
         _LOGGER.error("Coordinator data is None. Cannot set up button entities")
         return
 
-    neo_devices, _ = coordinator.data
-    system_data = coordinator.system_data
+    @callback
+    def device_entities(new_devices: list[NeoStat]):
+        return [
+            HeatmiserNeoNumber(neodevice, coordinator, hub, description, entry)
+            for description in NUMBERS
+            for neodevice in new_devices
+            if description.setup_filter_fn(neodevice, coordinator.system_data)
+        ]
 
-    _LOGGER.info("Adding Neo Device Numbers")
-
-    async_add_entities(
-        HeatmiserNeoNumber(neodevice, coordinator, hub, description, entry)
-        for description in NUMBERS
-        for neodevice in neo_devices.values()
-        if description.setup_filter_fn(neodevice, system_data)
+    await async_setup_entities(
+        hass, entry, async_add_entities, Platform.NUMBER, None, device_entities
     )
 
 

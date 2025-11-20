@@ -155,7 +155,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             )
         else:
             await self.async_set_unique_id(f"{self.host}:{self._port}")
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
 
         mac_address, conn_error = await self.try_connection()
         if not conn_error:
@@ -169,7 +169,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                         dr.format_mac(mac_address),
                         raise_on_progress=False,
                     )
-                    self._abort_if_unique_id_configured()
+                    self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
                 elif dr.format_mac(mac_address) != dr.format_mac(
                     self._discovered_device.mac_address
                 ):
@@ -448,7 +448,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="already_in_progress")
         # Handled ignored case since _async_current_entries
         # is called with include_ignore=False
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
         return await self.async_step_choose_conn_method()
 
     def is_matching(self, other_flow: Self) -> bool:

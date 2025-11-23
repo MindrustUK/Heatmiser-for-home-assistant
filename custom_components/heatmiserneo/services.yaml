@@ -6,7 +6,7 @@ hold_on:
       integration: heatmiserneo
       domain: climate
   fields:
-    hold_duration:
+    hold_duration: &hold_duration
       name: Hold Duration
       description: Set the duration for the hold (hh:mm:ss).
       default: "01:00:00"
@@ -39,13 +39,7 @@ timer_hold_on:
       integration: heatmiserneo
       domain: select
   fields:
-    hold_duration:
-      name: Hold Duration
-      description: Set the duration for the hold (hh:mm:ss).
-      default: "01:00:00"
-      example: "01:00:00"
-      selector:
-        duration:
+    hold_duration: *hold_duration
     hold_state:
       name: Hold State
       description: Whether we should hold on or off
@@ -55,11 +49,12 @@ timer_hold_on:
 set_away_mode:
   name: Set Away Mode
   description: Set Away/Holiday Mode on the Heatmiser NeoHub
-  target:
-    entity:
-      integration: heatmiserneo
-      domain: binary_sensor
   fields:
+    config_entry_id: &config_entry
+      required: true
+      selector:
+        config_entry:
+          integration: heatmiserneo
     away:
       name: Away State
       description: Whether to set away on or off

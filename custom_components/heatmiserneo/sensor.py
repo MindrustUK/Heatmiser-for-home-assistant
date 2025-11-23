@@ -33,7 +33,6 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.util.dt as dt_util
 
-from . import ProfileLevel, TemperatureProfileLevel
 from .const import (
     ATTR_CREATE_MODE,
     ATTR_FRIDAY_OFF_TIMES,
@@ -97,7 +96,12 @@ from .entity import (
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import get_profile_definition, profile_level
+from .helpers import (
+    ProfileLevel,
+    TemperatureProfileLevel,
+    get_profile_definition,
+    profile_level,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

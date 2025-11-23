@@ -1,20 +1,51 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Constants used by multiple Heatmiser Neo modules."""
 
+from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
-from . import (
-    HeatCoolTemperatureProfileLevel,
-    ProfileLevel,
-    RawTimerProfileLevel,
-    TemperatureProfileLevel,
-    TimerProfileLevel,
-)
+from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
+
+
+@dataclass
+class ProfileLevel:
+    """Base class for a profile level with a time."""
+
+    time: str
+
+
+@dataclass
+class TemperatureProfileLevel(ProfileLevel):
+    """Profile level for temperature settings."""
+
+    temperature: float
+
+
+@dataclass
+class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
+    """Profile level for temperature settings."""
+
+    cool_temperature: float
+    enabled: bool
+
+
+@dataclass
+class TimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    state: bool
+
+
+@dataclass
+class RawTimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    end_time: str
 
 
 def set_away(state: bool, dev: NeoStat) -> None:
@@ -408,3 +439,8 @@ def get_profile_definition(
         result = result | levels
 
     return result
+
+
+def device_supports_away(dev: NeoStat) -> bool:
+    """Check if a particular device supports away mode."""
+    return dev.device_type in HEATMISER_TYPE_IDS_AWAY

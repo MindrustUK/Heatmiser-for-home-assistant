@@ -2,7 +2,6 @@
 """The Heatmiser Neo integration."""
 
 import asyncio
-from dataclasses import dataclass
 from datetime import timedelta
 import logging
 from typing import Any
@@ -39,8 +38,12 @@ from .discovery import (
     async_trigger_discovery,
     async_update_entry_from_discovery,
 )
+from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
+
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -56,42 +59,6 @@ PLATFORMS = [
 _OLD_SERIAL_NUMBER_PREFIX = "NEOHUB-SN:000000"
 
 
-@dataclass
-class ProfileLevel:
-    """Base class for a profile level with a time."""
-
-    time: str
-
-
-@dataclass
-class TemperatureProfileLevel(ProfileLevel):
-    """Profile level for temperature settings."""
-
-    temperature: float
-
-
-@dataclass
-class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
-    """Profile level for temperature settings."""
-
-    cool_temperature: float
-    enabled: bool
-
-
-@dataclass
-class TimerProfileLevel(ProfileLevel):
-    """Profile level for on/off states."""
-
-    state: bool
-
-
-@dataclass
-class RawTimerProfileLevel(ProfileLevel):
-    """Profile level for on/off states."""
-
-    end_time: str
-
-
 async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:
     """Set up the Heatmiser Neo integration."""
 
@@ -103,6 +70,9 @@ async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:
     async_track_time_interval(
         hass, _async_discovery, DISCOVERY_INTERVAL, cancel_on_shutdown=True
     )
+
+    async_setup_services(hass)
+
     return True
 
 

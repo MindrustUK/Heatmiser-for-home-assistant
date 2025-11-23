@@ -24,14 +24,9 @@ import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import unique_id_is_mac
-from .const import (
-    DOMAIN,
-    HEATMISER_HUB_PRODUCT_LIST,
-    HEATMISER_PRODUCT_LIST,
-    HEATMISER_TYPE_IDS_AWAY,
-)
+from .const import DOMAIN, HEATMISER_HUB_PRODUCT_LIST, HEATMISER_PRODUCT_LIST
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
-from .helpers import set_away, set_holiday
+from .helpers import device_supports_away, set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -196,29 +191,29 @@ class HeatmiserNeoEntity(
 
     async def async_cancel_away_or_holiday(self) -> None:
         """Cancel away/holiday mode."""
-        if _device_supports_away(self.data):
+        if device_supports_away(self.data):
             dev = self.data
             if dev.away:
                 await self._hub.set_away(False)
                 self.coordinator.update_in_memory_state(
                     partial(set_away, False),
-                    _device_supports_away,
+                    device_supports_away,
                 )
             if dev.holiday:
                 await self._hub.cancel_holiday()
                 self.coordinator.update_in_memory_state(
                     partial(set_holiday, False),
-                    _device_supports_away,
+                    device_supports_away,
                 )
 
     async def async_set_away_mode(self) -> None:
         """Set away mode."""
-        if _device_supports_away(self.data):
+        if device_supports_away(self.data):
             dev = self.data
             if not (dev.away or dev.holiday):
                 await self._hub.set_away(True)
                 self.coordinator.update_in_memory_state(
-                    partial(set_away, True), _device_supports_away
+                    partial(set_away, True), device_supports_away
                 )
 
 
@@ -314,10 +309,6 @@ async def call_custom_action(
             )
         return None
     return await entity.call_custom_action(service_call)
-
-
-def _device_supports_away(dev: NeoStat) -> bool:
-    return dev.device_type in HEATMISER_TYPE_IDS_AWAY
 
 
 def profile_sensor_enabled_by_default(entity: HeatmiserNeoEntity) -> bool:

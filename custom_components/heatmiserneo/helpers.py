@@ -8,6 +8,8 @@ from enum import Enum
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
+from homeassistant.util.json import JsonValueType
+
 from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
 
@@ -335,7 +337,7 @@ def get_profile_definition(
     coordinator: HeatmiserNeoCoordinator,
     friendly_mode: bool = False,
     device_id: int = 0,
-):
+) -> JsonValueType | None:
     """Set override with custom duration."""
     profile_format = coordinator.system_data.FORMAT
     profile = None
@@ -444,3 +446,22 @@ def get_profile_definition(
 def device_supports_away(dev: NeoStat) -> bool:
     """Check if a particular device supports away mode."""
     return dev.device_type in HEATMISER_TYPE_IDS_AWAY
+
+
+def check_profile_name(profile_name: str, coordinator: HeatmiserNeoCoordinator):
+    """Check if a profile name is in use."""
+    ids = [
+        k
+        for k, p in coordinator.timer_profiles.items()
+        if p.name.casefold() == profile_name.casefold()
+    ]
+    if len(ids) == 1:
+        return ids[0], True
+
+    ids = [
+        k
+        for k, p in coordinator.profiles.items()
+        if p.name.casefold() == profile_name.casefold()
+    ]
+
+    return ids[0] if len(ids) == 1 else None, False

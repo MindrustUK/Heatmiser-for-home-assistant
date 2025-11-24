@@ -289,6 +289,12 @@
     "create_profile_two": {
       "name": "Create Profile - 5 Day / 2 Day",
       "description": "Creates or update a profile for weekdays and weekends",
+      "fields": {
+        "config_entry_id": {
+          "description": "[%key:component::heatmiserneo::common::config_entry_description%]",
+          "name": "[%key:component::heatmiserneo::common::config_entry_name%]"
+        }
+      },
       "sections": {
         "monday_levels": {
           "name": "Weekday Levels"
@@ -301,6 +307,12 @@
     "create_profile_seven": {
       "name": "Create Profile - 7 Day",
       "description": "Creates or update a profile for each day of the week",
+      "fields": {
+        "config_entry_id": {
+          "description": "[%key:component::heatmiserneo::common::config_entry_description%]",
+          "name": "[%key:component::heatmiserneo::common::config_entry_name%]"
+        }
+      },
       "sections": {
         "monday_levels": {
           "name": "Monday Levels"
@@ -328,6 +340,12 @@
     "create_timer_profile_two": {
       "name": "Create Timer Profile - 5 Day / 2 Day",
       "description": "Creates or update a timer profile for weekdays and weekends",
+      "fields": {
+        "config_entry_id": {
+          "description": "[%key:component::heatmiserneo::common::config_entry_description%]",
+          "name": "[%key:component::heatmiserneo::common::config_entry_name%]"
+        }
+      },
       "sections": {
         "monday_levels": {
           "name": "Weekday Levels"
@@ -340,6 +358,12 @@
     "create_timer_profile_seven": {
       "name": "Create Timer Profile - 7 Day",
       "description": "Creates or update a timer profile for each day of the week",
+      "fields": {
+        "config_entry_id": {
+          "description": "[%key:component::heatmiserneo::common::config_entry_description%]",
+          "name": "[%key:component::heatmiserneo::common::config_entry_name%]"
+        }
+      },
       "sections": {
         "monday_levels": {
           "name": "Monday Levels"

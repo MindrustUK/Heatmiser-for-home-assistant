@@ -27,6 +27,7 @@ from .const import (
     HEATMISER_TYPE_IDS_PLUG,
 )
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
+from .utils import unique_id_is_mac
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -331,10 +332,3 @@ async def async_setup_entities(
                 device_id=device_id,
                 remove_config_entry_id=entry.entry_id,
             )
-
-
-def unique_id_is_mac(unique_id: str | None) -> bool:
-    "Check if a unique id is a mac address."
-    if not unique_id:
-        return False
-    return unique_id.count(":") == 5 and len(unique_id) == 17

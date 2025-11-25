@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import datetime
-from datetime import timedelta
 from functools import partial
 import json
 import logging
@@ -107,6 +106,7 @@ from .helpers import (
     set_holiday,
 )
 from .select import set_plug_override, set_timer_override
+from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -158,20 +158,6 @@ def _dates_only_provided_when_setting_away(
         return obj
 
     return validate
-
-
-def _time_period_minutes(value: float | str) -> timedelta:
-    """Validate and transform minutes to a time offset."""
-    try:
-        return timedelta(minutes=float(value))
-    except (ValueError, TypeError) as err:
-        raise vol.Invalid(f"Expected minutes, got {value}") from err
-
-
-_hold_duration_validation = vol.All(
-    vol.Any(cv.time_period_str, _time_period_minutes, timedelta, cv.time_period_dict),
-    cv.positive_timedelta,
-)
 
 
 def time_str(value: Any) -> str:
@@ -237,14 +223,14 @@ SCHEMA_GET_DEVICE_PROFILE_DEFINITION = cv.make_entity_service_schema(
 
 SCHEMA_TIMER_HOLD_ON = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_HOLD_DURATION, default=1): _hold_duration_validation,
+        vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
         vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
     }
 )
 
 SCHEMA_HOLD_ON = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_HOLD_DURATION, default=1): _hold_duration_validation,
+        vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
         vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.All(
             vol.Coerce(float), vol.Range(min=0, max=35)
         ),

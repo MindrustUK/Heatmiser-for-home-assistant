@@ -38,7 +38,6 @@ from homeassistant.helpers.service_info.zeroconf import (
 )
 from homeassistant.helpers.typing import DiscoveryInfoType
 
-from . import hold_duration_validation
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,
@@ -78,6 +77,7 @@ from .discovery import (
     async_discover_devices,
     async_update_entry_from_discovery,
 )
+from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -115,14 +115,14 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         )
         return await self._async_handle_discovery()
 
-    async def try_connection(self) -> tuple[str | None, str]:
+    async def try_connection(self) -> tuple[str | None, str | None]:
         """Try connection to NeoHub."""
         _LOGGER.debug("Trying connection to NeoHub")
-        mac_address = None
+        mac_address: str | None = None
         try:
             hub = NeoHub(self.host, self._port, token=self._token)
             await hub.firmware()
-            mac_address = hub.mac_address
+            mac_address = str(hub.mac_address) if hub.mac_address else None
             await hub.disconnect()
         except NeoHubConnectionError:
             return None, "cannot_connect"

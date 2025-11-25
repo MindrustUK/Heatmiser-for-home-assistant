@@ -2,12 +2,10 @@
 """The Heatmiser Neo integration."""
 
 import asyncio
-from datetime import timedelta
 import logging
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
 
 from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import CoreState, HomeAssistant
@@ -39,6 +37,7 @@ from .discovery import (
     async_update_entry_from_discovery,
 )
 from .services import async_setup_services
+from .utils import unique_id_is_mac
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -144,20 +143,6 @@ async def options_update_listener(
 ):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
-
-
-def time_period_minutes(value: float | str) -> timedelta:
-    """Validate and transform minutes to a time offset."""
-    try:
-        return timedelta(minutes=float(value))
-    except (ValueError, TypeError) as err:
-        raise vol.Invalid(f"Expected minutes, got {value}") from err
-
-
-hold_duration_validation = vol.All(
-    vol.Any(cv.time_period_str, time_period_minutes, timedelta, cv.time_period_dict),
-    cv.positive_timedelta,
-)
 
 
 async def _async_migrate_unique_ids(
@@ -267,13 +252,6 @@ async def _async_migrate_unique_ids(
             entity_registry.async_update_entity(
                 entity_id=reg_entry.entity_id, new_unique_id=new_unique_id
             )
-
-
-def unique_id_is_mac(unique_id: str | None) -> bool:
-    "Check if a unique id is a mac address."
-    if not unique_id:
-        return False
-    return unique_id.count(":") == 5 and len(unique_id) == 17
 
 
 def _has_old_identifier(device: dr.DeviceEntry) -> bool:

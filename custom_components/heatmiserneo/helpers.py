@@ -2,8 +2,6 @@
 """Constants used by multiple Heatmiser Neo modules."""
 
 from dataclasses import dataclass
-from datetime import timedelta
-from enum import Enum
 from functools import partial
 
 from neohubapi.enums import ScheduleFormat, Weekday
@@ -13,6 +11,7 @@ from homeassistant.util.json import JsonObjectType
 
 from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
+from .utils import to_dict
 
 
 @dataclass
@@ -310,27 +309,6 @@ def profile_level(
             ## so that is the next level
             current_level = previous_level
     return current_level
-
-
-def to_dict(item):
-    """Convert an arbitrary object to a dict."""
-    match item:
-        case dict():
-            return {key: to_dict(value) for key, value in item.items()}
-        case list() | tuple():
-            return [to_dict(x) for x in item]
-        case Enum():
-            return item.name
-        case timedelta():
-            return {
-                "days": item.days,
-                "seconds": item.seconds,
-                "microseconds": item.microseconds,
-            }
-        case object(__dict__=_):
-            return {key: to_dict(value) for key, value in vars(item).items()}
-        case _:
-            return item
 
 
 def get_profile_definition(

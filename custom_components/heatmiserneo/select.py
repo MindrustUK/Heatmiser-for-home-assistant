@@ -11,20 +11,13 @@ import logging
 from typing import Final
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory, Platform
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
-from homeassistant.helpers import entity_platform
-import homeassistant.helpers.config_validation as cv
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import hold_duration_validation
 from .const import (
-    ATTR_FRIENDLY_MODE,
-    ATTR_HOLD_DURATION,
-    ATTR_HOLD_STATE,
     CONF_DEFAULTS,
     CONF_TIMER_HOLD_DURATION,
     CONF_TIMER_OPTIONS,
@@ -34,8 +27,6 @@ from .const import (
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
     HEATMISER_TYPE_IDS_TIMER,
     PROFILE_0,
-    SERVICE_GET_DEVICE_PROFILE_DEFINITION,
-    SERVICE_TIMER_HOLD_ON,
     ModeSelectOption,
 )
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
@@ -45,10 +36,9 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
     async_setup_entities,
-    call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import get_profile_definition
+from .helpers import async_cancel_away_or_holiday, async_set_away_mode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,43 +67,52 @@ class HeatmiserNeoHubSelectEntityDescription(
 async def set_timer_auto(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
+    assert entity.coordinator.config_entry
     if dev.standby:
-        await set_timer_standby(entity, False)
+        await set_timer_standby(entity.coordinator.config_entry, dev, False)
     if dev.hold_on:
-        await set_timer_override(entity, dev.hold_temp == 1, 0)
-    await entity.async_cancel_away_or_holiday()
+        await set_timer_override(
+            entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0
+        )
+    await async_cancel_away_or_holiday(
+        entity.coordinator.config_entry.runtime_data.coordinator, dev
+    )
 
 
 async def set_timer_away(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
+    assert entity.coordinator.config_entry
     if dev.standby:
-        await set_timer_standby(entity, False)
+        await set_timer_standby(entity.coordinator.config_entry, dev, False)
     if dev.hold_on:
-        await set_timer_override(entity, dev.hold_temp == 1, 0)
-    await entity.async_set_away_mode()
+        await set_timer_override(
+            entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0
+        )
+    await async_set_away_mode(
+        entity.coordinator.config_entry.runtime_data.coordinator, dev
+    )
 
 
 async def set_timer_override(
-    entity: HeatmiserNeoEntity,
+    config_entry: HeatmiserNeoConfigEntry,
+    dev: NeoStat,
     on: bool,
     duration: int | None = None,
 ):
     """Set timer override."""
-    assert entity.coordinator.config_entry
     if duration is None:
         duration = (
-            entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
+            config_entry.options.get(CONF_DEFAULTS, {})
             .get(CONF_TIMER_OPTIONS, {})
             .get(CONF_TIMER_HOLD_DURATION, DEFAULT_TIMER_HOLD_DURATION)
         )
     assert duration is not None
-    dev = entity.data
     state = duration > 0
     if state:
-        await entity.async_cancel_away_or_holiday()
+        await async_cancel_away_or_holiday(config_entry.runtime_data.coordinator, dev)
         if on and dev.standby:
-            await set_timer_standby(entity, False)
+            await set_timer_standby(config_entry, dev, False)
     await dev.set_timer_hold(on, duration)
     dev.hold_on = state
     if state:
@@ -122,11 +121,12 @@ async def set_timer_override(
     dev.hold_time = timedelta(minutes=duration)
 
 
-async def set_timer_standby(entity: HeatmiserNeoEntity, state: bool = True):
+async def set_timer_standby(
+    config_entry: HeatmiserNeoConfigEntry, dev: NeoStat, state: bool = True
+):
     """Set standby mode. Disable hold if set."""
-    dev = entity.data
     if state and dev.hold_on:
-        await set_timer_override(entity, dev.hold_temp == 1, 0)
+        await set_timer_override(config_entry, dev, dev.hold_temp == 1, 0)
     await dev.set_frost(state)
     dev.standby = state
     if dev.standby:
@@ -136,8 +136,11 @@ async def set_timer_standby(entity: HeatmiserNeoEntity, state: bool = True):
 async def set_plug_auto(entity: HeatmiserNeoEntity):
     """Set device back to auto based on its current state."""
     dev = entity.data
-    await set_plug_override(entity, dev.hold_temp == 1, 0)
-    await entity.async_cancel_away_or_holiday()
+    assert entity.coordinator.config_entry
+    await set_plug_override(entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0)
+    await async_cancel_away_or_holiday(
+        entity.coordinator.config_entry.runtime_data.coordinator, dev
+    )
 
 
 # async def set_plug_away(entity: HeatmiserNeoSelectEntity):
@@ -148,28 +151,27 @@ async def set_plug_auto(entity: HeatmiserNeoEntity):
 
 
 async def set_plug_override(
-    entity: HeatmiserNeoEntity,
+    config_entry: HeatmiserNeoConfigEntry,
+    dev: NeoStat,
     on: bool,
     duration: int | None = None,
     turn_off_manual: bool = True,
 ):
     """Set timer override. Disable manual if set."""
-    assert entity.coordinator.config_entry
     if duration is None:
         duration = (
-            entity.coordinator.config_entry.options.get(CONF_DEFAULTS, {})
+            config_entry.options.get(CONF_DEFAULTS, {})
             .get(CONF_TIMER_OPTIONS, {})
             .get(CONF_TIMER_HOLD_DURATION, DEFAULT_TIMER_HOLD_DURATION)
         )
-    dev = entity.data
-    hub = entity.coordinator.hub
+    hub = config_entry.runtime_data.hub
     assert duration is not None
     state = duration > 0
     if turn_off_manual and not dev.manual_off:
         await hub.set_manual(False, [dev])
         dev.manual_off = True
     if state:
-        await entity.async_cancel_away_or_holiday()
+        await async_cancel_away_or_holiday(config_entry.runtime_data.coordinator, dev)
     await dev.set_timer_hold(on, duration)
     dev.hold_on = state
     if state:
@@ -182,7 +184,10 @@ async def set_plug_manual(entity: HeatmiserNeoSelectEntity, on: bool):
     """Set standby mode. Disable hold if set."""
     dev = entity.data
     hub = entity.coordinator.hub
-    await set_plug_override(entity, dev.hold_temp == 1, 0, False)
+    assert entity.coordinator.config_entry
+    await set_plug_override(
+        entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0, False
+    )
     if dev.manual_off:
         await hub.set_manual(True, [dev])
         dev.manual_off = False
@@ -275,24 +280,6 @@ def _plug_icon(device: NeoStat) -> str | None:
     return "mdi:timer" if device.timer_on else "mdi:timer-outline"
 
 
-async def async_timer_hold(entity: HeatmiserNeoEntity, service_call: ServiceCall):
-    """Set override with custom duration."""
-    duration = service_call.data[ATTR_HOLD_DURATION]
-    state = service_call.data[ATTR_HOLD_STATE]
-    hold_minutes = int(duration.total_seconds() / 60)
-    hold_minutes = min(hold_minutes, 60 * 99)
-    await set_timer_override(entity, state, hold_minutes)
-
-
-async def async_plug_hold(entity: HeatmiserNeoEntity, service_call: ServiceCall):
-    """Set override with custom duration."""
-    duration = service_call.data[ATTR_HOLD_DURATION]
-    state = service_call.data[ATTR_HOLD_STATE]
-    hold_minutes = int(duration.total_seconds() / 60)
-    hold_minutes = min(hold_minutes, 60 * 99)
-    await set_plug_override(entity, state, hold_minutes)
-
-
 async def async_set_switching_differential(
     val: str, entity: HeatmiserNeoEntity
 ) -> None:
@@ -340,32 +327,26 @@ async def async_base_set_profile(
     entity.data.active_profile = profile_id
 
 
-async def _async_get_profile_definition(
-    entity: HeatmiserNeoEntity, service_call: ServiceCall
-):
-    """Set override with custom duration."""
-    coordinator = entity.coordinator
-    data = entity.data
-    profile_id = data.active_profile
-
-    friendly_mode = service_call.data.get(ATTR_FRIENDLY_MODE, False)
-    return get_profile_definition(
-        int(profile_id), coordinator, friendly_mode, data.device_id
-    )
-
-
 TIMER_SET_MODE = {
     ModeSelectOption.AUTO: set_timer_auto,
-    ModeSelectOption.OVERRIDE_ON: lambda entity: set_timer_override(entity, True),
-    ModeSelectOption.OVERRIDE_OFF: lambda entity: set_timer_override(entity, False),
+    ModeSelectOption.OVERRIDE_ON: lambda entity: set_timer_override(
+        entity.coordinator.config_entry, entity.data, True
+    ),
+    ModeSelectOption.OVERRIDE_OFF: lambda entity: set_timer_override(
+        entity.coordinator.config_entry, entity.data, False
+    ),
     ModeSelectOption.STANDBY: set_timer_standby,
     ModeSelectOption.AWAY: set_timer_away,
 }
 
 PLUG_SET_MODE = {
     ModeSelectOption.AUTO: set_plug_auto,
-    ModeSelectOption.OVERRIDE_ON: lambda entity: set_plug_override(entity, True),
-    ModeSelectOption.OVERRIDE_OFF: lambda entity: set_plug_override(entity, False),
+    ModeSelectOption.OVERRIDE_ON: lambda entity: set_plug_override(
+        entity.coordinator.config_entry, entity.data, True
+    ),
+    ModeSelectOption.OVERRIDE_OFF: lambda entity: set_plug_override(
+        entity.coordinator.config_entry, entity.data, False
+    ),
     ModeSelectOption.MANUAL_ON: lambda entity: set_plug_manual(entity, True),
     ModeSelectOption.MANUAL_OFF: lambda entity: set_plug_manual(entity, False),
     # ModeSelectOption.AWAY: set_plug_away,
@@ -398,7 +379,6 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=_timer_set_mode,
         icon_fn=_timer_icon,
         translation_key="timer_mode",
-        custom_functions={SERVICE_TIMER_HOLD_ON: async_timer_hold},
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_plug_mode_select",
@@ -409,7 +389,6 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         set_value_fn=_plug_set_mode,
         icon_fn=_plug_icon,
         translation_key="plug_mode",
-        custom_functions={SERVICE_TIMER_HOLD_ON: async_plug_hold},
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_switching_differential",
@@ -455,11 +434,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         ),
         set_value_fn=async_set_profile,
         name="Active Profile",
-        # translation_key="preheat_time",
         enabled_by_default_fn=profile_sensor_enabled_by_default,
-        custom_functions={
-            SERVICE_GET_DEVICE_PROFILE_DEFINITION: _async_get_profile_definition
-        },
     ),
     HeatmiserNeoSelectEntityDescription(
         key="heatmiser_neo_active_timer_profile",
@@ -473,11 +448,7 @@ SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
         ),
         set_value_fn=async_set_timer_profile,
         name="Active Profile",
-        # translation_key="preheat_time",
         enabled_by_default_fn=profile_sensor_enabled_by_default,
-        custom_functions={
-            SERVICE_GET_DEVICE_PROFILE_DEFINITION: _async_get_profile_definition
-        },
     ),
 )
 
@@ -573,24 +544,6 @@ async def async_setup_entry(
 
     await async_setup_entities(
         hass, entry, async_add_entities, Platform.SELECT, hub_entities, device_entities
-    )
-
-    platform = entity_platform.async_get_current_platform()
-    platform.async_register_entity_service(
-        SERVICE_TIMER_HOLD_ON,
-        {
-            vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-            vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_GET_DEVICE_PROFILE_DEFINITION,
-        {
-            vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
-        },
-        call_custom_action,
-        supports_response=SupportsResponse.ONLY,
     )
 
 

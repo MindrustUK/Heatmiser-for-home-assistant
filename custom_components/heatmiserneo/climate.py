@@ -67,6 +67,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     async_setup_entities,
 )
+from .helpers import async_cancel_away_or_holiday, async_set_away_mode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -509,6 +510,7 @@ class NeoStatEntity(
         """Set preset mode."""
         device = self.data
         disable_away = True
+        assert self.coordinator.config_entry
         if preset_mode == PRESET_STANDBY:
             disable_away = False
             if not device.standby:
@@ -519,9 +521,13 @@ class NeoStatEntity(
             device.standby = False
 
         if preset_mode == PRESET_AWAY:
-            await self.async_set_away_mode()
+            await async_set_away_mode(
+                self.coordinator.config_entry.runtime_data.coordinator, self.data
+            )
         elif disable_away and (device.away or device.holiday):
-            await self.async_cancel_away_or_holiday()
+            await async_cancel_away_or_holiday(
+                self.coordinator.config_entry.runtime_data.coordinator, self.data
+            )
 
         hold_temp = float(device.target_temperature)
         hold_duration = 0

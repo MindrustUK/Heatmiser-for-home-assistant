@@ -4,11 +4,12 @@
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
+from functools import partial
 
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
-from homeassistant.util.json import JsonValueType
+from homeassistant.util.json import JsonObjectType
 
 from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
@@ -337,7 +338,7 @@ def get_profile_definition(
     coordinator: HeatmiserNeoCoordinator,
     friendly_mode: bool = False,
     device_id: int = 0,
-) -> JsonValueType | None:
+) -> JsonObjectType | None:
     """Set override with custom duration."""
     profile_format = coordinator.system_data.FORMAT
     profile = None
@@ -465,3 +466,34 @@ def check_profile_name(profile_name: str, coordinator: HeatmiserNeoCoordinator):
     ]
 
     return ids[0] if len(ids) == 1 else None, False
+
+
+async def async_cancel_away_or_holiday(
+    coordinator: HeatmiserNeoCoordinator, dev: NeoStat
+) -> None:
+    """Cancel away/holiday mode."""
+    if device_supports_away(dev):
+        if dev.away:
+            await coordinator.hub.set_away(False)
+            coordinator.update_in_memory_state(
+                partial(set_away, False),
+                device_supports_away,
+            )
+        if dev.holiday:
+            await coordinator.hub.cancel_holiday()
+            coordinator.update_in_memory_state(
+                partial(set_holiday, False),
+                device_supports_away,
+            )
+
+
+async def async_set_away_mode(
+    coordinator: HeatmiserNeoCoordinator, dev: NeoStat
+) -> None:
+    """Set away mode."""
+    if device_supports_away(dev):
+        if not (dev.away or dev.holiday):
+            await coordinator.hub.set_away(True)
+            coordinator.update_in_memory_state(
+                partial(set_away, True), device_supports_away
+            )

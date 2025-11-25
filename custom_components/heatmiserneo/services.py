@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import datetime
+from datetime import timedelta
 from functools import partial
 import json
 import logging
 from typing import Any
 
-from neohubapi.neohub import ScheduleFormat
+from neohubapi.neohub import NeoStat, ScheduleFormat
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntryState
@@ -22,9 +23,19 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.selector import ConfigEntrySelector
+from homeassistant.helpers.target import (
+    TargetSelectorData,
+    async_extract_referenced_entity_ids,
+)
 import homeassistant.util.dt as dt_util
+from homeassistant.util.json import JsonValueType
 
 from .const import (
     ATTR_AWAY_END,
@@ -35,6 +46,8 @@ from .const import (
     ATTR_FRIDAY_TEMPERATURES,
     ATTR_FRIDAY_TIMES,
     ATTR_FRIENDLY_MODE,
+    ATTR_HOLD_DURATION,
+    ATTR_HOLD_STATE,
     ATTR_MONDAY_OFF_TIMES,
     ATTR_MONDAY_ON_TIMES,
     ATTR_MONDAY_TEMPERATURES,
@@ -62,6 +75,8 @@ from .const import (
     ATTR_WEDNESDAY_TEMPERATURES,
     ATTR_WEDNESDAY_TIMES,
     DOMAIN,
+    HEATMISER_TYPE_IDS_PLUG,
+    HEATMISER_TYPE_IDS_TIMER,
     OPTION_CREATE_MODE_CREATE,
     OPTION_CREATE_MODE_UPDATE,
     OPTIONS_CREATE_MODE,
@@ -72,9 +87,11 @@ from .const import (
     SERVICE_CREATE_TIMER_PROFILE_SEVEN,
     SERVICE_CREATE_TIMER_PROFILE_TWO,
     SERVICE_DELETE_PROFILE,
+    SERVICE_GET_DEVICE_PROFILE_DEFINITION,
     SERVICE_GET_PROFILE_DEFINITIONS,
     SERVICE_HUB_AWAY,
     SERVICE_RENAME_PROFILE,
+    SERVICE_TIMER_HOLD_ON,
 )
 from .coordinator import HeatmiserNeoConfigEntry
 from .helpers import (
@@ -84,6 +101,7 @@ from .helpers import (
     set_away,
     set_holiday,
 )
+from .select import set_plug_override, set_timer_override
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -135,6 +153,20 @@ def _dates_only_provided_when_setting_away(
         return obj
 
     return validate
+
+
+def _time_period_minutes(value: float | str) -> timedelta:
+    """Validate and transform minutes to a time offset."""
+    try:
+        return timedelta(minutes=float(value))
+    except (ValueError, TypeError) as err:
+        raise vol.Invalid(f"Expected minutes, got {value}") from err
+
+
+_hold_duration_validation = vol.All(
+    vol.Any(cv.time_period_str, _time_period_minutes, timedelta, cv.time_period_dict),
+    cv.positive_timedelta,
+)
 
 
 def time_str(value: Any) -> str:
@@ -192,15 +224,30 @@ SCHEMA_GET_PROFILE_DEFINITIONS = vol.Schema(
     }
 )
 
+SCHEMA_GET_DEVICE_PROFILE_DEFINITION = cv.make_entity_service_schema(
+    {
+        vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+    }
+)
+
+SCHEMA_SET_TIMER_HOLD_ON = cv.make_entity_service_schema(
+    {
+        vol.Required(ATTR_HOLD_DURATION, default=1): _hold_duration_validation,
+        vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
+    }
+)
+
+PARTIAL_SCHEMA_PROFILE_CREATE = {
+    vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector({"integration": DOMAIN}),
+    vol.Required(ATTR_NAME): cv.string,
+    vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+        OPTIONS_CREATE_MODE
+    ),
+}
+
 SCHEMA_CREATE_PROFILE_ONE = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
             cv.ensure_list, [vol.Coerce(float)]
@@ -210,13 +257,7 @@ SCHEMA_CREATE_PROFILE_ONE = vol.Schema(
 
 SCHEMA_CREATE_PROFILE_TWO = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
             cv.ensure_list, [vol.Coerce(float)]
@@ -230,13 +271,7 @@ SCHEMA_CREATE_PROFILE_TWO = vol.Schema(
 
 SCHEMA_CREATE_PROFILE_SEVEN = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
             cv.ensure_list, [vol.Coerce(float)]
@@ -270,13 +305,7 @@ SCHEMA_CREATE_PROFILE_SEVEN = vol.Schema(
 
 SCHEMA_CREATE_TIMER_PROFILE_ONE = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
     }
@@ -284,13 +313,7 @@ SCHEMA_CREATE_TIMER_PROFILE_ONE = vol.Schema(
 
 SCHEMA_CREATE_TIMER_PROFILE_TWO = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
@@ -300,13 +323,7 @@ SCHEMA_CREATE_TIMER_PROFILE_TWO = vol.Schema(
 
 SCHEMA_CREATE_TIMER_PROFILE_SEVEN = vol.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
-            {"integration": DOMAIN}
-        ),
-        vol.Required(ATTR_NAME): cv.string,
-        vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-            OPTIONS_CREATE_MODE
-        ),
+        **PARTIAL_SCHEMA_PROFILE_CREATE,
         vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
         vol.Required(ATTR_TUESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
@@ -325,10 +342,11 @@ SCHEMA_CREATE_TIMER_PROFILE_SEVEN = vol.Schema(
 )
 
 
-def _validate_config_entry(call: ServiceCall) -> HeatmiserNeoConfigEntry:
+def _validate_config_entry(
+    hass: HomeAssistant, entry_id: str
+) -> HeatmiserNeoConfigEntry:
     config_entry: HeatmiserNeoConfigEntry | None
-    entry_id = call.data[ATTR_CONFIG_ENTRY_ID]
-    if not (config_entry := call.hass.config_entries.async_get_entry(entry_id)):
+    if not (config_entry := hass.config_entries.async_get_entry(entry_id)):
         raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="integration_not_found",
@@ -343,9 +361,63 @@ def _validate_config_entry(call: ServiceCall) -> HeatmiserNeoConfigEntry:
     return config_entry
 
 
+def _validate_device_id(
+    hass: HomeAssistant, device_id: str
+) -> tuple[HeatmiserNeoConfigEntry, NeoStat, DeviceEntry]:
+    device_registry = dr.async_get(hass)
+    device_entry = device_registry.async_get(device_id)
+    if device_entry is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="device_entry_not_found",
+            translation_placeholders={
+                "device_id": device_id,
+            },
+        )
+    entry: HeatmiserNeoConfigEntry | None = None
+    for entry_id in device_entry.config_entries:
+        _entry = hass.config_entries.async_get_entry(entry_id)
+        assert _entry
+        if _entry.domain == DOMAIN:
+            entry = _validate_config_entry(hass, entry_id)
+            break
+
+    if entry is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="config_entry_not_found",
+            translation_placeholders={
+                "device_id": device_id,
+            },
+        )
+
+    coordinator = entry.runtime_data.coordinator
+    devices, _ = coordinator.data
+
+    device = next(
+        (
+            dev
+            for dev in devices.values()
+            if dev.serial_number and dev.serial_number == device_entry.serial_number
+        ),
+        None,
+    )
+    if device is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="appliance_not_found",
+            translation_placeholders={
+                "device_id": device_id,
+            },
+        )
+    return entry, device, device_entry
+
+
 async def _async_set_away_mode(call: ServiceCall) -> None:
     """Set away mode on the hub."""
-    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(call)
+    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(
+        call.hass, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
     state = call.data[ATTR_AWAY_STATE]
 
     coordinator = config_entry.runtime_data.coordinator
@@ -393,7 +465,9 @@ async def _async_set_away_mode(call: ServiceCall) -> None:
 
 async def _async_rename_profile(call: ServiceCall) -> None:
     """Rename a profile."""
-    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(call)
+    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(
+        call.hass, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
 
     coordinator = config_entry.runtime_data.coordinator
     hub = config_entry.runtime_data.hub
@@ -416,7 +490,9 @@ async def _async_rename_profile(call: ServiceCall) -> None:
 
 async def _async_delete_profile(call: ServiceCall) -> None:
     """Delete a profile."""
-    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(call)
+    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(
+        call.hass, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
 
     coordinator = config_entry.runtime_data.coordinator
     hub = config_entry.runtime_data.hub
@@ -435,17 +511,19 @@ async def _async_delete_profile(call: ServiceCall) -> None:
 
 async def _async_get_profile_definitions(call: ServiceCall) -> ServiceResponse:
     """Get definitions of all profiles."""
-    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(call)
+    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(
+        call.hass, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
 
     coordinator = config_entry.runtime_data.coordinator
 
     friendly_mode = call.data.get(ATTR_FRIENDLY_MODE, False)
 
-    heating = {
+    heating: JsonValueType = {
         str(p.name): get_profile_definition(k, coordinator, friendly_mode)
         for k, p in coordinator.profiles.items()
     }
-    timers = {
+    timers: JsonValueType = {
         str(p.name): get_profile_definition(k, coordinator, friendly_mode)
         for k, p in coordinator.timer_profiles.items()
     }
@@ -453,10 +531,52 @@ async def _async_get_profile_definitions(call: ServiceCall) -> ServiceResponse:
     return {"heating_profiles": heating, "timer_profiles": timers}
 
 
+async def _async_get_profile_definition(call: ServiceCall) -> ServiceResponse:
+    """Set override with custom duration."""
+    ref = async_extract_referenced_entity_ids(call.hass, TargetSelectorData(call.data))
+    entity_registry = er.async_get(call.hass)
+    entity_entries = [
+        entity_registry.async_get(entity_id)
+        for entity_id in ref.referenced | ref.indirectly_referenced
+    ]
+
+    device_ids = {
+        entry.device_id for entry in entity_entries if entry and entry.device_id
+    }
+
+    devices = [_validate_device_id(call.hass, device_id) for device_id in device_ids]
+
+    if len(devices) == 0:
+        raise HomeAssistantError("No devices found")
+
+    friendly_mode = call.data.get(ATTR_FRIENDLY_MODE, False)
+
+    main_entity_by_device = {
+        entry.device_id: entry.entity_id
+        for entry in entity_entries
+        if entry and entry.device_id and not entry.original_name
+    }
+
+    return {
+        main_entity_by_device.get(
+            device_entry.id,
+            device_entry.name if device_entry.name else data.name,
+        ): get_profile_definition(
+            int(data.active_profile),
+            entry.runtime_data.coordinator,
+            friendly_mode,
+            data.device_id,
+        )
+        for entry, data, device_entry in devices
+    }
+
+
 async def _async_create_profile(
     requested_format: ScheduleFormat, timer: bool, call: ServiceCall
 ) -> None:
-    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(call)
+    config_entry: HeatmiserNeoConfigEntry = _validate_config_entry(
+        call.hass, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
 
     coordinator = config_entry.runtime_data.coordinator
     hub = config_entry.runtime_data.hub
@@ -571,6 +691,39 @@ def _convert_level_index(timer: bool, configured_levels: int, level_idx: int) ->
     return HEATING_LEVELS_6[level_idx]
 
 
+async def _async_set_timer_hold(call: ServiceCall) -> None:
+    ref = async_extract_referenced_entity_ids(call.hass, TargetSelectorData(call.data))
+    entity_registry = er.async_get(call.hass)
+    entity_entries = [
+        entity_registry.async_get(entity_id)
+        for entity_id in ref.referenced | ref.indirectly_referenced
+    ]
+
+    device_ids = {
+        entry.device_id for entry in entity_entries if entry and entry.device_id
+    }
+
+    devices = [_validate_device_id(call.hass, device_id) for device_id in device_ids]
+
+    if len(devices) == 0:
+        raise HomeAssistantError("No devices found")
+
+    duration = call.data[ATTR_HOLD_DURATION]
+    state = call.data[ATTR_HOLD_STATE]
+    hold_minutes = int(duration.total_seconds() / 60)
+    hold_minutes = min(hold_minutes, 60 * 99)
+
+    for entry, data, _ in devices:
+        if data.device_type in HEATMISER_TYPE_IDS_PLUG:
+            await set_plug_override(entry, data, state, hold_minutes)
+        elif (
+            data.device_type
+            in HEATMISER_TYPE_IDS_TIMER.difference(HEATMISER_TYPE_IDS_PLUG)
+            and data.time_clock_mode
+        ):
+            await set_timer_override(entry, data, state, hold_minutes)
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Home Assistant services."""
@@ -641,4 +794,19 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_CREATE_TIMER_PROFILE_SEVEN,
         partial(_async_create_profile, ScheduleFormat.SEVEN, True),
         schema=SCHEMA_CREATE_TIMER_PROFILE_SEVEN,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_DEVICE_PROFILE_DEFINITION,
+        _async_get_profile_definition,
+        schema=SCHEMA_GET_DEVICE_PROFILE_DEFINITION,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TIMER_HOLD_ON,
+        _async_set_timer_hold,
+        schema=SCHEMA_SET_TIMER_HOLD_ON,
     )

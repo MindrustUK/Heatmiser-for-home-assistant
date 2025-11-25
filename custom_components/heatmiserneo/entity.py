@@ -3,19 +3,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from functools import partial
 import logging
-from types import CoroutineType
 from typing import Any, Generic, TypeVar
 
 from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat, ScheduleFormat
 from propcache.api import cached_property
 
-from homeassistant.const import ATTR_ENTITY_ID, Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
@@ -23,10 +20,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import unique_id_is_mac
-from .const import DOMAIN, HEATMISER_HUB_PRODUCT_LIST, HEATMISER_PRODUCT_LIST
+from .const import (
+    DOMAIN,
+    HEATMISER_HUB_PRODUCT_LIST,
+    HEATMISER_PRODUCT_LIST,
+    HEATMISER_TYPE_IDS_PLUG,
+)
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
-from .helpers import device_supports_away, set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,14 +40,6 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     property_exists_fn: Callable[[NeoStat], bool] = lambda device: True
     enabled_by_default_fn: Callable[[HeatmiserNeoEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
-    # extra_attrs: list[str] | None = None
-    custom_functions: (
-        Mapping[
-            str,
-            Callable[[HeatmiserNeoEntity, ServiceCall], CoroutineType[Any, Any, Any]],
-        ]
-        | None
-    ) = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -59,17 +51,6 @@ class HeatmiserNeoHubEntityDescription(EntityDescription):
     )
     enabled_by_default_fn: Callable[[HeatmiserNeoHubEntity], bool] | None = None
     icon_fn: Callable[[], str | None] | None = None
-    # extra_attrs: list[str] | None = None
-    custom_functions: (
-        Mapping[
-            str,
-            Callable[
-                [HeatmiserNeoHubEntity, ServiceCall],
-                CoroutineType[Any, Any, Any],
-            ],
-        ]
-        | None
-    ) = None
 
 
 DescriptionT = TypeVar("DescriptionT", bound=HeatmiserNeoEntityDescription)
@@ -115,6 +96,12 @@ class HeatmiserNeoEntity(
         if unique_id_is_mac(config_entry.unique_id):
             via_device_identifier_key = CONNECTION_NETWORK_MAC
 
+        model_id = (
+            f"{self._neodevice.device_type}-TIMER"
+            if self._neodevice.time_clock_mode
+            and self._neodevice.device_type not in HEATMISER_TYPE_IDS_PLUG
+            else self._neodevice.device_type
+        )
         self._attr_device_info = DeviceInfo(
             identifiers={
                 (
@@ -125,6 +112,7 @@ class HeatmiserNeoEntity(
             name=self._neodevice.name,
             manufacturer="Heatmiser",
             model=f"{HEATMISER_PRODUCT_LIST[self._neodevice.device_type]}",
+            model_id=model_id,
             suggested_area=self._neodevice.name,
             serial_number=self._neodevice.serial_number,
             sw_version=self._neodevice.stat_version,
@@ -180,41 +168,6 @@ class HeatmiserNeoEntity(
         if self.entity_description.enabled_by_default_fn:
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
-
-    async def call_custom_action(self, service_call: ServiceCall) -> Any | None:
-        """Call a custom action specified in the entity description."""
-        result = await self.entity_description.custom_functions.get(
-            service_call.service
-        )(self, service_call)
-        self.coordinator.async_update_listeners()
-        return result
-
-    async def async_cancel_away_or_holiday(self) -> None:
-        """Cancel away/holiday mode."""
-        if device_supports_away(self.data):
-            dev = self.data
-            if dev.away:
-                await self._hub.set_away(False)
-                self.coordinator.update_in_memory_state(
-                    partial(set_away, False),
-                    device_supports_away,
-                )
-            if dev.holiday:
-                await self._hub.cancel_holiday()
-                self.coordinator.update_in_memory_state(
-                    partial(set_holiday, False),
-                    device_supports_away,
-                )
-
-    async def async_set_away_mode(self) -> None:
-        """Set away mode."""
-        if device_supports_away(self.data):
-            dev = self.data
-            if not (dev.away or dev.holiday):
-                await self._hub.set_away(True)
-                self.coordinator.update_in_memory_state(
-                    partial(set_away, True), device_supports_away
-                )
 
 
 class HeatmiserNeoHubEntity(
@@ -284,31 +237,6 @@ class HeatmiserNeoHubEntity(
         if self.entity_description.enabled_by_default_fn:
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
-
-    async def call_custom_action(self, service_call: ServiceCall) -> Any | None:
-        """Call a custom action specified in the entity description."""
-        result = await self.entity_description.custom_functions.get(
-            service_call.service
-        )(self, service_call)
-        self.coordinator.async_update_listeners()
-        return result
-
-
-async def call_custom_action(
-    entity: HeatmiserNeoEntity, service_call: ServiceCall
-) -> Any | None:
-    """Call a custom action specified in the entity description."""
-    if (
-        not entity.entity_description.custom_functions
-        or service_call.service not in entity.entity_description.custom_functions
-    ):
-        target_entities = service_call.data.get(ATTR_ENTITY_ID, None)
-        if target_entities and entity.entity_id in target_entities:
-            raise HomeAssistantError(
-                f"Entity {entity.entity_id} does not support service"
-            )
-        return None
-    return await entity.call_custom_action(service_call)
 
 
 def profile_sensor_enabled_by_default(entity: HeatmiserNeoEntity) -> bool:
@@ -403,3 +331,10 @@ async def async_setup_entities(
                 device_id=device_id,
                 remove_config_entry_id=entry.entry_id,
             )
+
+
+def unique_id_is_mac(unique_id: str | None) -> bool:
+    "Check if a unique id is a mac address."
+    if not unique_id:
+        return False
+    return unique_id.count(":") == 5 and len(unique_id) == 17

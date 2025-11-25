@@ -38,36 +38,36 @@ timer_hold_on:
     entity:
       integration: heatmiserneo
       domain: select
-    device:
-      - integration: heatmiserneo
-        model: NeoStat V1
-        model_id: 1-TIMER
-      - integration: heatmiserneo
-        model: Neo Plug
-      - integration: heatmiserneo
-        model: NeoAir
-        model_id: 7-TIMER
-      - integration: heatmiserneo
-        model: NeoAir HW
-        model_id: 9-TIMER
-      - integration: heatmiserneo
-        model: NeoStat HC
-        model_id: 11-TIMER
-      - integration: heatmiserneo
-        model: NeoStat V2
-        model_id: 12-TIMER
-      - integration: heatmiserneo
-        model: NeoAir V2
-        model_id: 13-TIMER
-      - integration: heatmiserneo
-        model: NeoAir V2 Combo
-        model_id: 15-TIMER
-      - integration: heatmiserneo
-        model: NeoStat Pro
-        model_id: 19-TIMER
-      - integration: heatmiserneo
-        model: NeoStat Touch
-        model_id: 23-TIMER
+  #       device:
+  #         - integration: heatmiserneo
+  #           model: NeoStat V1
+  #           model_id: 1-TIMER
+  #         - integration: heatmiserneo
+  #           model: Neo Plug
+  #         - integration: heatmiserneo
+  #           model: NeoAir
+  #           model_id: 7-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoAir HW
+  #           model_id: 9-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoStat HC
+  #           model_id: 11-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoStat V2
+  #           model_id: 12-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoAir V2
+  #           model_id: 13-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoAir V2 Combo
+  #           model_id: 15-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoStat Pro
+  #           model_id: 19-TIMER
+  #         - integration: heatmiserneo
+  #           model: NeoStat Touch
+  #           model_id: 23-TIMER
 
   fields:
     hold_duration: *hold_duration

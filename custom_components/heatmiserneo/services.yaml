@@ -34,42 +34,59 @@ hold_off:
 timer_hold_on:
   name: Timer Hold On
   description: Instruct the NeoStat in TimeClock mode or NeoPlug to 'hold' for a specified period of time.
-  target:
-    entity:
-      integration: heatmiserneo
-      domain: select
-  #       device:
-  #         - integration: heatmiserneo
-  #           model: NeoStat V1
-  #           model_id: 1-TIMER
-  #         - integration: heatmiserneo
-  #           model: Neo Plug
-  #         - integration: heatmiserneo
-  #           model: NeoAir
-  #           model_id: 7-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoAir HW
-  #           model_id: 9-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoStat HC
-  #           model_id: 11-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoStat V2
-  #           model_id: 12-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoAir V2
-  #           model_id: 13-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoAir V2 Combo
-  #           model_id: 15-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoStat Pro
-  #           model_id: 19-TIMER
-  #         - integration: heatmiserneo
-  #           model: NeoStat Touch
-  #           model_id: 23-TIMER
-
   fields:
+    device_id:
+      name: Device
+      description: Select the Device to target
+      required: false
+      selector:
+        device:
+          multiple: true
+          entity:
+            integration: heatmiserneo
+            domain: select
+          filter: &timer_device_models
+            - integration: heatmiserneo
+              model: NeoStat V1
+              model_id: 1-TIMER
+            - integration: heatmiserneo
+              model: Neo Plug
+            - integration: heatmiserneo
+              model: NeoAir
+              model_id: 7-TIMER
+            - integration: heatmiserneo
+              model: NeoAir HW
+              model_id: 9-TIMER
+            - integration: heatmiserneo
+              model: NeoStat V2
+              model_id: 12-TIMER
+            - integration: heatmiserneo
+              model: NeoAir V2
+              model_id: 13-TIMER
+            - integration: heatmiserneo
+              model: NeoAir V2 Combo
+              model_id: 15-TIMER
+            - integration: heatmiserneo
+              model: NeoStat Touch
+              model_id: 23-TIMER
+    entity_id:
+      name: Entity
+      description: Select the entity to target
+      required: false
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: heatmiserneo
+              domain: select
+    area_id:
+      name: Area
+      description: Select the area to target
+      required: false
+      selector:
+        area:
+          multiple: true
+          device: *timer_device_models
     hold_duration: *hold_duration
     hold_state:
       name: Hold State
@@ -105,13 +122,58 @@ set_away_mode:
 get_device_profile_definition:
   name: Get Device Profile Definition
   description: Gets the current profile definition from a device
-  target:
-    entity:
-      integration: heatmiserneo
-      domain:
-        - climate
-        - select
   fields:
+    device_id:
+      name: Device
+      description: Select the Device to target
+      required: false
+      selector:
+        device:
+          multiple: true
+          entity:
+            integration: heatmiserneo
+            domain:
+              - select
+              - climate
+          filter: &profile_devices
+            - integration: heatmiserneo
+              model: NeoStat V1
+            - integration: heatmiserneo
+              model: NeoAir
+            - integration: heatmiserneo
+              model: NeoAir HW
+            - integration: heatmiserneo
+              model: NeoStat HC
+            - integration: heatmiserneo
+              model: NeoStat V2
+            - integration: heatmiserneo
+              model: NeoAir V2
+            - integration: heatmiserneo
+              model: NeoAir V2 Combo
+            - integration: heatmiserneo
+              model: NeoStat Pro
+            - integration: heatmiserneo
+              model: NeoStat Touch
+    entity_id:
+      name: Entity
+      description: Select the entity to target
+      required: false
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - integration: heatmiserneo
+              domain:
+                - select
+                - climate
+    area_id:
+      name: Area
+      description: Select the area to target
+      required: false
+      selector:
+        area:
+          multiple: true
+          device: *profile_devices
     friendly_mode: &friendly_mode
       name: Friendly Mode
       description: Enable to return the profile in a format easier to consume by humans

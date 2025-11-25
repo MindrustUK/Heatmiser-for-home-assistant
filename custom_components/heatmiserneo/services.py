@@ -13,6 +13,7 @@ from typing import Any
 from neohubapi.neohub import NeoStat, ScheduleFormat
 import voluptuous as vol
 
+from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import ATTR_CONFIG_ENTRY_ID, ATTR_NAME
 from homeassistant.core import (
@@ -27,6 +28,7 @@ from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
     entity_registry as er,
+    service,
 )
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.selector import ConfigEntrySelector
@@ -48,6 +50,7 @@ from .const import (
     ATTR_FRIENDLY_MODE,
     ATTR_HOLD_DURATION,
     ATTR_HOLD_STATE,
+    ATTR_HOLD_TEMPERATURE,
     ATTR_MONDAY_OFF_TIMES,
     ATTR_MONDAY_ON_TIMES,
     ATTR_MONDAY_TEMPERATURES,
@@ -89,6 +92,8 @@ from .const import (
     SERVICE_DELETE_PROFILE,
     SERVICE_GET_DEVICE_PROFILE_DEFINITION,
     SERVICE_GET_PROFILE_DEFINITIONS,
+    SERVICE_HOLD_OFF,
+    SERVICE_HOLD_ON,
     SERVICE_HUB_AWAY,
     SERVICE_RENAME_PROFILE,
     SERVICE_TIMER_HOLD_ON,
@@ -230,12 +235,23 @@ SCHEMA_GET_DEVICE_PROFILE_DEFINITION = cv.make_entity_service_schema(
     }
 )
 
-SCHEMA_SET_TIMER_HOLD_ON = cv.make_entity_service_schema(
+SCHEMA_TIMER_HOLD_ON = cv.make_entity_service_schema(
     {
         vol.Required(ATTR_HOLD_DURATION, default=1): _hold_duration_validation,
         vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
     }
 )
+
+SCHEMA_HOLD_ON = cv.make_entity_service_schema(
+    {
+        vol.Required(ATTR_HOLD_DURATION, default=1): _hold_duration_validation,
+        vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=35)
+        ),
+    }
+)
+SCHEMA_HOLD_OFF = cv.make_entity_service_schema({})
+
 
 PARTIAL_SCHEMA_PROFILE_CREATE = {
     vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector({"integration": DOMAIN}),
@@ -808,5 +824,23 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         SERVICE_TIMER_HOLD_ON,
         _async_set_timer_hold,
-        schema=SCHEMA_SET_TIMER_HOLD_ON,
+        schema=SCHEMA_TIMER_HOLD_ON,
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_HOLD_ON,
+        entity_domain=CLIMATE_DOMAIN,
+        schema=SCHEMA_HOLD_ON,
+        func="set_hold",
+    )
+
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_HOLD_OFF,
+        entity_domain=CLIMATE_DOMAIN,
+        schema=SCHEMA_HOLD_OFF,
+        func="unset_hold",
     )

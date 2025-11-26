@@ -420,5 +420,22 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "config_entry_not_found": {
+      "message": "Config entry {entry_id} not found"
+    },
+    "config_entry_not_loaded": {
+      "message": "Config entry {entry_title}({entry_id}) not loaded"
+    },
+    "config_entry_not_found_for_device": {
+      "message": "Config entry not found for device {device_id}"
+    },
+    "config_entry_not_found_for_device_with_name": {
+      "message": "Config entry not found for device {device_name}({device_id})"
+    },
+    "no_target_devices_found": {
+      "message": "No suitable devices found for supplied entity_id, device_id or area_id"
+    }
   }
 }

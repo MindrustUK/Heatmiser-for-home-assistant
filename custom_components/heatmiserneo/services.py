@@ -351,21 +351,24 @@ def _validate_config_entry(
     if not (config_entry := hass.config_entries.async_get_entry(entry_id)):
         raise ServiceValidationError(
             translation_domain=DOMAIN,
-            translation_key="integration_not_found",
-            translation_placeholders={"target": entry_id},
+            translation_key="config_entry_not_found",
+            translation_placeholders={"entry_id": entry_id},
         )
     if config_entry.state is not ConfigEntryState.LOADED:
-        raise HomeAssistantError(
+        raise ServiceValidationError(
             translation_domain=DOMAIN,
-            translation_key="not_loaded",
-            translation_placeholders={"target": config_entry.title},
+            translation_key="config_entry_not_loaded",
+            translation_placeholders={
+                "entry_id": entry_id,
+                "entry_title": config_entry.title,
+            },
         )
     return config_entry
 
 
 def _validate_device_id(
     hass: HomeAssistant, device_id: str
-) -> tuple[HeatmiserNeoConfigEntry, NeoStat, DeviceEntry]:
+) -> tuple[HeatmiserNeoConfigEntry, NeoStat | None, DeviceEntry]:
     device_registry = dr.async_get(hass)
     device_entry = device_registry.async_get(device_id)
     if device_entry is None:
@@ -385,12 +388,17 @@ def _validate_device_id(
             break
 
     if entry is None:
+        translation_key = "config_entry_not_found_for_device"
+        translation_placeholders = {
+            "device_id": device_id,
+        }
+        if device_entry.name:
+            translation_key = f"{translation_key}_with_name"
+            translation_placeholders["device_name"] = device_entry.name
         raise ServiceValidationError(
             translation_domain=DOMAIN,
-            translation_key="config_entry_not_found",
-            translation_placeholders={
-                "device_id": device_id,
-            },
+            translation_key=translation_key,
+            translation_placeholders=translation_placeholders,
         )
 
     coordinator = entry.runtime_data.coordinator
@@ -404,14 +412,6 @@ def _validate_device_id(
         ),
         None,
     )
-    if device is None:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key="appliance_not_found",
-            translation_placeholders={
-                "device_id": device_id,
-            },
-        )
     return entry, device, device_entry
 
 
@@ -548,8 +548,15 @@ async def _async_get_profile_definition(call: ServiceCall) -> ServiceResponse:
 
     devices = [_validate_device_id(call.hass, device_id) for device_id in device_ids]
 
+    devices = [
+        (entry, data, device_entry) for entry, data, device_entry in devices if data
+    ]
+
     if len(devices) == 0:
-        raise HomeAssistantError("No devices found")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="no_target_devices_found",
+        )
 
     friendly_mode = call.data.get(ATTR_FRIENDLY_MODE, False)
 
@@ -707,8 +714,17 @@ async def _async_set_timer_hold(call: ServiceCall) -> None:
 
     devices = [_validate_device_id(call.hass, device_id) for device_id in device_ids]
 
+    devices = [
+        (entry, data, device_entry)
+        for entry, data, device_entry in devices
+        if data and data.time_clock_mode
+    ]
+
     if len(devices) == 0:
-        raise HomeAssistantError("No devices found")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="no_target_devices_found",
+        )
 
     duration = call.data[ATTR_HOLD_DURATION]
     state = call.data[ATTR_HOLD_STATE]

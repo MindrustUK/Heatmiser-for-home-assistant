@@ -17,7 +17,6 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TimerProfileLevel
 from .const import (
     HEATMISER_TYPE_IDS_AWAY,
     HEATMISER_TYPE_IDS_HOLD,
@@ -35,7 +34,7 @@ from .entity import (
     async_setup_entities,
     profile_sensor_enabled_by_default,
 )
-from .helpers import profile_level
+from .helpers import TimerProfileLevel, profile_level
 
 _LOGGER = logging.getLogger(__name__)
 

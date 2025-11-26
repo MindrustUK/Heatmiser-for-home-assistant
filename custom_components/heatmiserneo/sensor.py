@@ -27,6 +27,7 @@ from homeassistant.const import EntityCategory, Platform, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import ProfileLevel, TemperatureProfileLevel
 from .const import (
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
@@ -45,7 +46,7 @@ from .entity import (
     async_setup_entities,
     profile_sensor_enabled_by_default,
 )
-from .helpers import ProfileLevel, TemperatureProfileLevel, profile_level
+from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
 

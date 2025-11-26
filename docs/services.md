@@ -82,42 +82,39 @@ You can control the away/holiday state of the hub (and all attached devices) usi
 - Turn on away mode (with no end date)
 - Turn on holiday mode (away with and end date)
 
-You should target the NeoHub device itself or the Away entity of the hub. The `end` parameter is optional. It should not be supplied if `away` is `false`, and it can optionally be supplied when `away` is `true`
+You should target the config entry for the NeoHub. The `end` parameter is optional. It should not be supplied if `away` is `false`, and it can optionally be supplied when `away` is `true`
 
 ```
 action: heatmiserneo.set_away_mode
 data:
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
   away: true
   end: "2025-01-01 15:00:00"
-target:
-  entity_id: binary_sensor.neohub_192_168_1_10_away
 ```
 
 ## Profile Services
 
 ### Rename Profile
 
-Change the name of an existing profile using the `heatmiserneo.rename_profile` action. You should target the NeoHub device itself or the Profile Format entity of the hub.
+Change the name of an existing profile using the `heatmiserneo.rename_profile` action. You should target the config entry for the NeoHub.
 
 ```
 action: heatmiserneo.rename_profile
 data:
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
   old_name: Old Profile
   new_name: New Profile
-target:
-  entity_id: sensor.neohub_192_168_1_10_profile_format
 ```
 
 ### Delete Profile
 
-Delete an existing profile using the `heatmiserneo.delete_profile` action. You should target the NeoHub device itself or the Profile Format entity of the hub. Note, if any devices are using the profile, they will be moved to PROFILE_0 (eg profile managed on the device itself).
+Delete an existing profile using the `heatmiserneo.delete_profile` action. You should target the config entry for the NeoHub. Note, if any devices are using the profile, they will be moved to PROFILE_0 (eg profile managed on the device itself).
 
 ```
 action: heatmiserneo.delete_profile
 data:
   name: Profile Name
-target:
-  entity_id: sensor.neohub_192_168_1_10_profile_format
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
 ```
 
 ### Create/Update Profile
@@ -143,11 +140,12 @@ These have the following parameters in common:
   - For 7 Day mode, supply times and temperatures for every day of the week
   - The maximum number of levels allowed is dependent on the hub configuration. It will be either 4 or 6. The sensor `sensor.neohub_192_168_1_10_profile_heating_levels` has the current configuration. You can supply less levels but not more
 
-You should target the NeoHub device itself or the Profile Format entity of the hub.
+You should target the config entry for the NeoHub.
 
 ```
 action: heatmiserneo.create_profile_two
 data:
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
   name: Existing Profile
   mode: upsert
   monday_times:
@@ -166,8 +164,6 @@ data:
   sunday_temperatures:
     - 19.5
     - 16
-target:
-  entity_id: sensor.neohub_192_168_1_10_profile_format
 ```
 
 ### Create/Update Timer Profile
@@ -192,11 +188,12 @@ These have the following parameters in common:
   - For 7 Day mode, supply times and temperatures for every day of the week
   - Unlike heating profiles, the maximum number of timer levels is always 4. You can supply less levels but not more
 
-You should target the NeoHub device itself or the Profile Format entity of the hub.
+You should target the config entry for the NeoHub.
 
 ```
 action: heatmiserneo.create_timer_profile_two
 data:
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
   name: Existing Profile
   mode: upsert
   monday_on_times:
@@ -215,8 +212,6 @@ data:
   sunday_off_times:
     - "07:45"
     - "01:00"
-target:
-  entity_id: sensor.neohub_192_168_1_10_profile_format
 ```
 
 ### Get Profile Definitions
@@ -225,24 +220,22 @@ Use this action to retrieve all profiles defined in the hub. It has one optional
 
 - Friendly Mode - By default (or when set to false), the returned format closely matches the format of the create/update service calls, so it can be used to copy the format, make the necessary changes and then upload it using the relevant service. When set to true, the result is a bit easier to read.
 
-You should target the NeoHub device itself or the Profile Format entity of the hub.
+You should target the config entry for the NeoHub.
 
 ```
 action: heatmiserneo.get_profile_definitions
 data:
+  config_entry_id: 01KAE1RZ9FH56JKC9TRZ480KX1
   friendly_mode: false
-target:
-  entity_id: sensor.neohub_192_168_1_10_profile_format
 ```
 
 ### Get Device Profile Definition
 
-This is very similar to the hub level service, but instead you can get the definition of the profile that a particular device is using. Target the device itself or the Active Profile entity of the device.
+This is very similar to the hub level service, but instead you can get the definition of the profile that a particular device is using. This can be used to target an entity, device or area
 
 ```
 action: heatmiserneo.get_device_profile_definition
 data:
+  entity_id: climate.kitchen
   friendly_mode: true
-target:
-  entity_id: select.landing_active_profile
 ```

@@ -5,12 +5,10 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 import datetime
-import json
 import logging
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat, ScheduleFormat
-import voluptuous as vol
 
 from homeassistant.components.climate import (
     FAN_AUTO,
@@ -25,66 +23,18 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import ATTR_NAME, EntityCategory, Platform, UnitOfTime
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import entity_platform
-import homeassistant.helpers.config_validation as cv
+from homeassistant.const import EntityCategory, Platform, UnitOfTime
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-import homeassistant.util.dt as dt_util
 
 from . import ProfileLevel, TemperatureProfileLevel
 from .const import (
-    ATTR_CREATE_MODE,
-    ATTR_FRIDAY_OFF_TIMES,
-    ATTR_FRIDAY_ON_TIMES,
-    ATTR_FRIDAY_TEMPERATURES,
-    ATTR_FRIDAY_TIMES,
-    ATTR_FRIENDLY_MODE,
-    ATTR_MONDAY_OFF_TIMES,
-    ATTR_MONDAY_ON_TIMES,
-    ATTR_MONDAY_TEMPERATURES,
-    ATTR_MONDAY_TIMES,
-    ATTR_NAME_NEW,
-    ATTR_NAME_OLD,
-    ATTR_SATURDAY_OFF_TIMES,
-    ATTR_SATURDAY_ON_TIMES,
-    ATTR_SATURDAY_TEMPERATURES,
-    ATTR_SATURDAY_TIMES,
-    ATTR_SUNDAY_OFF_TIMES,
-    ATTR_SUNDAY_ON_TIMES,
-    ATTR_SUNDAY_TEMPERATURES,
-    ATTR_SUNDAY_TIMES,
-    ATTR_THURSDAY_OFF_TIMES,
-    ATTR_THURSDAY_ON_TIMES,
-    ATTR_THURSDAY_TEMPERATURES,
-    ATTR_THURSDAY_TIMES,
-    ATTR_TUESDAY_OFF_TIMES,
-    ATTR_TUESDAY_ON_TIMES,
-    ATTR_TUESDAY_TEMPERATURES,
-    ATTR_TUESDAY_TIMES,
-    ATTR_WEDNESDAY_OFF_TIMES,
-    ATTR_WEDNESDAY_ON_TIMES,
-    ATTR_WEDNESDAY_TEMPERATURES,
-    ATTR_WEDNESDAY_TIMES,
     HEATMISER_FAN_SPEED_HA_FAN_MODE,
     HEATMISER_TEMPERATURE_UNIT_HA_UNIT,
     HEATMISER_TYPE_IDS_HC,
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
-    OPTION_CREATE_MODE_CREATE,
-    OPTION_CREATE_MODE_UPDATE,
-    OPTIONS_CREATE_MODE,
-    SERVICE_CREATE_PROFILE_ONE,
-    SERVICE_CREATE_PROFILE_SEVEN,
-    SERVICE_CREATE_PROFILE_TWO,
-    SERVICE_CREATE_TIMER_PROFILE_ONE,
-    SERVICE_CREATE_TIMER_PROFILE_SEVEN,
-    SERVICE_CREATE_TIMER_PROFILE_TWO,
-    SERVICE_DELETE_PROFILE,
-    SERVICE_GET_PROFILE_DEFINITIONS,
-    SERVICE_RENAME_PROFILE,
     GlobalSystemType,
 )
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
@@ -94,54 +44,13 @@ from .entity import (
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
     async_setup_entities,
-    call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import get_profile_definition, profile_level
+from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
 
 HOLIDAY_FORMAT = "%a %b %d %H:%M:%S %Y\n"
-
-HEATING_LEVELS_4 = {0: "wake", 1: "leave", 2: "return", 3: "sleep"}
-
-HEATING_LEVELS_6 = {
-    0: "wake",
-    1: "level1",
-    2: "level2",
-    3: "level3",
-    4: "level4",
-    5: "sleep",
-}
-
-TIMER_LEVELS_4 = {0: "time1", 1: "time2", 2: "time3", 3: "time4"}
-
-SCHEDULE_WEEKDAYS = {
-    ScheduleFormat.ONE: ["sunday"],
-    ScheduleFormat.TWO: ["sunday", "monday"],
-    ScheduleFormat.SEVEN: [
-        "sunday",
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-    ],
-}
-
-
-def time_str(value: Any) -> str:
-    """Input validator for time string in profile services."""
-    try:
-        time_val = dt_util.parse_time(value)
-    except TypeError as err:
-        raise vol.Invalid("Not a parseable type") from err
-
-    if time_val is None:
-        raise vol.Invalid(f"Invalid time specified: {value}")
-
-    return time_val.strftime("%H:%M")
 
 
 async def async_setup_entry(
@@ -177,342 +86,6 @@ async def async_setup_entry(
     await async_setup_entities(
         hass, entry, async_add_entities, Platform.SENSOR, hub_entities, device_entities
     )
-
-    platform = entity_platform.async_get_current_platform()
-    platform.async_register_entity_service(
-        SERVICE_RENAME_PROFILE,
-        {
-            vol.Required(ATTR_NAME_OLD): cv.string,
-            vol.Required(ATTR_NAME_NEW): cv.string,
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_DELETE_PROFILE,
-        {vol.Required(ATTR_NAME): cv.string},
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_PROFILE_ONE,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_PROFILE_TWO,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_PROFILE_SEVEN,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_TUESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_WEDNESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_THURSDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_FRIDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_SATURDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_TIMER_PROFILE_ONE,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_TIMER_PROFILE_TWO,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_CREATE_TIMER_PROFILE_SEVEN,
-        {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        },
-        call_custom_action,
-    )
-    platform.async_register_entity_service(
-        SERVICE_GET_PROFILE_DEFINITIONS,
-        {
-            vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
-        },
-        call_custom_action,
-        supports_response=SupportsResponse.ONLY,
-    )
-
-
-async def async_rename_profile(
-    entity: HeatmiserNeoHubEntity, service_call: ServiceCall
-):
-    """Rename a profile."""
-    coordinator = entity.coordinator
-    old_name = service_call.data[ATTR_NAME_OLD]
-    new_name = service_call.data[ATTR_NAME_NEW]
-    profile_id, timer = _check_profile_name(old_name, coordinator)
-    conflicting_profile_id, _ = _check_profile_name(new_name, coordinator)
-    if not profile_id:
-        raise HomeAssistantError(f"Old name '{old_name}' does not exist")
-    if conflicting_profile_id:
-        raise HomeAssistantError(f"New name '{new_name}' already in use")
-
-    await entity.coordinator.hub.rename_profile(old_name, new_name)
-    if timer:
-        entity.coordinator.timer_profiles[profile_id].name = new_name
-    else:
-        entity.coordinator.profiles[profile_id].name = new_name
-
-
-async def async_delete_profile(
-    entity: HeatmiserNeoHubEntity, service_call: ServiceCall
-):
-    """Rename a profile."""
-    coordinator = entity.coordinator
-    profile_name = service_call.data[ATTR_NAME]
-    profile_id, timer = _check_profile_name(profile_name, coordinator)
-    if not profile_id:
-        raise HomeAssistantError(f"Profile '{profile_name}' does not exist")
-
-    await entity.coordinator.hub.delete_profile(profile_name)
-    if timer:
-        del entity.coordinator.timer_profiles[profile_id]
-    else:
-        del entity.coordinator.profiles[profile_id]
-
-
-async def async_get_profile_definitions(
-    entity: HeatmiserNeoHubEntity, service_call: ServiceCall
-):
-    """Get definitions of all profiles."""
-    friendly_mode = service_call.data.get(ATTR_FRIENDLY_MODE, False)
-
-    heating = {
-        p.name: get_profile_definition(k, entity.coordinator, friendly_mode)
-        for k, p in entity.coordinator.profiles.items()
-    }
-    timers = {
-        p.name: get_profile_definition(k, entity.coordinator, friendly_mode)
-        for k, p in entity.coordinator.timer_profiles.items()
-    }
-
-    return {"heating_profiles": heating, "timer_profiles": timers}
-
-
-async def async_create_profile(
-    entity: HeatmiserNeoEntity,
-    service_call: ServiceCall,
-    requested_format: ScheduleFormat,
-    timer: bool = False,
-):
-    """Create or update a profile."""
-    _LOGGER.debug("Create profile - service_call=%s", service_call)
-    coordinator = entity.coordinator
-    profile_format = coordinator.system_data.FORMAT
-    if timer and profile_format is ScheduleFormat.ZERO:
-        profile_format = coordinator.system_data.ALT_TIMER_FORMAT
-
-    if profile_format is ScheduleFormat.ZERO:
-        raise HomeAssistantError(
-            "Hub is in non programmable mode. Can't create profiles"
-        )
-
-    if requested_format is not profile_format:
-        raise HomeAssistantError(
-            f"Requested profile format ({requested_format}) does not match hub format ({profile_format})"
-        )
-
-    create_mode = service_call.data.get(ATTR_CREATE_MODE, OPTION_CREATE_MODE_CREATE)
-    profile_name = service_call.data[ATTR_NAME]
-    profile_id, timer_profile = _check_profile_name(profile_name, coordinator)
-
-    if not profile_id:
-        if create_mode == OPTION_CREATE_MODE_UPDATE:
-            raise HomeAssistantError(
-                f"Could not find existing profile with name '{profile_name}'"
-            )
-    else:
-        if create_mode == OPTION_CREATE_MODE_CREATE:
-            raise HomeAssistantError(
-                f"A profile with name '{profile_name}' already exists"
-            )
-        if timer != timer_profile:
-            raise HomeAssistantError(
-                f"A {'heating' if timer else 'timer'} profile with name '{profile_name}' already exists"
-            )
-
-    heating_levels = 4 if timer else coordinator.system_data.HEATING_LEVELS
-
-    weekdays = SCHEDULE_WEEKDAYS[profile_format]
-    weekday_levels = {
-        wd: _convert_to_profile_info(service_call, wd, heating_levels, timer)
-        for wd in weekdays
-    }
-
-    msg_details = {}
-    if profile_id:
-        msg_details["ID"] = profile_id
-    msg_details["info"] = weekday_levels
-    msg_details["name"] = profile_name
-
-    msg = {"STORE_PROFILE": msg_details}
-    reply = {"result": "profile created"}
-
-    _LOGGER.debug("Create profile - msg=%s", json.dumps(msg))
-    await entity.coordinator.hub._send(msg, reply)  # noqa: SLF001
-
-    await coordinator.async_request_refresh()
-
-
-def _convert_to_profile_info(
-    service_call: ServiceCall, weekday: str, levels: int = 4, timer: bool = False
-) -> dict:
-    list1 = None
-    list2 = None
-    empty1 = "24:00"
-    empty2 = None
-    if timer:
-        on_key = weekday + "_on_times"
-        off_key = weekday + "_off_times"
-        list1 = service_call.data.get(on_key, [])
-        list2 = service_call.data.get(off_key, [])
-        empty2 = empty1
-
-        if len(list1) != len(list2):
-            raise HomeAssistantError(
-                f"On Times and Off Times lists for {weekday} must have same length"
-            )
-    else:
-        times_key = weekday + "_times"
-        temperatures_key = weekday + "_temperatures"
-
-        list1 = service_call.data.get(times_key, [])
-        list2 = service_call.data.get(temperatures_key, [])
-        empty2 = 5
-
-        if len(list1) != len(list2):
-            raise HomeAssistantError(
-                f"Times and Temperatures lists for {weekday} must have same length"
-            )
-
-    if len(list1) > levels:
-        raise HomeAssistantError(
-            f"Too many levels defined for {weekday}. Hub only supports {levels} levels"
-        )
-
-    tuples = sorted([(list1[i], list2[i]) for i in range(len(list1))])
-
-    return {
-        _convert_level_index(timer, levels, i): [tuples[i][0], tuples[i][1]]
-        if i < len(tuples)
-        else [empty1, empty2]
-        for i in range(levels)
-    }
-
-
-def _convert_level_index(timer: bool, configured_levels: int, level_idx: int) -> str:
-    if timer:
-        return TIMER_LEVELS_4[level_idx]
-    if configured_levels == 4:
-        return HEATING_LEVELS_4[level_idx]
-    return HEATING_LEVELS_6[level_idx]
-
-
-def _check_profile_name(profile_name: str, coordinator: HeatmiserNeoCoordinator):
-    ids = [
-        k
-        for k, p in coordinator.timer_profiles.items()
-        if p.name.casefold() == profile_name.casefold()
-    ]
-    if len(ids) == 1:
-        return ids[0], True
-
-    ids = [
-        k
-        for k, p in coordinator.profiles.items()
-        if p.name.casefold() == profile_name.casefold()
-    ]
-
-    return ids[0] if len(ids) == 1 else None, False
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -718,29 +291,6 @@ HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
         if coordinator.system_data.FORMAT
         else None,
         translation_key="hub_profile_format",
-        custom_functions={
-            SERVICE_RENAME_PROFILE: async_rename_profile,
-            SERVICE_DELETE_PROFILE: async_delete_profile,
-            SERVICE_GET_PROFILE_DEFINITIONS: async_get_profile_definitions,
-            SERVICE_CREATE_PROFILE_ONE: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.ONE
-            ),
-            SERVICE_CREATE_PROFILE_TWO: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.TWO
-            ),
-            SERVICE_CREATE_PROFILE_SEVEN: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.SEVEN
-            ),
-            SERVICE_CREATE_TIMER_PROFILE_ONE: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.ONE, True
-            ),
-            SERVICE_CREATE_TIMER_PROFILE_TWO: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.TWO, True
-            ),
-            SERVICE_CREATE_TIMER_PROFILE_SEVEN: lambda e, s: async_create_profile(
-                e, s, ScheduleFormat.SEVEN, True
-            ),
-        },
     ),
     HeatmiserNeoHubSensorEntityDescription(
         key="heatmiser_neohub_alt_timer_profile_format",

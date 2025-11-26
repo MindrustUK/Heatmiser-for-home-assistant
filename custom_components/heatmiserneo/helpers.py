@@ -1,20 +1,30 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
-"""Constants used by multiple Heatmiser Neo modules."""
+"""Helpers used by multiple Heatmiser Neo modules."""
 
-from datetime import timedelta
-from enum import Enum
+from dataclasses import dataclass
+from functools import partial
 
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
+from homeassistant.util.json import JsonObjectType
+
 from . import (
     HeatCoolTemperatureProfileLevel,
     ProfileLevel,
-    RawTimerProfileLevel,
     TemperatureProfileLevel,
     TimerProfileLevel,
 )
+from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
+from .utils import to_dict
+
+
+@dataclass
+class RawTimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    end_time: str
 
 
 def set_away(state: bool, dev: NeoStat) -> None:
@@ -278,33 +288,12 @@ def profile_level(
     return current_level
 
 
-def to_dict(item):
-    """Convert an arbitrary object to a dict."""
-    match item:
-        case dict():
-            return {key: to_dict(value) for key, value in item.items()}
-        case list() | tuple():
-            return [to_dict(x) for x in item]
-        case Enum():
-            return item.name
-        case timedelta():
-            return {
-                "days": item.days,
-                "seconds": item.seconds,
-                "microseconds": item.microseconds,
-            }
-        case object(__dict__=_):
-            return {key: to_dict(value) for key, value in vars(item).items()}
-        case _:
-            return item
-
-
 def get_profile_definition(
     profile_id: int,
     coordinator: HeatmiserNeoCoordinator,
     friendly_mode: bool = False,
     device_id: int = 0,
-):
+) -> JsonObjectType | None:
     """Set override with custom duration."""
     profile_format = coordinator.system_data.FORMAT
     profile = None
@@ -408,3 +397,58 @@ def get_profile_definition(
         result = result | levels
 
     return result
+
+
+def device_supports_away(dev: NeoStat) -> bool:
+    """Check if a particular device supports away mode."""
+    return dev.device_type in HEATMISER_TYPE_IDS_AWAY
+
+
+def check_profile_name(profile_name: str, coordinator: HeatmiserNeoCoordinator):
+    """Check if a profile name is in use."""
+    ids = [
+        k
+        for k, p in coordinator.timer_profiles.items()
+        if p.name.casefold() == profile_name.casefold()
+    ]
+    if len(ids) == 1:
+        return ids[0], True
+
+    ids = [
+        k
+        for k, p in coordinator.profiles.items()
+        if p.name.casefold() == profile_name.casefold()
+    ]
+
+    return ids[0] if len(ids) == 1 else None, False
+
+
+async def async_cancel_away_or_holiday(
+    coordinator: HeatmiserNeoCoordinator, dev: NeoStat
+) -> None:
+    """Cancel away/holiday mode."""
+    if device_supports_away(dev):
+        if dev.away:
+            await coordinator.hub.set_away(False)
+            coordinator.update_in_memory_state(
+                partial(set_away, False),
+                device_supports_away,
+            )
+        if dev.holiday:
+            await coordinator.hub.cancel_holiday()
+            coordinator.update_in_memory_state(
+                partial(set_holiday, False),
+                device_supports_away,
+            )
+
+
+async def async_set_away_mode(
+    coordinator: HeatmiserNeoCoordinator, dev: NeoStat
+) -> None:
+    """Set away mode."""
+    if device_supports_away(dev):
+        if not (dev.away or dev.holiday):
+            await coordinator.hub.set_away(True)
+            coordinator.update_in_memory_state(
+                partial(set_away, True), device_supports_away
+            )

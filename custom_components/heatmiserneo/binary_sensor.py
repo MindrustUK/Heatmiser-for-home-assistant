@@ -4,13 +4,9 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-import datetime
-from functools import partial
 import logging
-from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -18,22 +14,17 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.const import EntityCategory, Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import entity_platform
-import homeassistant.helpers.config_validation as cv
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TimerProfileLevel
 from .const import (
-    ATTR_AWAY_END,
-    ATTR_AWAY_STATE,
     HEATMISER_TYPE_IDS_AWAY,
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
     HEATMISER_TYPE_IDS_THERMOSTAT,
     HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC,
     HEATMISER_TYPE_IDS_TIMER,
-    SERVICE_HUB_AWAY,
 )
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .entity import (
@@ -41,95 +32,12 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     HeatmiserNeoHubEntity,
     HeatmiserNeoHubEntityDescription,
-    _device_supports_away,
     async_setup_entities,
-    call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import profile_level, set_away, set_holiday
+from .helpers import profile_level
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _dates_only_provided_when_setting_away(
-    state_key, end_key
-) -> Callable[[dict[str, Any]], dict[str, Any]]:
-    """Verify that all values are of the same type."""
-
-    def validate(obj: dict[str, Any]) -> dict[str, Any]:
-        """Test that all keys in the dict have values of the same type."""
-        state_val = obj[state_key]
-        # start_val = obj.get(start_key)
-        end_val = obj.get(end_key)
-        if not state_val:
-            # if start_val:
-            #     raise vol.Invalid(
-            #         "Start date should only be specified if setting away."
-            #     )
-            if end_val:
-                raise vol.Invalid("End date should only be specified if setting away.")
-        return obj
-
-    return validate
-
-
-SET_AWAY_MODE_SCHEMA = vol.Schema(
-    vol.All(
-        cv.make_entity_service_schema(
-            {
-                vol.Required(ATTR_AWAY_STATE, default=False): cv.boolean,
-                # vol.Optional(ATTR_AWAY_START): cv.datetime,
-                vol.Optional(ATTR_AWAY_END): cv.datetime,
-            }
-        ),
-        _dates_only_provided_when_setting_away(ATTR_AWAY_STATE, ATTR_AWAY_END),
-    )
-)
-
-
-async def async_set_away_mode(
-    entity: HeatmiserNeoHubEntity, service_call: ServiceCall
-) -> None:
-    """Set away mode on the hub."""
-    state = service_call.data[ATTR_AWAY_STATE]
-    holiday = None
-    away = None
-    if not state:
-        if entity.coordinator.live_data.HUB_AWAY:
-            await entity.coordinator.hub.set_away(False)
-            away = False
-        if entity.coordinator.live_data.HUB_HOLIDAY:
-            await entity.coordinator.hub.cancel_holiday()
-            holiday = False
-    else:
-        end_date = service_call.data.get(ATTR_AWAY_END)
-        if end_date:
-            if entity.coordinator.live_data.HUB_AWAY:
-                await entity.coordinator.hub.set_away(False)
-                away = False
-
-            await entity.coordinator.hub.set_holiday(
-                datetime.datetime.now() - datetime.timedelta(days=1), end_date
-            )
-            holiday = True
-        else:
-            if entity.coordinator.live_data.HUB_HOLIDAY:
-                await entity.coordinator.hub.cancel_holiday()
-                holiday = False
-            await entity.coordinator.hub.set_away(True)
-            away = True
-    if away is not None:
-        entity.coordinator.update_in_memory_state(
-            partial(set_away, away),
-            _device_supports_away,
-        )
-        entity.coordinator.live_data.HUB_AWAY = away
-    if holiday is not None:
-        entity.coordinator.update_in_memory_state(
-            partial(set_holiday, holiday),
-            _device_supports_away,
-        )
-        entity.coordinator.live_data.HUB_HOLIDAY = holiday
 
 
 async def async_setup_entry(
@@ -169,13 +77,6 @@ async def async_setup_entry(
         Platform.BINARY_SENSOR,
         hub_entities,
         device_entities,
-    )
-
-    platform = entity_platform.async_get_current_platform()
-    platform.async_register_entity_service(
-        SERVICE_HUB_AWAY,
-        SET_AWAY_MODE_SCHEMA,
-        call_custom_action,
     )
 
 
@@ -304,7 +205,6 @@ HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (
         value_fn=lambda coordinator: (
             coordinator.live_data.HUB_AWAY or coordinator.live_data.HUB_HOLIDAY
         ),
-        custom_functions={SERVICE_HUB_AWAY: async_set_away_mode},
     ),
 )
 

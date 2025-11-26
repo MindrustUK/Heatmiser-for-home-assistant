@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest an idea for this project
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before raising a feature request, please read the [documentation](https://mindrustuk.github.io/Heatmiser-for-home-assistant/) to make sure it is not already provided.
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: The problem
+      description: >-
+        A clear and concise description of what you would like to see.
+  - type: markdown
+    attributes:
+      value: |
+        # Details
+  - type: textarea
+    attributes:
+      label: Diagnostics information
+      placeholder: "drag-and-drop the diagnostics data file here (do not copy-and-paste the content)"
+      description: >-
+        Always include [diagnostic data](https://www.home-assistant.io/docs/configuration/troubleshooting/#download-diagnostics).
+
+        **It would really help if you could download the diagnostics data,
+        and <ins>drag-and-drop that file into the textbox below.</ins>**
+
+        It will allow us to consider your request much more efficiently
+  - type: textarea
+    attributes:
+      label: Example YAML snippet
+      description: |
+        If applicable, please provide an example piece of YAML that can help reproduce this problem.
+        This can be from an automation, script, scene or configuration.
+      render: yaml
+  - type: textarea
+    attributes:
+      label: Anything in the logs that might be useful for us?
+      description: For example, error message, or stack traces.
+      render: txt
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: >
+        If you have any additional information for us, use the field below.

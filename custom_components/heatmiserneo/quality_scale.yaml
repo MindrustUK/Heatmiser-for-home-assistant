@@ -1,9 +1,6 @@
 rules:
   # Bronze
-  action-setup:
-    status: todo
-    comment: |
-      No custom actions are defined.
+  action-setup: done
   appropriate-polling:
     status: done
     comment: |

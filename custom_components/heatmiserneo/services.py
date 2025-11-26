@@ -542,6 +542,12 @@ async def _async_get_profile_definition(call: ServiceCall) -> ServiceResponse:
         for entity_id in ref.referenced | ref.indirectly_referenced
     ]
 
+    entity_entries = [
+        entry
+        for entry in entity_entries
+        if entry and entry.device_id and entry.platform == DOMAIN
+    ]
+
     device_ids = {
         entry.device_id for entry in entity_entries if entry and entry.device_id
     }

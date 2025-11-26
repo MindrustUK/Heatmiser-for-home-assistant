@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
-"""Constants used by multiple Heatmiser Neo modules."""
+"""Helpers used by multiple Heatmiser Neo modules."""
 
 from dataclasses import dataclass
 from functools import partial

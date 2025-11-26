@@ -9,15 +9,38 @@ from neohubapi.neohub import NeoStat
 
 from homeassistant.util.json import JsonObjectType
 
-from . import (
-    HeatCoolTemperatureProfileLevel,
-    ProfileLevel,
-    TemperatureProfileLevel,
-    TimerProfileLevel,
-)
 from .const import HEATMISER_TYPE_IDS_AWAY
 from .coordinator import HeatmiserNeoCoordinator
 from .utils import to_dict
+
+
+@dataclass
+class ProfileLevel:
+    """Base class for a profile level with a time."""
+
+    time: str
+
+
+@dataclass
+class TemperatureProfileLevel(ProfileLevel):
+    """Profile level for temperature settings."""
+
+    temperature: float
+
+
+@dataclass
+class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
+    """Profile level for temperature settings."""
+
+    cool_temperature: float
+    enabled: bool
+
+
+@dataclass
+class TimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    state: bool
 
 
 @dataclass

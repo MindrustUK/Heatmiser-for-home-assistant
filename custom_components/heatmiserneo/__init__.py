@@ -2,7 +2,6 @@
 """The Heatmiser Neo integration."""
 
 import asyncio
-from dataclasses import dataclass
 import logging
 from typing import Any
 
@@ -57,35 +56,6 @@ PLATFORMS = [
 ]
 
 _OLD_SERIAL_NUMBER_PREFIX = "NEOHUB-SN:000000"
-
-
-@dataclass
-class ProfileLevel:
-    """Base class for a profile level with a time."""
-
-    time: str
-
-
-@dataclass
-class TemperatureProfileLevel(ProfileLevel):
-    """Profile level for temperature settings."""
-
-    temperature: float
-
-
-@dataclass
-class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
-    """Profile level for temperature settings."""
-
-    cool_temperature: float
-    enabled: bool
-
-
-@dataclass
-class TimerProfileLevel(ProfileLevel):
-    """Profile level for on/off states."""
-
-    state: bool
 
 
 async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:

@@ -122,6 +122,9 @@ HEATMISER_HUB_PRODUCT_LIST = [
     "NeoHub Version 1",
     "NeoHub Version 2",
     "NeoHub Mini",
+    "PLACEHOLDER-4",
+    "PLACEHOLDER-5",
+    "NeoHub Version 3",
 ]
 
 HEATMISER_PRODUCT_LIST = [

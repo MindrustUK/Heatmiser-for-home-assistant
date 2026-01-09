@@ -1,5 +1,10 @@
 # Change Log
 
+## 20251211
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/321 by @patch0, add support for NeoHub V3
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/320 by @patch0, add support for NeoStat V3
+
 ## 20251119
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/311 by @ocrease, Use standard HA remove device option and automatically add new devices

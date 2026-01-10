@@ -19,6 +19,10 @@ repos:
     hooks:
       - id: check-json
         exclude: (.vscode|.devcontainer)
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.35.1
     hooks:

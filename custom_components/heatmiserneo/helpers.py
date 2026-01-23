@@ -153,8 +153,8 @@ def _heating_level_filter(level: TemperatureProfileLevel):
     return True
 
 
-def _is_valid_time(time) -> bool:
-    return not (time == "24:00" or time > "24:00")
+def _is_valid_time(time: str) -> bool:
+    return not (time.startswith("24:") or time > "24:00")
 
 
 def _flatten_timer_levels(

@@ -1,5 +1,13 @@
 # Change Log
 
+## 20260125
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/328 by @ocrease, improve normalization of profile times
+
+## 20260115
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/326 by @ocrease, add support for NeoFlo
+
 ## 20251211
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/321 by @patch0, add support for NeoHub V3

@@ -144,31 +144,39 @@ def _profile_levels(
         info = profile.profiles[0]
     key_val = key.value
     tmpLevels = getattr(info, key_val)
-    levels: list[ProfileLevel]
+    levels: list[ProfileLevel] = []
     if timeclock:
-        timerLevels = [
-            RawTimerProfileLevel(time=lv[0], end_time=lv[1])
-            for lv in tmpLevels.__dict__.values()
-        ]
-        levels = [lv for lv in timerLevels if filter(lv)]
+        for tl in tmpLevels.__dict__.values():
+            time = _normalize_time(tl[0])
+            end_time = _normalize_time(tl[1])
+            if time and end_time:
+                lv = RawTimerProfileLevel(time=time, end_time=end_time)
+                if filter(lv):
+                    levels.append(lv)
     else:
-        temperatureLevels = [
-            TemperatureProfileLevel(time=lv[0], temperature=float(lv[1]))
-            if len(lv) == 2
-            else HeatCoolTemperatureProfileLevel(
-                time=lv[0],
-                temperature=float(lv[1]),
-                cool_temperature=float(lv[2]),
-                enabled=bool(lv[3]),
-            )
-            for lv in tmpLevels.__dict__.values()
-        ]
-        levels = [lv for lv in temperatureLevels if filter(lv)]
+        for tl in tmpLevels.__dict__.values():
+            time = _normalize_time(tl[0])
+            if not time:
+                continue
+            temperature = float(tl[1])
+            if len(tl) == 4:
+                cool_temperature = float(tl[2])
+                enabled = bool(tl[3])
+                lv = HeatCoolTemperatureProfileLevel(
+                    time=time,
+                    temperature=temperature,
+                    cool_temperature=cool_temperature,
+                    enabled=enabled,
+                )
+            else:
+                lv = TemperatureProfileLevel(time=time, temperature=temperature)
+            if filter(lv):
+                levels.append(lv)
     return sorted(levels, key=lambda lv: lv.time)
 
 
 def _timer_level_filter(level: RawTimerProfileLevel):
-    if not _is_valid_time(level.time):
+    if not level.time:
         return False
     if level.time == level.end_time:
         return False
@@ -176,7 +184,7 @@ def _timer_level_filter(level: RawTimerProfileLevel):
 
 
 def _heating_level_filter(level: TemperatureProfileLevel):
-    if not _is_valid_time(level.time):
+    if not level.time:
         return False
     if level.temperature < 5:
         return False
@@ -186,8 +194,29 @@ def _heating_level_filter(level: TemperatureProfileLevel):
     return True
 
 
-def _is_valid_time(time) -> bool:
-    return not (time == "24:00" or time > "24:00")
+def _normalize_time(time: str | None) -> str | None:
+    """Normalize a time string to 'hh:mm' format (24-hour) or return None if invalid."""
+    if time is None:
+        return None
+
+    time = time.strip()
+    if not time:
+        return None
+
+    parts = time.split(":")
+    if len(parts) != 2:
+        return None
+
+    try:
+        hours = int(parts[0])
+        minutes = int(parts[1])
+    except ValueError:
+        return None
+
+    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        return None
+
+    return f"{hours:02d}:{minutes:02d}"
 
 
 def _flatten_timer_levels(
@@ -357,64 +386,59 @@ def get_profile_definition(
 
     if timer:
         if friendly_mode:
-            levels = {
-                wd: [
-                    {"time_on": e[0], "time_off": e[1]}
-                    for e in sorted(lv.values(), key=lambda x: x[0])
-                    if _is_valid_time(e[0])
-                ]
-                for wd, lv in info.items()
-            }
+            levels = {}
+            for wd, lv in info.items():
+                levels[wd] = []
+                for e in sorted(lv.values(), key=lambda x: x[0]):
+                    start_time = _normalize_time(e[0])
+                    end_time = _normalize_time(e[1])
+                    if start_time and end_time:
+                        levels[wd].append(
+                            {"start_time": start_time, "end_time": end_time}
+                        )
 
             result["info"] = levels
         else:
-            on_times = {
-                wd + "_on_times": [
-                    e[0]
-                    for e in sorted(lv.values(), key=lambda x: x[0])
-                    if _is_valid_time(e[0])
-                ]
-                for wd, lv in info.items()
-            }
-            off_times = {
-                wd + "_off_times": [
-                    e[1]
-                    for e in sorted(lv.values(), key=lambda x: x[0])
-                    if _is_valid_time(e[0])
-                ]
-                for wd, lv in info.items()
-            }
+            on_times = {}
+            off_times = {}
+            for wd, lv in info.items():
+                on_list = []
+                off_list = []
+                for e in sorted(lv.values(), key=lambda x: x[0]):
+                    start_time = _normalize_time(e[0])
+                    end_time = _normalize_time(e[1])
+                    if start_time and end_time:
+                        on_list.append(start_time)
+                        off_list.append(end_time)
+                on_times[wd + "_on_times"] = on_list
+                off_times[wd + "_off_times"] = off_list
             times = on_times | off_times
             times = dict(sorted(times.items(), reverse=True))
 
             result = result | times
     elif friendly_mode:
-        levels = {
-            wd: [
-                {"time": e[0], "temperature": e[1]}
-                for e in sorted(lv.values(), key=lambda x: x[0])
-                if _is_valid_time(e[0])
-            ]
-            for wd, lv in info.items()
-        }
+        levels = {}
+        for wd, lv in info.items():
+            levels[wd] = []
+            for e in sorted(lv.values(), key=lambda x: x[0]):
+                time = _normalize_time(e[0])
+                if time:
+                    levels[wd].append({"time": time, "temperature": e[1]})
         result["info"] = levels
     else:
-        times = {
-            wd + "_times": [
-                e[0]
-                for e in sorted(lv.values(), key=lambda x: x[0])
-                if _is_valid_time(e[0])
-            ]
-            for wd, lv in info.items()
-        }
-        temperatures = {
-            wd + "_temperatures": [
-                e[1]
-                for e in sorted(lv.values(), key=lambda x: x[0])
-                if _is_valid_time(e[0])
-            ]
-            for wd, lv in info.items()
-        }
+        times = {}
+        temperatures = {}
+        for wd, lv in info.items():
+            times_list = []
+            temperatures_list = []
+            for e in sorted(lv.values(), key=lambda x: x[0]):
+                time = _normalize_time(e[0])
+                if time:
+                    times_list.append(time)
+                    temperatures_list.append(e[1])
+            times[wd + "_times"] = times_list
+            temperatures[wd + "_temperatures"] = temperatures_list
+
         levels = times | temperatures
         levels = dict(sorted(levels.items(), reverse=True))
         result = result | levels

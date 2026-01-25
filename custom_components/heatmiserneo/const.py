@@ -153,7 +153,7 @@ HEATMISER_PRODUCT_LIST = [
     "PLACEHOLDER-22",
     "NeoStat Touch",
     "NeoStat V3",
-    "NeoFlo"
+    "NeoFlo",
 ]
 
 HEATMISER_TYPE_IDS_THERMOSTAT = {1, 2, 7, 8, 9, 11, 12, 13, 15, 17, 19, 23, 24, 25}

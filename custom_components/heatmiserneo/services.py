@@ -32,7 +32,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.selector import ConfigEntrySelector
 from homeassistant.helpers.target import (
-    TargetSelectorData,
+    TargetSelection,
     async_extract_referenced_entity_ids,
 )
 import homeassistant.util.dt as dt_util
@@ -535,7 +535,7 @@ async def _async_get_profile_definitions(call: ServiceCall) -> ServiceResponse:
 
 async def _async_get_profile_definition(call: ServiceCall) -> ServiceResponse:
     """Set override with custom duration."""
-    ref = async_extract_referenced_entity_ids(call.hass, TargetSelectorData(call.data))
+    ref = async_extract_referenced_entity_ids(call.hass, TargetSelection(call.data))
     entity_registry = er.async_get(call.hass)
     entity_entries = [
         entity_registry.async_get(entity_id)
@@ -575,7 +575,7 @@ async def _async_get_profile_definition(call: ServiceCall) -> ServiceResponse:
     return {
         main_entity_by_device.get(
             device_entry.id,
-            device_entry.name if device_entry.name else data.name,
+            device_entry.name or data.name,
         ): get_profile_definition(
             int(data.active_profile),
             entry.runtime_data.coordinator,
@@ -707,7 +707,7 @@ def _convert_level_index(timer: bool, configured_levels: int, level_idx: int) ->
 
 
 async def _async_set_timer_hold(call: ServiceCall) -> None:
-    ref = async_extract_referenced_entity_ids(call.hass, TargetSelectorData(call.data))
+    ref = async_extract_referenced_entity_ids(call.hass, TargetSelection(call.data))
     entity_registry = er.async_get(call.hass)
     entity_entries = [
         entity_registry.async_get(entity_id)

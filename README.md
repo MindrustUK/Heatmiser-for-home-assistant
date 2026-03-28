@@ -26,7 +26,7 @@ Full documentation is available here - [Heatmiser for Home Assistant](https://mi
 # Supporting this project
 
 As per: [https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133](https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues/133) a few users found this useful and
-wanted to support the project. I'm very grateful and humbled, thanks for the show of support! 
+wanted to support the project. I'm very grateful and humbled, thanks for the show of support!
 
 This is not a completely solo project, and credit is due to anyone who contributed. Please see the GitHub commits
 to support these awesome devs if there was any work that you would like to say thanks for.

@@ -28,6 +28,7 @@ from .const import (
     ATTR_AWAY_END,
     ATTR_AWAY_STATE,
     HEATMISER_TYPE_IDS_AWAY,
+    HEATMISER_TYPE_IDS_BATTERY,
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
     HEATMISER_TYPE_IDS_THERMOSTAT,
@@ -224,7 +225,9 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda device: device.data.low_battery,
-        setup_filter_fn=lambda device, _: device.battery_powered,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_BATTERY
+        ),
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_timer_output_active",

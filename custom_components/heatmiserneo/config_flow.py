@@ -249,7 +249,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         assert self.auto_connect_task
         connect_details: NeoHubConnectDetails = await self.auto_connect_task
         self.auto_connect_task = None
-        user_input = user_input if user_input else {}
+        user_input = user_input or {}
         user_input[CONF_PORT] = DEFAULT_PORT
         ws_token = connect_details.direct_link_token
         if ws_token:
@@ -371,9 +371,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                         CONF_HOST,
                         default=self._discovered_device.ip_address
                         if self._discovered_device
-                        else self.host
-                        if self.host
-                        else DEFAULT_HOST,
+                        else self.host or DEFAULT_HOST,
                     ): str,
                     vol.Required(CONF_API_TOKEN, default=self._token): str,
                 }
@@ -388,7 +386,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if self._discovered_device:
-            user_input = user_input if user_input else {}
+            user_input = user_input or {}
             user_input[CONF_HOST] = self._discovered_device.ip_address
             user_input[CONF_PORT] = DEFAULT_PORT
             result, errors = await self._configure_entry(user_input)
@@ -410,9 +408,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                         CONF_HOST,
                         default=self._discovered_device.ip_address
                         if self._discovered_device
-                        else self.host
-                        if self.host
-                        else DEFAULT_HOST,
+                        else self.host or DEFAULT_HOST,
                     ): str
                 }
             ),
@@ -464,7 +460,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
 def _resolve_ip_address(host: str) -> str:
     """Check if host1 and host2 are the same."""
-    host = host.split(":")[0]
+    host = host.split(":", maxsplit=1)[0]
     return host if is_ip_address(host) else socket.gethostbyname(host)
 
 

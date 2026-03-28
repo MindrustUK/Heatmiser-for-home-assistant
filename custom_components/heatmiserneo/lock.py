@@ -105,9 +105,7 @@ LOCKS: tuple[HeatmiserNeoLockEntityDescription, ...] = (
         default_pin_fn=lambda entity: entity.data.pin_number,
         lock_fn=_async_lock_device,
         unlock_fn=_async_unlock_device,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_LOCK
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_LOCK,
     ),
 )
 

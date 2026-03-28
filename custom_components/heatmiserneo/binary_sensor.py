@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     HEATMISER_TYPE_IDS_AWAY,
+    HEATMISER_TYPE_IDS_BATTERY,
     HEATMISER_TYPE_IDS_HOLD,
     HEATMISER_TYPE_IDS_STANDBY,
     HEATMISER_TYPE_IDS_THERMOSTAT,
@@ -117,16 +118,16 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Hold Active",
         value_fn=lambda device: device.data.hold_on,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_HOLD
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_HOLD,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_battery_level_sensor",
         device_class=BinarySensorDeviceClass.BATTERY,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda device: device.data.low_battery,
-        setup_filter_fn=lambda device, _: device.battery_powered,
+        setup_filter_fn=lambda device, _: (
+            device.device_type in HEATMISER_TYPE_IDS_BATTERY
+        ),
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_timer_output_active",
@@ -142,9 +143,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         name="Away",
         value_fn=lambda device: device.data.away or device.data.holiday,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_AWAY
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_AWAY,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_standby",

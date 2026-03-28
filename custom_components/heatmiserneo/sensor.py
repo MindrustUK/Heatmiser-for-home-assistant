@@ -117,9 +117,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
             if device.data.hold_on
             else None
         ),
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_HOLD
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_HOLD,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_temperature_sensor",
@@ -286,19 +284,23 @@ HUB_SENSORS: tuple[HeatmiserNeoHubSensorEntityDescription, ...] = (
         key="heatmiser_neohub_profile_format",
         device_class=SensorDeviceClass.ENUM,
         options=[e._name_.lower() for e in ScheduleFormat],
-        value_fn=lambda coordinator: coordinator.system_data.FORMAT._name_.lower()
-        if coordinator.system_data.FORMAT
-        else None,
+        value_fn=lambda coordinator: (
+            coordinator.system_data.FORMAT._name_.lower()
+            if coordinator.system_data.FORMAT
+            else None
+        ),
         translation_key="hub_profile_format",
     ),
     HeatmiserNeoHubSensorEntityDescription(
         key="heatmiser_neohub_alt_timer_profile_format",
         device_class=SensorDeviceClass.ENUM,
         options=[e._name_.lower() for e in ScheduleFormat if e != ScheduleFormat.ZERO],
-        value_fn=lambda coordinator: coordinator.system_data.ALT_TIMER_FORMAT._name_.lower()
-        if coordinator.system_data.ALT_TIMER_FORMAT
-        and coordinator.system_data.FORMAT == ScheduleFormat.ZERO
-        else None,
+        value_fn=lambda coordinator: (
+            coordinator.system_data.ALT_TIMER_FORMAT._name_.lower()
+            if coordinator.system_data.ALT_TIMER_FORMAT
+            and coordinator.system_data.FORMAT == ScheduleFormat.ZERO
+            else None
+        ),
         translation_key="hub_profile_alt_timer_format",
     ),
     HeatmiserNeoHubSensorEntityDescription(

@@ -217,9 +217,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Hold Active",
         value_fn=lambda device: device.data.hold_on,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_HOLD
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_HOLD,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_battery_level_sensor",
@@ -242,9 +240,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         name="Away",
         value_fn=lambda device: device.data.away or device.data.holiday,
-        setup_filter_fn=lambda device, _: (
-            device.device_type in HEATMISER_TYPE_IDS_AWAY
-        ),
+        setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_AWAY,
     ),
     HeatmiserNeoBinarySensorEntityDescription(
         key="heatmiser_neo_device_standby",

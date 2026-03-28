@@ -176,7 +176,7 @@ ISSUE_ID_CLEANUP_OLD_DEVICES = "cleanup_old_devices_{entry_id}"
 
 
 # This should be in the neohubapi.neohub enums code
-class AvailableMode(str, enum.Enum):
+class AvailableMode(enum.StrEnum):
     """Operating mode options for NeoStats."""
 
     HEAT = "heat"
@@ -185,7 +185,7 @@ class AvailableMode(str, enum.Enum):
     AUTO = "auto"
 
 
-class GlobalSystemType(str, enum.Enum):
+class GlobalSystemType(enum.StrEnum):
     """Global System Types for NeoStat HC."""
 
     HEAT_ONLY = "HeatOnly"
@@ -194,7 +194,7 @@ class GlobalSystemType(str, enum.Enum):
     INDEPENDENT = "Independent"
 
 
-class ModeSelectOption(str, enum.Enum):
+class ModeSelectOption(enum.StrEnum):
     """Operating mode options for NeoPlugs and NeoStats in timer mode."""
 
     AUTO = "auto"
@@ -220,7 +220,7 @@ HEATMISER_FAN_SPEED_HA_FAN_MODE = {
 }
 
 
-class FanControl(str, enum.Enum):
+class FanControl(enum.StrEnum):
     """Fan control mode options for NeoStat HC."""
 
     MANUAL = "Manual"

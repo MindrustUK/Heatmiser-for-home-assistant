@@ -59,8 +59,8 @@ class HeatmiserNeoEntityDescription(EntityDescription):
 class HeatmiserNeoHubEntityDescription(EntityDescription):
     """Describes Heatmiser Neo Hub entity."""
 
-    setup_filter_fn: Callable[[HeatmiserNeoCoordinator], bool] = (
-        lambda coordinator: True
+    setup_filter_fn: Callable[[HeatmiserNeoCoordinator], bool] = lambda coordinator: (
+        True
     )
     enabled_by_default_fn: Callable[[HeatmiserNeoHubEntity], bool] | None = None
     icon_fn: Callable[[], str | None] | None = None

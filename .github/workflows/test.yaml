@@ -1,0 +1,31 @@
+name: Run Tests
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test_all.txt
+      - name: Run linters with pre-commit
+        run: pre-commit run --all-files || (git diff; exit 1)
+      - name: Run tests
+        run: pytest tests/

@@ -9,7 +9,6 @@ import logging
 from typing import Any
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
-import voluptuous as vol
 
 from homeassistant.components.climate import (
     ATTR_TARGET_TEMP_HIGH,
@@ -32,13 +31,9 @@ from homeassistant.components.climate import (
 from homeassistant.const import ATTR_TEMPERATURE, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import hold_duration_validation
 from .const import (
-    ATTR_HOLD_DURATION,
-    ATTR_HOLD_TEMPERATURE,
     CONF_DEFAULTS,
     CONF_HVAC_MODES,
     CONF_STAT_HOLD_DURATION,
@@ -56,8 +51,6 @@ from .const import (
     HEATMISER_TYPE_IDS_HC,
     HEATMISER_TYPE_IDS_THERMOSTAT,
     PRESET_STANDBY,
-    SERVICE_HOLD_OFF,
-    SERVICE_HOLD_ON,
     AvailableMode,
     GlobalSystemType,
 )
@@ -67,6 +60,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     async_setup_entities,
 )
+from .helpers import async_cancel_away_or_holiday, async_set_away_mode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,24 +119,6 @@ async def async_setup_entry(
 
     await async_setup_entities(
         hass, entry, async_add_entities, Platform.CLIMATE, None, device_entities
-    )
-    platform = entity_platform.async_get_current_platform()
-
-    platform.async_register_entity_service(
-        SERVICE_HOLD_ON,
-        {
-            vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.All(
-                vol.Coerce(float), vol.Range(min=0, max=35)
-            ),
-        },
-        "set_hold",
-    )
-
-    platform.async_register_entity_service(
-        SERVICE_HOLD_OFF,
-        {},
-        "unset_hold",
     )
 
 
@@ -509,6 +485,7 @@ class NeoStatEntity(
         """Set preset mode."""
         device = self.data
         disable_away = True
+        assert self.coordinator.config_entry
         if preset_mode == PRESET_STANDBY:
             disable_away = False
             if not device.standby:
@@ -519,9 +496,13 @@ class NeoStatEntity(
             device.standby = False
 
         if preset_mode == PRESET_AWAY:
-            await self.async_set_away_mode()
+            await async_set_away_mode(
+                self.coordinator.config_entry.runtime_data.coordinator, self.data
+            )
         elif disable_away and (device.away or device.holiday):
-            await self.async_cancel_away_or_holiday()
+            await async_cancel_away_or_holiday(
+                self.coordinator.config_entry.runtime_data.coordinator, self.data
+            )
 
         hold_temp = float(device.target_temperature)
         hold_duration = 0

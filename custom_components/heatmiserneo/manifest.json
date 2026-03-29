@@ -1,7 +1,7 @@
 {
   "domain": "heatmiserneo",
   "name": "Heatmiser Neo Climate",
-  "codeowners": ["@MindrustUK"],
+  "codeowners": ["@MindrustUK", "@ocrease"],
   "config_flow": true,
   "dependencies": ["network"],
   "documentation": "https://mindrustuk.github.io/Heatmiser-for-home-assistant/",

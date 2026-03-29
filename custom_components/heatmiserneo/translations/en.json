@@ -1,4 +1,8 @@
 {
+  "common": {
+    "config_entry_description": "Select the NeoHub to target",
+    "config_entry_name": "Hub"
+  },
   "config": {
     "step": {
       "choose_discovery_method": {
@@ -266,6 +270,24 @@
     }
   },
   "services": {
+    "set_away_mode": {
+      "name": "Set Away Mode",
+      "description": "Sets the hub to away or holiday",
+      "fields": {
+        "config_entry_id": {
+          "name": "Hub",
+          "description": "Select the NeoHub to target"
+        },
+        "away": {
+          "name": "Away State",
+          "description": "Whether to set away on or off"
+        },
+        "end": {
+          "name": "Holiday End",
+          "description": "Optional end date for holiday mode"
+        }
+      }
+    },
     "create_profile_two": {
       "name": "Create Profile - 5 Day / 2 Day",
       "description": "Creates or update a profile for weekdays and weekends",
@@ -373,6 +395,23 @@
           }
         }
       }
+    }
+  },
+  "exceptions": {
+    "config_entry_not_found": {
+      "message": "Config entry {entry_id} not found"
+    },
+    "config_entry_not_loaded": {
+      "message": "Config entry {entry_title}({entry_id}) not loaded"
+    },
+    "config_entry_not_found_for_device": {
+      "message": "Config entry not found for device {device_id}"
+    },
+    "config_entry_not_found_for_device_with_name": {
+      "message": "Config entry not found for device {device_name}({device_id})"
+    },
+    "no_target_devices_found": {
+      "message": "No suitable devices found for supplied entity_id, device_id or area_id"
     }
   }
 }

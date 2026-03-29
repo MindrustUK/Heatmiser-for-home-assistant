@@ -13,7 +13,7 @@ from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_TOKEN, CONF_UNIQ
 from homeassistant.core import HomeAssistant
 
 from .coordinator import HeatmiserNeoConfigEntry
-from .helpers import to_dict
+from .utils import to_dict
 
 _LOGGER = logging.getLogger(__name__)
 

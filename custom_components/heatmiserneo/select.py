@@ -495,7 +495,7 @@ HUB_SELECT: Final[tuple[HeatmiserNeoHubSelectEntityDescription, ...]] = (
             "tz875",
             "tz900",
             "tz950",
-            "tz100",
+            "tz1000",
             "tz1050",
             "tz1100",
             "tz1200",

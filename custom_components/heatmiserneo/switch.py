@@ -100,11 +100,11 @@ class HeatmiserNeoHubSwitch(
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
         await self._hub.set_ntp(True)
-        setattr(self.coordinator.system_data, "NTP_ON", "Running")
+        self.coordinator.system_data.NTP_ON = "Running"
         self.coordinator.async_update_listeners()
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         await self._hub.set_ntp(False)
-        setattr(self.coordinator.system_data, "NTP_ON", "Stopped")
+        self.coordinator.system_data.NTP_ON = "Stopped"
         self.coordinator.async_update_listeners()

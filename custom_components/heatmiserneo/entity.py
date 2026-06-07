@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """The Heatmiser Neo base entity definitions."""
 
-from __future__ import annotations
-
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 import logging
 from types import CoroutineType
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from neohubapi.neohub import ATTR_SYSTEM, NeoHub, NeoStat, ScheduleFormat
 from propcache.api import cached_property
@@ -77,12 +75,8 @@ class HeatmiserNeoHubEntityDescription(EntityDescription):
     ) = None
 
 
-DescriptionT = TypeVar("DescriptionT", bound=HeatmiserNeoEntityDescription)
-HubDescriptionT = TypeVar("HubDescriptionT", bound=HeatmiserNeoHubEntityDescription)
-
-
-class HeatmiserNeoEntity(
-    CoordinatorEntity[HeatmiserNeoCoordinator], Generic[DescriptionT]
+class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
+    CoordinatorEntity[HeatmiserNeoCoordinator]
 ):
     """Defines a base HeatmiserNeo entity."""
 
@@ -222,19 +216,19 @@ class HeatmiserNeoEntity(
                 )
 
 
-class HeatmiserNeoHubEntity(
-    CoordinatorEntity[HeatmiserNeoCoordinator], Generic[HubDescriptionT]
+class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](
+    CoordinatorEntity[HeatmiserNeoCoordinator]
 ):
     """Defines a base HeatmiserNeoHub entity."""
 
-    entity_description: HubDescriptionT
+    entity_description: DescriptionT
     _attr_has_entity_name = True
 
     def __init__(
         self,
         coordinator: HeatmiserNeoCoordinator,
         hub: NeoHub,
-        entity_description: HubDescriptionT,
+        entity_description: DescriptionT,
         config_entry: HeatmiserNeoConfigEntry,
     ) -> None:
         """Initialize the HeatmiserNeoHub entity."""

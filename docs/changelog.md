@@ -1,5 +1,21 @@
 # Change Log
 
+## 20260520
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/344 by @ocrease, fix deprecation warning for entity registry values not being strings (sw_version and model_id)
+
+## 20260520
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/342 by @tonyklawrence, Add battery sensor for NeoAir variants 7, 9 and 15
+
+## 20260410
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/340 by @ocrease, Fix Issue with timezone GMT+10
+
+## 20260328
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/334 by @ocrease, add battery sensor for NeoFlo
+
 ## 20260125
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/328 by @ocrease, improve normalization of profile times

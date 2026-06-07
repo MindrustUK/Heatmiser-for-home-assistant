@@ -253,7 +253,7 @@ def _next_level(time: str, levels: list[ProfileLevel]) -> ProfileLevel | None:
     return None
 
 
-def profile_level(
+def profile_level(  # noqa: C901
     profile_id, data: NeoStat, coordinator: HeatmiserNeoCoordinator, next: bool = False
 ) -> ProfileLevel | None:
     """Convert a profile id to a name."""
@@ -340,7 +340,7 @@ def profile_level(
     return current_level
 
 
-def get_profile_definition(
+def get_profile_definition(  # noqa: C901
     profile_id: int,
     coordinator: HeatmiserNeoCoordinator,
     friendly_mode: bool = False,

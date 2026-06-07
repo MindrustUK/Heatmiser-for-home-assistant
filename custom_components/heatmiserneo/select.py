@@ -2,8 +2,6 @@
 
 """Heatmiser Neo Select entities via Heatmiser Neo-hub."""
 
-from __future__ import annotations
-
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -231,13 +229,13 @@ async def async_set_dst_mode(coordinator: HeatmiserNeoCoordinator, option: str):
         dst_on = option == "On"
         await async_set_dst(coordinator)
         await coordinator.hub.manual_dst(dst_on)
-        setattr(coordinator.system_data, "DST_AUTO", False)
-        setattr(coordinator.system_data, "DST_ON", dst_on)
-        setattr(coordinator.system_data, "TIMEZONESTR", "")
+        coordinator.system_data.DST_AUTO = False
+        coordinator.system_data.DST_ON = dst_on
+        coordinator.system_data.TIMEZONESTR = ""
     else:
         await async_set_dst(coordinator, option)
-        setattr(coordinator.system_data, "DST_AUTO", True)
-        setattr(coordinator.system_data, "TIMEZONESTR", option)
+        coordinator.system_data.DST_AUTO = True
+        coordinator.system_data.TIMEZONESTR = option
 
 
 def _timer_icon(device: NeoStat) -> str | None:
@@ -294,7 +292,7 @@ async def async_set_preheat(
 ) -> None:
     """Set the maximum preheat time on a device."""
     await entity.data.set_preheat(int(val))
-    setattr(entity.data._data_, "MAX_PREHEAT", int(val))
+    entity.data._data_.MAX_PREHEAT = int(val)
 
 
 async def async_set_profile(

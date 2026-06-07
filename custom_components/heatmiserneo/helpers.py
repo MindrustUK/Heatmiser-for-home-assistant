@@ -143,10 +143,10 @@ def _profile_levels(
         # Profile 0
         info = profile.profiles[0]
     key_val = key.value
-    tmpLevels = getattr(info, key_val)
+    tmp_levels = getattr(info, key_val)
     levels: list[ProfileLevel] = []
     if timeclock:
-        for tl in tmpLevels.__dict__.values():
+        for tl in tmp_levels.__dict__.values():
             time = _normalize_time(tl[0])
             end_time = _normalize_time(tl[1])
             if time and end_time:
@@ -154,7 +154,7 @@ def _profile_levels(
                 if filter(lv):
                     levels.append(lv)
     else:
-        for tl in tmpLevels.__dict__.values():
+        for tl in tmp_levels.__dict__.values():
             time = _normalize_time(tl[0])
             if not time:
                 continue

@@ -95,7 +95,7 @@ class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
             f"{self._neodevice.device_type}-TIMER"
             if self._neodevice.time_clock_mode
             and self._neodevice.device_type not in HEATMISER_TYPE_IDS_PLUG
-            else self._neodevice.device_type
+            else str(self._neodevice.device_type)
         )
         self._attr_device_info = DeviceInfo(
             identifiers={
@@ -110,7 +110,7 @@ class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
             model_id=model_id,
             suggested_area=self._neodevice.name,
             serial_number=self._neodevice.serial_number,
-            sw_version=self._neodevice.stat_version,
+            sw_version=str(self._neodevice.stat_version),
             via_device=(via_device_identifier_key, config_entry.unique_id),
         )
 
@@ -208,7 +208,7 @@ class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](
             name=f"NeoHub - {self._hub._host}",  # noqa: SLF001
             manufacturer="Heatmiser",
             model=f"{HEATMISER_HUB_PRODUCT_LIST[self.coordinator.system_data.HUB_TYPE]}",
-            sw_version=self.coordinator.system_data.HUB_VERSION,
+            sw_version=str(self.coordinator.system_data.HUB_VERSION),
         )
 
     @property

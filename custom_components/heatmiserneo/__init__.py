@@ -145,7 +145,7 @@ async def options_update_listener(
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 
-async def _async_migrate_unique_ids(  # noqa: C901
+async def _async_migrate_unique_ids(
     hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
 ) -> None:
     """Migrate pre-config flow unique ids."""

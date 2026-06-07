@@ -1,7 +1,5 @@
 """Services for HeatmiserNeo."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 import datetime
 from functools import partial

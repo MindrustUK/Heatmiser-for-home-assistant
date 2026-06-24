@@ -370,6 +370,10 @@ class NeoStatEntity(
             if self.data._data_.FROST_TEMP >= 127:
                 # If the frost protection temperature is not set, then the thermostat is truly off.
                 return HVACAction.OFF
+            if self.data.device_type in HEATMISER_TYPE_IDS_HC:
+                if self.hvac_mode in {HVACMode.COOL, HVACMode.FAN_ONLY}:
+                    # NeoStat HC doesn't have frost protection unless in heat or heat_cool
+                    return HVACAction.OFF
         return HVACAction.IDLE
 
     @property

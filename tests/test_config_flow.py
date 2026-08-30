@@ -55,12 +55,12 @@ ZEROCONF_DISCOVERY = ZeroconfServiceInfo(
     port=80,
     type="_hap._tcp.local.",
     properties={
-        "id": "aa:bb:cc:dd:ee:ff",
+        "id": "xx:xx:xx:xx:xx:xx",
     },
 )
 
 INTEGRATION_DISCOVERY: DiscoveryInfoType = {
-    "mac_address": ZEROCONF_DISCOVERY.properties.get("id"),
+    "mac_address": "aa:bb:cc:dd:ee:ff",
     "ip_address": "192.168.1.100",
 }
 
@@ -192,11 +192,21 @@ async def test_zeroconf_discovery(
     hass: HomeAssistant,
 ) -> None:
     """Test zeroconf discovery."""
-    conn_menu_step = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": SOURCE_ZEROCONF},
-        data=ZEROCONF_DISCOVERY,
-    )
+    with (
+        patch(
+            "custom_components.heatmiserneo.config_flow.async_discover_device",
+            AsyncMock(
+                return_value=SimpleNamespace(
+                    mac_address=INTEGRATION_DISCOVERY["mac_address"]
+                )
+            ),
+        ),
+    ):
+        conn_menu_step = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_ZEROCONF},
+            data=ZEROCONF_DISCOVERY,
+        )
 
     assert conn_menu_step["type"] is FlowResultType.MENU
     assert conn_menu_step["step_id"] == "choose_conn_method"
@@ -218,7 +228,7 @@ async def test_zeroconf_discovery(
         mock_hub_instance.firmware = AsyncMock(
             return_value=None
         )  # Assume firmware returns nothing specific; adjust if it returns data
-        mock_mac = ZEROCONF_DISCOVERY.properties.get("id")
+        mock_mac = INTEGRATION_DISCOVERY["mac_address"]
         mock_hub_instance.mac_address = mock_mac  # Fake MAC for unique_id
         mock_hub_instance.disconnect = AsyncMock(return_value=None)
         mock_hub_instance.get_all_live_data = AsyncMock(return_value=None)
@@ -245,11 +255,21 @@ async def test_zeroconf_discovery_connect_mismatch(
     hass: HomeAssistant,
 ) -> None:
     """Test zeroconf discovery."""
-    conn_menu_step = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": SOURCE_ZEROCONF},
-        data=ZEROCONF_DISCOVERY,
-    )
+    with (
+        patch(
+            "custom_components.heatmiserneo.config_flow.async_discover_device",
+            AsyncMock(
+                return_value=SimpleNamespace(
+                    mac_address=INTEGRATION_DISCOVERY["mac_address"]
+                )
+            ),
+        ),
+    ):
+        conn_menu_step = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_ZEROCONF},
+            data=ZEROCONF_DISCOVERY,
+        )
 
     assert conn_menu_step["type"] is FlowResultType.MENU
     assert conn_menu_step["step_id"] == "choose_conn_method"
@@ -314,7 +334,7 @@ async def test_integration_discovery_using_legacy(
         mock_hub_instance.firmware = AsyncMock(
             return_value=None
         )  # Assume firmware returns nothing specific; adjust if it returns data
-        mock_mac = ZEROCONF_DISCOVERY.properties.get("id")
+        mock_mac = INTEGRATION_DISCOVERY["mac_address"]
         mock_hub_instance.mac_address = None
         mock_hub_instance.disconnect = AsyncMock(return_value=None)
         mock_hub_instance.get_all_live_data = AsyncMock(return_value=None)
@@ -376,7 +396,7 @@ async def test_options_flow(hass: HomeAssistant, config_entry: ConfigEntry) -> N
         assert defaults_form["type"] is FlowResultType.FORM
         assert defaults_form["step_id"] == CONF_DEFAULTS
 
-        UPDATE_OPTIONS = {
+        update_options = {
             CONF_THERMOSTAT_OPTIONS: {
                 CONF_STAT_HOLD_TEMP: 2,
                 CONF_STAT_HOLD_DURATION: {"minutes": 30},
@@ -387,7 +407,7 @@ async def test_options_flow(hass: HomeAssistant, config_entry: ConfigEntry) -> N
         }
 
         result2 = await hass.config_entries.options.async_configure(
-            defaults_form["flow_id"], UPDATE_OPTIONS
+            defaults_form["flow_id"], update_options
         )
         assert result2["type"] is FlowResultType.CREATE_ENTRY
         assert result2["data"] == {

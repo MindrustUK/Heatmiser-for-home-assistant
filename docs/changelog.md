@@ -4,6 +4,10 @@
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/354 by @ocrease, fix via_device_id warning
 
+## 20260830
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/352 by @ocrease, fix ZeroConf discovery MAC address mismatch
+
 ## 20260624
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/349 by @ocrease, fix frost protection check for NeoStat HC

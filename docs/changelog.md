@@ -1,6 +1,14 @@
 # Change Log
 
-## 20260520
+## 20260624
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/352 by @ocrease, fix ZeroConf discovery MAC address mismatch
+
+## 20260624
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/349 by @ocrease, fix frost protection check for NeoStat HC
+
+## 20260608
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/344 by @ocrease, fix deprecation warning for entity registry values not being strings (sw_version and model_id)
 

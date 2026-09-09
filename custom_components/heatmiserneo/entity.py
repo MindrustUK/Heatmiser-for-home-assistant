@@ -111,7 +111,11 @@ class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
             suggested_area=self._neodevice.name,
             serial_number=self._neodevice.serial_number,
             sw_version=str(self._neodevice.stat_version),
-            via_device=(via_device_identifier_key, config_entry.unique_id),
+            via_device_id=dr.async_get_device_id_by_identifier(
+                coordinator.hass,
+                (via_device_identifier_key, config_entry.unique_id),
+                config_entry_id=config_entry.entry_id,
+            ),
         )
 
     @property

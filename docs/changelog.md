@@ -1,5 +1,9 @@
 # Change Log
 
+## 20260910
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/355 by @ocrease, fix setting timer to standby
+
 ## 20260909
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/354 by @ocrease, fix via_device_id warning

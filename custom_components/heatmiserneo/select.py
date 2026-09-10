@@ -333,7 +333,9 @@ TIMER_SET_MODE = {
     ModeSelectOption.OVERRIDE_OFF: lambda entity: set_timer_override(
         entity.coordinator.config_entry, entity.data, False
     ),
-    ModeSelectOption.STANDBY: set_timer_standby,
+    ModeSelectOption.STANDBY: lambda entity: set_timer_standby(
+        entity.coordinator.config_entry, entity.data
+    ),
     ModeSelectOption.AWAY: set_timer_away,
 }
 

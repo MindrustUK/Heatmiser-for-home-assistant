@@ -29,6 +29,8 @@ DISCOVER_SCAN_TIMEOUT = 3
 DISCOVERY_INTERVAL = timedelta(minutes=15)
 DISCOVER_AUTO_CONNECT_TIMEOUT = 120
 
+DEFAULT_CONNECTION_TTL = timedelta(hours=12).total_seconds()
+
 CONF_CONN_METHOD_WEBSOCKET = "conn_method_websocket"
 CONF_CONN_METHOD_LEGACY = "conn_method_legacy"
 
@@ -49,6 +51,8 @@ CONF_STAT_MAX_TEMPERATURE = "stat_max_temp"
 CONF_STAT_MIN_TEMPERATURE = "stat_min_temp"
 CONF_STAT_HOLD_TEMP = "stat_hold_temp"
 CONF_TIMER_HOLD_DURATION = "timer_hold_duration"
+
+CONF_CONNECTION_TTL = "connection_ttl"
 
 SERVICE_HOLD_ON = "hold_on"
 SERVICE_HOLD_OFF = "hold_off"

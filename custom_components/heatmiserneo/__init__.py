@@ -19,6 +19,8 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    CONF_CONNECTION_TTL,
+    DEFAULT_CONNECTION_TTL,
     DISCOVER_SCAN_TIMEOUT,
     DISCOVERY_INTERVAL,
     DOMAIN,
@@ -84,6 +86,7 @@ async def async_setup_entry(
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
     token = entry.data.get(CONF_API_TOKEN)
+    connection_ttl = entry.options.get(CONF_CONNECTION_TTL, DEFAULT_CONNECTION_TTL)
 
     if not unique_id_is_mac(entry.unique_id):
 
@@ -103,9 +106,9 @@ async def async_setup_entry(
     await _async_migrate_unique_ids(hass, entry)
 
     if token:
-        hub = NeoHub(host, port, token=token)
+        hub = NeoHub(host, port, token=token, connection_ttl=connection_ttl)
     else:
-        hub = NeoHub(host, port)
+        hub = NeoHub(host, port, connection_ttl=connection_ttl)
 
     coordinator = HeatmiserNeoCoordinator(hass, entry, hub)
 

@@ -53,6 +53,7 @@ from .const import (
     CONF_THERMOSTAT_OPTIONS,
     CONF_TIMER_HOLD_DURATION,
     CONF_TIMER_OPTIONS,
+    DEFAULT_CONNECTION_TTL,
     DEFAULT_HOST,
     DEFAULT_NEOSTAT_HOLD_DURATION,
     DEFAULT_NEOSTAT_MAX_TEMPERATURE,
@@ -126,7 +127,12 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("Trying connection to NeoHub")
         mac_address: str | None = None
         try:
-            hub = NeoHub(self.host, self._port, token=self._token)
+            hub = NeoHub(
+                self.host,
+                self._port,
+                token=self._token,
+                connection_ttl=DEFAULT_CONNECTION_TTL,
+            )
             await hub.firmware()
             mac_address = str(hub.mac_address) if hub.mac_address else None
             await hub.disconnect()

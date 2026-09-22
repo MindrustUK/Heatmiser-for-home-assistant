@@ -1,5 +1,9 @@
 # Change Log
 
+## 20260922
+
+- Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/357 by @ocrease, set a max connection age on the neo hub
+
 ## 20260909
 
 - Merged https://github.com/MindrustUK/Heatmiser-for-home-assistant/pull/354 by @ocrease, fix via_device_id warning

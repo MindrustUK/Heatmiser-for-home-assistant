@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Discovery of Heatmiser Neo Hubs."""
 
 import asyncio

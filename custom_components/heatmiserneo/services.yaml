@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 hold_on:
   name: Temperature Hold On
   description: Instruct the NeoStat or NeoStats specified to 'hold' a specified temperature for a specified period of time.

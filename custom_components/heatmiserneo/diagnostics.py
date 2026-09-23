@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Diagnostics support for Heatmiser Neo."""
 
-from __future__ import annotations
-
 import logging
 from typing import Any
 

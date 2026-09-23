@@ -2,8 +2,6 @@
 
 """Config flow for Heatmiser Neo."""
 
-from __future__ import annotations
-
 import asyncio
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
@@ -74,6 +72,7 @@ from .const import (
 )
 from .coordinator import HeatmiserNeoConfigEntry
 from .discovery import (
+    async_discover_device,
     async_discover_device_connection_details,
     async_discover_devices,
     async_update_entry_from_discovery,
@@ -107,8 +106,15 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconfig discovered %s", discovery_info)
 
+        neo_hub_details = await async_discover_device(self.hass, discovery_info.host)
+
         self._discovered_device = NeoHubDetails(
-            discovery_info.properties.get(ATTR_PROPERTIES_ID), discovery_info.host
+            neo_hub_details.mac_address
+            if neo_hub_details
+            else discovery_info.properties.get(
+                ATTR_PROPERTIES_ID,
+            ),
+            discovery_info.host,
         )
         _LOGGER.debug(
             "NeoHub discovered from zeroconf discovery: %s", self._discovered_device

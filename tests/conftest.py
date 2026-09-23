@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Define fixtures for AirNow tests."""
 
 from custom_components.heatmiserneo.const import (

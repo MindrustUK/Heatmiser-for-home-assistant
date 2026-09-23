@@ -49,3 +49,14 @@ I've setup the following to accept donations to support my work;
 
 If anyone from Heatmiser is reading; some more devices to build out a more complete hardware test suite to ensure
 coverage would really help the project. Feel free to reach out if you want to help with this.
+
+## License
+
+This project is dual-licensed under the **Apache License 2.0** and the **GNU General Public License version 2 only** (GPL-2.0-only).
+
+You may use, modify, and distribute the code under either license:
+
+- Prefer the permissive terms → use it under Apache License 2.0
+- Prefer strong copyleft / share-alike terms → use it under GPL-2.0-only
+
+See the [LICENSE](LICENSE) file for details and the full license texts in the `LICENSES/` folder.

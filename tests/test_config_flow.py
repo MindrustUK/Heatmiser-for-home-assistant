@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Test the heatmiserneo config flow."""
 
 from ipaddress import ip_address

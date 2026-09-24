@@ -21,7 +21,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import unique_id_is_mac
 from .const import (
     DOMAIN,
     HEATMISER_HUB_PRODUCT_LIST,
@@ -31,6 +30,7 @@ from .const import (
 )
 from .coordinator import HeatmiserNeoConfigEntry, HeatmiserNeoCoordinator
 from .helpers import set_away, set_holiday
+from .utils import unique_id_is_mac
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -35,7 +35,6 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import hold_duration_validation
 from .const import (
     ATTR_HOLD_DURATION,
     ATTR_HOLD_TEMPERATURE,
@@ -67,6 +66,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     async_setup_entities,
 )
+from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
 

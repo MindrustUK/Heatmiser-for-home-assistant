@@ -36,7 +36,6 @@ from homeassistant.helpers.service_info.zeroconf import (
 )
 from homeassistant.helpers.typing import DiscoveryInfoType
 
-from . import hold_duration_validation
 from .const import (
     CONF_CONN_METHOD_LEGACY,
     CONF_CONN_METHOD_WEBSOCKET,
@@ -54,6 +53,7 @@ from .const import (
     CONF_THERMOSTAT_OPTIONS,
     CONF_TIMER_HOLD_DURATION,
     CONF_TIMER_OPTIONS,
+    DEFAULT_CONNECTION_TTL,
     DEFAULT_HOST,
     DEFAULT_NEOSTAT_HOLD_DURATION,
     DEFAULT_NEOSTAT_MAX_TEMPERATURE,
@@ -77,6 +77,7 @@ from .discovery import (
     async_discover_devices,
     async_update_entry_from_discovery,
 )
+from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -121,14 +122,19 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
         )
         return await self._async_handle_discovery()
 
-    async def try_connection(self) -> tuple[str | None, str]:
+    async def try_connection(self) -> tuple[str | None, str | None]:
         """Try connection to NeoHub."""
         _LOGGER.debug("Trying connection to NeoHub")
-        mac_address = None
+        mac_address: str | None = None
         try:
-            hub = NeoHub(self.host, self._port, token=self._token)
+            hub = NeoHub(
+                self.host,
+                self._port,
+                token=self._token,
+                connection_ttl=DEFAULT_CONNECTION_TTL,
+            )
             await hub.firmware()
-            mac_address = hub.mac_address
+            mac_address = str(hub.mac_address) if hub.mac_address else None
             await hub.disconnect()
         except NeoHubConnectionError:
             return None, "cannot_connect"
@@ -161,7 +167,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             )
         else:
             await self.async_set_unique_id(f"{self.host}:{self._port}")
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
 
         mac_address, conn_error = await self.try_connection()
         if not conn_error:
@@ -175,7 +181,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                         dr.format_mac(mac_address),
                         raise_on_progress=False,
                     )
-                    self._abort_if_unique_id_configured()
+                    self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
                 elif dr.format_mac(mac_address) != dr.format_mac(
                     self._discovered_device.mac_address
                 ):
@@ -450,7 +456,7 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="already_in_progress")
         # Handled ignored case since _async_current_entries
         # is called with include_ignore=False
-        self._abort_if_unique_id_configured()
+        self._abort_if_unique_id_configured(updates={CONF_HOST: self.host})
         return await self.async_step_choose_conn_method()
 
     def is_matching(self, other_flow: Self) -> bool:

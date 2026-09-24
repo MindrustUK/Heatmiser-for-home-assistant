@@ -2,13 +2,10 @@
 """The Heatmiser Neo integration."""
 
 import asyncio
-from dataclasses import dataclass
-from datetime import timedelta
 import logging
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
 
 from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import CoreState, HomeAssistant
@@ -22,6 +19,8 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    CONF_CONNECTION_TTL,
+    DEFAULT_CONNECTION_TTL,
     DISCOVER_SCAN_TIMEOUT,
     DISCOVERY_INTERVAL,
     DOMAIN,
@@ -39,8 +38,11 @@ from .discovery import (
     async_trigger_discovery,
     async_update_entry_from_discovery,
 )
+from .utils import unique_id_is_mac
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -54,42 +56,6 @@ PLATFORMS = [
 ]
 
 _OLD_SERIAL_NUMBER_PREFIX = "NEOHUB-SN:000000"
-
-
-@dataclass
-class ProfileLevel:
-    """Base class for a profile level with a time."""
-
-    time: str
-
-
-@dataclass
-class TemperatureProfileLevel(ProfileLevel):
-    """Profile level for temperature settings."""
-
-    temperature: float
-
-
-@dataclass
-class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
-    """Profile level for temperature settings."""
-
-    cool_temperature: float
-    enabled: bool
-
-
-@dataclass
-class TimerProfileLevel(ProfileLevel):
-    """Profile level for on/off states."""
-
-    state: bool
-
-
-@dataclass
-class RawTimerProfileLevel(ProfileLevel):
-    """Profile level for on/off states."""
-
-    end_time: str
 
 
 async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:
@@ -115,6 +81,7 @@ async def async_setup_entry(
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
     token = entry.data.get(CONF_API_TOKEN)
+    connection_ttl = entry.options.get(CONF_CONNECTION_TTL, DEFAULT_CONNECTION_TTL)
 
     if not unique_id_is_mac(entry.unique_id):
 
@@ -134,9 +101,9 @@ async def async_setup_entry(
     await _async_migrate_unique_ids(hass, entry)
 
     if token:
-        hub = NeoHub(host, port, token=token)
+        hub = NeoHub(host, port, token=token, connection_ttl=connection_ttl)
     else:
-        hub = NeoHub(host, port)
+        hub = NeoHub(host, port, connection_ttl=connection_ttl)
 
     coordinator = HeatmiserNeoCoordinator(hass, entry, hub)
 
@@ -174,20 +141,6 @@ async def options_update_listener(
 ):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
-
-
-def time_period_minutes(value: float | str) -> timedelta:
-    """Validate and transform minutes to a time offset."""
-    try:
-        return timedelta(minutes=float(value))
-    except (ValueError, TypeError) as err:
-        raise vol.Invalid(f"Expected minutes, got {value}") from err
-
-
-hold_duration_validation = vol.All(
-    vol.Any(cv.time_period_str, time_period_minutes, timedelta, cv.time_period_dict),
-    cv.positive_timedelta,
-)
 
 
 async def _async_migrate_unique_ids(
@@ -297,13 +250,6 @@ async def _async_migrate_unique_ids(
             entity_registry.async_update_entity(
                 entity_id=reg_entry.entity_id, new_unique_id=new_unique_id
             )
-
-
-def unique_id_is_mac(unique_id: str | None) -> bool:
-    "Check if a unique id is a mac address."
-    if not unique_id:
-        return False
-    return unique_id.count(":") == 5 and len(unique_id) == 17
 
 
 def _has_old_identifier(device: dr.DeviceEntry) -> bool:

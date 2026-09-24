@@ -23,7 +23,6 @@ from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TimerProfileLevel
 from .const import (
     ATTR_AWAY_END,
     ATTR_AWAY_STATE,
@@ -47,7 +46,7 @@ from .entity import (
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import profile_level, set_away, set_holiday
+from .helpers import TimerProfileLevel, profile_level, set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
 

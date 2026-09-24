@@ -1,20 +1,49 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
-"""Constants used by multiple Heatmiser Neo modules."""
+"""Helpers used by multiple Heatmiser Neo modules."""
 
-from datetime import timedelta
-from enum import Enum
+from dataclasses import dataclass
 
 from neohubapi.enums import ScheduleFormat, Weekday
 from neohubapi.neohub import NeoStat
 
-from . import (
-    HeatCoolTemperatureProfileLevel,
-    ProfileLevel,
-    RawTimerProfileLevel,
-    TemperatureProfileLevel,
-    TimerProfileLevel,
-)
 from .coordinator import HeatmiserNeoCoordinator
+from .utils import to_dict
+
+
+@dataclass
+class ProfileLevel:
+    """Base class for a profile level with a time."""
+
+    time: str
+
+
+@dataclass
+class TemperatureProfileLevel(ProfileLevel):
+    """Profile level for temperature settings."""
+
+    temperature: float
+
+
+@dataclass
+class HeatCoolTemperatureProfileLevel(TemperatureProfileLevel):
+    """Profile level for temperature settings."""
+
+    cool_temperature: float
+    enabled: bool
+
+
+@dataclass
+class TimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    state: bool
+
+
+@dataclass
+class RawTimerProfileLevel(ProfileLevel):
+    """Profile level for on/off states."""
+
+    end_time: str
 
 
 def set_away(state: bool, dev: NeoStat) -> None:
@@ -305,27 +334,6 @@ def profile_level(
             ## so that is the next level
             current_level = previous_level
     return current_level
-
-
-def to_dict(item):
-    """Convert an arbitrary object to a dict."""
-    match item:
-        case dict():
-            return {key: to_dict(value) for key, value in item.items()}
-        case list() | tuple():
-            return [to_dict(x) for x in item]
-        case Enum():
-            return item.name
-        case timedelta():
-            return {
-                "days": item.days,
-                "seconds": item.seconds,
-                "microseconds": item.microseconds,
-            }
-        case object(__dict__=_):
-            return {key: to_dict(value) for key, value in vars(item).items()}
-        case _:
-            return item
 
 
 def get_profile_definition(

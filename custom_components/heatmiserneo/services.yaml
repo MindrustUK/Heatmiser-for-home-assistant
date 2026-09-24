@@ -6,7 +6,7 @@ hold_on:
       integration: heatmiserneo
       domain: climate
   fields:
-    hold_duration:
+    hold_duration: &hold_duration
       name: Hold Duration
       description: Set the duration for the hold (hh:mm:ss).
       default: "01:00:00"
@@ -39,13 +39,7 @@ timer_hold_on:
       integration: heatmiserneo
       domain: select
   fields:
-    hold_duration:
-      name: Hold Duration
-      description: Set the duration for the hold (hh:mm:ss).
-      default: "01:00:00"
-      example: "01:00:00"
-      selector:
-        duration:
+    hold_duration: *hold_duration
     hold_state:
       name: Hold State
       description: Whether we should hold on or off
@@ -78,10 +72,11 @@ get_device_profile_definition:
   name: Get Device Profile Definition
   description: Gets the current profile definition from a device
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: select
   fields:
-    friendly_mode:
+    friendly_mode: &friendly_mode
       name: Friendly Mode
       description: Enable to return the profile in a format easier to consume by humans
       default: false
@@ -92,22 +87,20 @@ get_profile_definitions:
   name: Get Profile Definitions
   description: Gets all the profiles from the hub
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    friendly_mode:
-      name: Friendly Mode
-      description: Enable to return the profile in a format easier to consume by humans
-      default: false
-      example: true
-      selector:
-        boolean:
+    friendly_mode: *friendly_mode
 rename_profile:
   name: Rename Profile
   description: Updates the name of an existing profile
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
     old_name:
       name: Old Name
@@ -127,8 +120,10 @@ delete_profile:
   name: Delete Profile
   description: Delete a profile
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
     name:
       name: Name
@@ -141,17 +136,19 @@ create_profile_one:
   name: Create Profile - 24hr
   description: Creates or update a profile which is the same every day
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
+    name: &profile_name_create
       name: Profile Name
       description: Profile Name. If mode is Create, it must not be in use already
       required: true
       example: New Profile
       selector:
         text:
-    mode:
+    mode: &profile_create_mode
       name: Mode
       description: Choose the mode of operation
       required: true
@@ -164,7 +161,7 @@ create_profile_one:
             - "update"
             - "upsert"
           translation_key: profile_create_mode
-    sunday_times:
+    sunday_times: &profile_create_times
       name: Times
       description: Profile level time in HH:MM format
       required: true
@@ -172,7 +169,7 @@ create_profile_one:
       selector:
         text:
           multiple: true
-    sunday_temperatures:
+    sunday_temperatures: &profile_create_temperatures
       name: Temperatures
       description: Profile level temperature in 0.5 degree steps
       required: true
@@ -184,255 +181,81 @@ create_profile_two:
   name: Create Profile - 5 Day / 2 Day
   description: Creates or update a profile for weekdays and weekends
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
-      name: Profile Name
-      description: Profile Name. If mode is Create, it must not be in use already
-      required: true
-      example: New Profile
-      selector:
-        text:
-    mode:
-      name: Mode
-      description: Choose the mode of operation
-      required: true
-      default: create
-      example: upsert
-      selector:
-        select:
-          options:
-            - "create"
-            - "update"
-            - "upsert"
-          translation_key: profile_create_mode
+    name: *profile_name_create
+    mode: *profile_create_mode
     monday_levels:
       collapsed: true
       fields:
-        monday_times:
-          name: Times
-          description: Profile level time in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        monday_temperatures:
-          name: Temperatures
-          description: Profile level temperature in 0.5 degree steps
-          required: true
-          example: "[19.5, 17, 20.5, 16]"
-          selector:
-            text:
-              multiple: true
+        monday_times: *profile_create_times
+        monday_temperatures: *profile_create_temperatures
     sunday_levels:
       collapsed: true
       fields:
-        sunday_times:
-          name: Times
-          description: Profile level time. Seconds are disregarded
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        sunday_temperatures:
-          name: Temperatures
-          description: Profile level temperature
-          required: true
-          example: "[19.5, 16]"
-          selector:
-            text:
-              multiple: true
+        sunday_times: *profile_create_times
+        sunday_temperatures: *profile_create_temperatures
 create_profile_seven:
   name: Create Profile - 7 Day
   description: Creates or update a profile for each day of the week
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
-      name: Profile Name
-      description: Profile Name. If mode is Create, it must not be in use already
-      required: true
-      example: New Profile
-      selector:
-        text:
-    mode:
-      name: Mode
-      description: Choose the mode of operation
-      required: true
-      default: create
-      example: upsert
-      selector:
-        select:
-          options:
-            - "create"
-            - "update"
-            - "upsert"
-          translation_key: profile_create_mode
+    name: *profile_name_create
+    mode: *profile_create_mode
     monday_levels:
       collapsed: true
       fields:
-        monday_times:
-          name: Times
-          description: Profile level time in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        monday_temperatures:
-          name: Temperatures
-          description: Profile level temperature in 0.5 degree steps
-          required: true
-          example: "[19.5, 17, 20.5, 16]"
-          selector:
-            text:
-              multiple: true
+        monday_times: *profile_create_times
+        monday_temperatures: *profile_create_temperatures
     tuesday_levels:
       collapsed: true
       fields:
-        tuesday_times:
-          name: Times
-          description: Profile level time in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        tuesday_temperatures:
-          name: Temperatures
-          description: Profile level temperature in 0.5 degree steps
-          required: true
-          example: "[19.5, 17, 20.5, 16]"
-          selector:
-            text:
-              multiple: true
+        tuesday_times: *profile_create_times
+        tuesday_temperatures: *profile_create_temperatures
     wednesday_levels:
       collapsed: true
       fields:
-        wednesday_times:
-          name: Times
-          description: Profile level time. Seconds are disregarded
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        wednesday_temperatures:
-          name: Temperatures
-          description: Profile level temperature
-          required: true
-          example: "[19.5, 16]"
-          selector:
-            text:
-              multiple: true
+        wednesday_times: *profile_create_times
+        wednesday_temperatures: *profile_create_temperatures
     thursday_levels:
       collapsed: true
       fields:
-        thursday_times:
-          name: Times
-          description: Profile level time in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        thursday_temperatures:
-          name: Temperatures
-          description: Profile level temperature in 0.5 degree steps
-          required: true
-          example: "[19.5, 17, 20.5, 16]"
-          selector:
-            text:
-              multiple: true
+        thursday_times: *profile_create_times
+        thursday_temperatures: *profile_create_temperatures
     friday_levels:
       collapsed: true
       fields:
-        friday_times:
-          name: Times
-          description: Profile level time. Seconds are disregarded
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        friday_temperatures:
-          name: Temperatures
-          description: Profile level temperature
-          required: true
-          example: "[19.5, 16]"
-          selector:
-            text:
-              multiple: true
+        friday_times: *profile_create_times
+        friday_temperatures: *profile_create_temperatures
     saturday_levels:
       collapsed: true
       fields:
-        saturday_times:
-          name: Times
-          description: Profile level time in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        saturday_temperatures:
-          name: Temperatures
-          description: Profile level temperature in 0.5 degree steps
-          required: true
-          example: "[19.5, 17, 20.5, 16]"
-          selector:
-            text:
-              multiple: true
+        saturday_times: *profile_create_times
+        saturday_temperatures: *profile_create_temperatures
     sunday_levels:
       collapsed: true
       fields:
-        sunday_times:
-          name: Times
-          description: Profile level time. Seconds are disregarded
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        sunday_temperatures:
-          name: Temperatures
-          description: Profile level temperature
-          required: true
-          example: "[19.5, 16]"
-          selector:
-            text:
-              multiple: true
+        sunday_times: *profile_create_times
+        sunday_temperatures: *profile_create_temperatures
 create_timer_profile_one:
   name: Create Timer Profile - 24hr
   description: Creates or update a timer profile which is the same every day
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
-      name: Profile Name
-      description: Profile Name. If mode is Create, it must not be in use already
-      required: true
-      example: New Profile
-      selector:
-        text:
-    mode:
-      name: Mode
-      description: Choose the mode of operation
-      required: true
-      default: create
-      example: upsert
-      selector:
-        select:
-          options:
-            - "create"
-            - "update"
-            - "upsert"
-          translation_key: profile_create_mode
-    sunday_on_times:
+    name: *profile_name_create
+    mode: *profile_create_mode
+    sunday_on_times: &timer_profile_create_on_times
       name: Switch On Times
       description: Times to switch on in HH:MM format
       required: true
@@ -440,7 +263,7 @@ create_timer_profile_one:
       selector:
         text:
           multiple: true
-    sunday_off_times:
+    sunday_off_times: &timer_profile_create_off_times
       name: Switch Off Times
       description: Times to switch off in HH:MM format
       required: true
@@ -452,224 +275,66 @@ create_timer_profile_two:
   name: Create Timer Profile - 5 Day / 2 Day
   description: Creates or update a timer profile for weekdays and weekends
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
-      name: Profile Name
-      description: Profile Name. If mode is Create, it must not be in use already
-      required: true
-      example: New Profile
-      selector:
-        text:
-    mode:
-      name: Mode
-      description: Choose the mode of operation
-      required: true
-      default: create
-      example: upsert
-      selector:
-        select:
-          options:
-            - "create"
-            - "update"
-            - "upsert"
-          translation_key: profile_create_mode
+    name: *profile_name_create
+    mode: *profile_create_mode
     monday_levels:
       collapsed: true
       fields:
-        monday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        monday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 10:30, 19:00, 01:00]"
-          selector:
-            text:
-              multiple: true
+        monday_on_times: *timer_profile_create_on_times
+        monday_off_times: *timer_profile_create_off_times
     sunday_levels:
       collapsed: true
       fields:
-        sunday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        sunday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 01:00]"
-          selector:
-            text:
-              multiple: true
+        sunday_on_times: *timer_profile_create_on_times
+        sunday_off_times: *timer_profile_create_off_times
 create_timer_profile_seven:
   name: Create Timer Profile - 7 Day
   description: Creates or update a timer profile for each day of the week
   target:
-    device:
+    entity:
       integration: heatmiserneo
+      domain: sensor
+      device_class: enum
   fields:
-    name:
-      name: Profile Name
-      description: Profile Name. If mode is Create, it must not be in use already
-      required: true
-      example: New Profile
-      selector:
-        text:
-    mode:
-      name: Mode
-      description: Choose the mode of operation
-      required: true
-      default: create
-      example: upsert
-      selector:
-        select:
-          options:
-            - "create"
-            - "update"
-            - "upsert"
-          translation_key: profile_create_mode
+    name: *profile_name_create
+    mode: *profile_create_mode
     monday_levels:
       collapsed: true
       fields:
-        monday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        monday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 10:30, 19:00, 01:00]"
-          selector:
-            text:
-              multiple: true
+        monday_on_times: *timer_profile_create_on_times
+        monday_off_times: *timer_profile_create_off_times
     tuesday_levels:
       collapsed: true
       fields:
-        tuesday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        tuesday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 10:30, 19:00, 01:00]"
-          selector:
-            text:
-              multiple: true
+        tuesday_on_times: *timer_profile_create_on_times
+        tuesday_off_times: *timer_profile_create_off_times
     wednesday_levels:
       collapsed: true
       fields:
-        wednesday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        wednesday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 01:00]"
-          selector:
-            text:
-              multiple: true
+        wednesday_on_times: *timer_profile_create_on_times
+        wednesday_off_times: *timer_profile_create_off_times
     thursday_levels:
       collapsed: true
       fields:
-        thursday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        thursday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 10:30, 19:00, 01:00]"
-          selector:
-            text:
-              multiple: true
+        thursday_on_times: *timer_profile_create_on_times
+        thursday_off_times: *timer_profile_create_off_times
     friday_levels:
       collapsed: true
       fields:
-        friday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        friday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 01:00]"
-          selector:
-            text:
-              multiple: true
+        friday_on_times: *timer_profile_create_on_times
+        friday_off_times: *timer_profile_create_off_times
     saturday_levels:
       collapsed: true
       fields:
-        saturday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 09:00, 17:00, 22:00]"
-          selector:
-            text:
-              multiple: true
-        saturday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 10:30, 19:00, 01:00]"
-          selector:
-            text:
-              multiple: true
+        saturday_on_times: *timer_profile_create_on_times
+        saturday_off_times: *timer_profile_create_off_times
     sunday_levels:
       collapsed: true
       fields:
-        sunday_on_times:
-          name: Switch On Times
-          description: Times to switch on in HH:MM format
-          required: true
-          example: "[06:45, 22:00]"
-          selector:
-            text:
-              multiple: true
-        sunday_off_times:
-          name: Switch Off Times
-          description: Times to switch off in HH:MM format
-          required: true
-          example: "[07:45, 01:00]"
-          selector:
-            text:
-              multiple: true
+        sunday_on_times: *timer_profile_create_on_times
+        sunday_off_times: *timer_profile_create_off_times

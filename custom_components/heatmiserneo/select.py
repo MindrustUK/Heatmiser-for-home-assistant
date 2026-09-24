@@ -18,7 +18,6 @@ from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import hold_duration_validation
 from .const import (
     ATTR_FRIENDLY_MODE,
     ATTR_HOLD_DURATION,
@@ -47,6 +46,7 @@ from .entity import (
     profile_sensor_enabled_by_default,
 )
 from .helpers import get_profile_definition
+from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
 

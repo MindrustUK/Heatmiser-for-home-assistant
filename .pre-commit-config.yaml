@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.5
+    rev: v0.16.10
     hooks:
       - id: ruff-check
         args:

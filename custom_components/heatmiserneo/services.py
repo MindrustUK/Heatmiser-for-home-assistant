@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from neohubapi.neohub import NeoStat, ScheduleFormat
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
 from homeassistant.config_entries import ConfigEntryState
@@ -138,6 +138,8 @@ SCHEDULE_WEEKDAYS = {
     ],
 }
 
+ensure_list = probatio.EnsureList()
+
 
 def _dates_only_provided_when_setting_away(
     state_key, end_key
@@ -149,11 +151,13 @@ def _dates_only_provided_when_setting_away(
         end_val = obj.get(end_key)
         if not state_val:
             # if start_val:
-            #     raise vol.Invalid(
+            #     raise probatio.Invalid(
             #         "Start date should only be specified if setting away."
             #     )
             if end_val:
-                raise vol.Invalid("End date should only be specified if setting away.")
+                raise probatio.Invalid(
+                    "End date should only be specified if setting away."
+                )
         return obj
 
     return validate
@@ -164,74 +168,74 @@ def time_str(value: Any) -> str:
     try:
         time_val = dt_util.parse_time(value)
     except TypeError as err:
-        raise vol.Invalid("Not a parseable type") from err
+        raise probatio.Invalid("Not a parseable type") from err
 
     if time_val is None:
-        raise vol.Invalid(f"Invalid time specified: {value}")
+        raise probatio.Invalid(f"Invalid time specified: {value}")
 
     return time_val.strftime("%H:%M")
 
 
-SCHEMA_SET_AWAY_MODE = vol.All(
-    vol.Schema(
+SCHEMA_SET_AWAY_MODE = probatio.All(
+    probatio.Schema(
         {
-            vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
+            probatio.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
                 {"integration": DOMAIN}
             ),
-            vol.Required(ATTR_AWAY_STATE, default=False): cv.boolean,
-            # vol.Optional(ATTR_AWAY_START): cv.datetime,
-            vol.Optional(ATTR_AWAY_END): cv.datetime,
+            probatio.Required(ATTR_AWAY_STATE, default=False): cv.boolean,
+            # probatio.Optional(ATTR_AWAY_START): cv.datetime,
+            probatio.Optional(ATTR_AWAY_END): cv.datetime,
         }
     ),
     _dates_only_provided_when_setting_away(ATTR_AWAY_STATE, ATTR_AWAY_END),
 )
 
-SCHEMA_RENAME_PROFILE = vol.Schema(
+SCHEMA_RENAME_PROFILE = probatio.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
+        probatio.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
             {"integration": DOMAIN}
         ),
-        vol.Required(ATTR_NAME_OLD): cv.string,
-        vol.Required(ATTR_NAME_NEW): cv.string,
+        probatio.Required(ATTR_NAME_OLD): cv.string,
+        probatio.Required(ATTR_NAME_NEW): cv.string,
     }
 )
 
-SCHEMA_DELETE_PROFILE = vol.Schema(
+SCHEMA_DELETE_PROFILE = probatio.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
+        probatio.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
             {"integration": DOMAIN}
         ),
-        vol.Required(ATTR_NAME): cv.string,
+        probatio.Required(ATTR_NAME): cv.string,
     }
 )
 
-SCHEMA_GET_PROFILE_DEFINITIONS = vol.Schema(
+SCHEMA_GET_PROFILE_DEFINITIONS = probatio.Schema(
     {
-        vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
+        probatio.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
             {"integration": DOMAIN}
         ),
-        vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+        probatio.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
     }
 )
 
 SCHEMA_GET_DEVICE_PROFILE_DEFINITION = cv.make_entity_service_schema(
     {
-        vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+        probatio.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
     }
 )
 
 SCHEMA_TIMER_HOLD_ON = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-        vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
+        probatio.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
+        probatio.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
     }
 )
 
 SCHEMA_HOLD_ON = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-        vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.All(
-            vol.Coerce(float), vol.Range(min=0, max=35)
+        probatio.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
+        probatio.Required(ATTR_HOLD_TEMPERATURE, default=20): probatio.All(
+            probatio.Coerce(float), probatio.Range(min=0, max=35)
         ),
     }
 )
@@ -239,106 +243,122 @@ SCHEMA_HOLD_OFF = cv.make_entity_service_schema({})
 
 
 PARTIAL_SCHEMA_PROFILE_CREATE = {
-    vol.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector({"integration": DOMAIN}),
-    vol.Required(ATTR_NAME): cv.string,
-    vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
+    probatio.Required(ATTR_CONFIG_ENTRY_ID): ConfigEntrySelector(
+        {"integration": DOMAIN}
+    ),
+    probatio.Required(ATTR_NAME): cv.string,
+    probatio.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): probatio.In(
         OPTIONS_CREATE_MODE
     ),
 }
 
-SCHEMA_CREATE_PROFILE_ONE = vol.Schema(
+SCHEMA_CREATE_PROFILE_ONE = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
     }
 )
 
-SCHEMA_CREATE_PROFILE_TWO = vol.Schema(
+SCHEMA_CREATE_PROFILE_TWO = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_MONDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
     }
 )
 
-SCHEMA_CREATE_PROFILE_SEVEN = vol.Schema(
+SCHEMA_CREATE_PROFILE_SEVEN = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_MONDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_TUESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_TUESDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_TUESDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_TUESDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_WEDNESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_WEDNESDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_WEDNESDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_WEDNESDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_THURSDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_THURSDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_THURSDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_THURSDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_FRIDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_FRIDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_FRIDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_FRIDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_SATURDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SATURDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_SATURDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SATURDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
-        vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-            cv.ensure_list, [vol.Coerce(float)]
+        probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+            ensure_list, [probatio.Coerce(float)]
         ),
     }
 )
 
-SCHEMA_CREATE_TIMER_PROFILE_ONE = vol.Schema(
+SCHEMA_CREATE_TIMER_PROFILE_ONE = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
     }
 )
 
-SCHEMA_CREATE_TIMER_PROFILE_TWO = vol.Schema(
+SCHEMA_CREATE_TIMER_PROFILE_TWO = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
     }
 )
 
-SCHEMA_CREATE_TIMER_PROFILE_SEVEN = vol.Schema(
+SCHEMA_CREATE_TIMER_PROFILE_SEVEN = probatio.Schema(
     {
         **PARTIAL_SCHEMA_PROFILE_CREATE,
-        vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_TUESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_TUESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_WEDNESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_WEDNESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_THURSDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_THURSDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_FRIDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_FRIDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SATURDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SATURDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-        vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_MONDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_TUESDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_TUESDAY_OFF_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_WEDNESDAY_ON_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_WEDNESDAY_OFF_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_THURSDAY_ON_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_THURSDAY_OFF_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_FRIDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_FRIDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SATURDAY_ON_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_SATURDAY_OFF_TIMES): probatio.All(
+            ensure_list, [time_str]
+        ),
+        probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(ensure_list, [time_str]),
+        probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(ensure_list, [time_str]),
     }
 )
 

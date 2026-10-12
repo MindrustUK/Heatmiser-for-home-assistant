@@ -379,12 +379,10 @@ def _validate_device_id(
             },
         )
     entry: HeatmiserNeoConfigEntry | None = None
-    for entry_id in device_entry.config_entries:
-        _entry = hass.config_entries.async_get_entry(entry_id)
-        assert _entry
-        if _entry.domain == DOMAIN:
-            entry = _validate_config_entry(hass, entry_id)
-            break
+    _entry = hass.config_entries.async_get_entry(device_entry.config_entry_id)
+    assert _entry
+    if _entry.domain == DOMAIN:
+        entry = _validate_config_entry(hass, device_entry.config_entry_id)
 
     if entry is None:
         translation_key = "config_entry_not_found_for_device"

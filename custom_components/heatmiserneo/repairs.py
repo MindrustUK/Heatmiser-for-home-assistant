@@ -3,7 +3,7 @@
 
 import logging
 
-import voluptuous as vol
+import probatio
 
 from homeassistant import data_entry_flow
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
@@ -56,7 +56,7 @@ class CleanupOldDevicesFlow(RepairsFlow):
 
         return self.async_show_form(
             step_id="confirm",
-            data_schema=vol.Schema({}),
+            data_schema=probatio.Schema({}),
         )
 
 

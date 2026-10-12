@@ -4,7 +4,7 @@
 from datetime import timedelta
 from enum import Enum
 
-import voluptuous as vol
+import probatio
 
 from homeassistant.helpers import config_validation as cv
 
@@ -14,11 +14,13 @@ def _time_period_minutes(value: float | str) -> timedelta:
     try:
         return timedelta(minutes=float(value))
     except (ValueError, TypeError) as err:
-        raise vol.Invalid(f"Expected minutes, got {value}") from err
+        raise probatio.Invalid(f"Expected minutes, got {value}") from err
 
 
-hold_duration_validation = vol.All(
-    vol.Any(cv.time_period_str, _time_period_minutes, timedelta, cv.time_period_dict),
+hold_duration_validation = probatio.All(
+    probatio.Any(
+        cv.time_period_str, _time_period_minutes, timedelta, cv.time_period_dict
+    ),
     cv.positive_timedelta,
 )
 

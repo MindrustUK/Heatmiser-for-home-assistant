@@ -2,7 +2,7 @@
 """Services for HeatmiserNeo."""
 
 from collections.abc import Callable
-import datetime
+import datetime as dt
 from functools import partial
 import json
 import logging
@@ -452,15 +452,13 @@ async def _async_set_away_mode(call: ServiceCall) -> None:
             await hub.cancel_holiday()
             holiday = False
     else:
-        end_date: datetime.datetime | None = call.data.get(ATTR_AWAY_END)
+        end_date: dt.datetime | None = call.data.get(ATTR_AWAY_END)
         if end_date:
             if coordinator.live_data.HUB_AWAY:
                 await hub.set_away(False)
                 away = False
 
-            await hub.set_holiday(
-                datetime.datetime.now() - datetime.timedelta(days=1), end_date
-            )
+            await hub.set_holiday(dt.datetime.now() - dt.timedelta(days=1), end_date)
             holiday = True
         else:
             if coordinator.live_data.HUB_HOLIDAY:

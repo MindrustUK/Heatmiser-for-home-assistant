@@ -9,7 +9,7 @@ import logging
 from typing import Final
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory, Platform
@@ -577,15 +577,15 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_TIMER_HOLD_ON,
         {
-            vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-            vol.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
+            probatio.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
+            probatio.Optional(ATTR_HOLD_STATE, default=True): cv.boolean,
         },
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_GET_DEVICE_PROFILE_DEFINITION,
         {
-            vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+            probatio.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
         },
         call_custom_action,
         supports_response=SupportsResponse.ONLY,

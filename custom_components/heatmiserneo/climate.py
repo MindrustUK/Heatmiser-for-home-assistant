@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.climate import (
     ATTR_TARGET_TEMP_HIGH,
@@ -27,9 +27,8 @@ from homeassistant.components.climate import (
     ClimateEntityFeature,
     HVACAction,
     HVACMode,
-    UnitOfTemperature,
 )
-from homeassistant.const import ATTR_TEMPERATURE, Platform
+from homeassistant.const import ATTR_TEMPERATURE, Platform, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
@@ -131,9 +130,9 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_HOLD_ON,
         {
-            vol.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
-            vol.Required(ATTR_HOLD_TEMPERATURE, default=20): vol.All(
-                vol.Coerce(float), vol.Range(min=0, max=35)
+            probatio.Required(ATTR_HOLD_DURATION, default=1): hold_duration_validation,
+            probatio.Required(ATTR_HOLD_TEMPERATURE, default=20): probatio.All(
+                probatio.Coerce(float), probatio.Range(min=0, max=35)
             ),
         },
         "set_hold",

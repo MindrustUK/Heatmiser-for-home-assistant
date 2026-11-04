@@ -12,9 +12,14 @@ from neohubapi.discovery import NeoHubConnectDetails, NeoHubDetails
 from neohubapi.neohub import NeoHub, NeoHubConnectionError
 import probatio
 
-from homeassistant.components.climate import UnitOfTemperature
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_NAME, CONF_PORT
+from homeassistant.const import (
+    CONF_API_TOKEN,
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    UnitOfTemperature,
+)
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import device_registry as dr

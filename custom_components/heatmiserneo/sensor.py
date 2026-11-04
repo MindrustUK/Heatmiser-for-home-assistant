@@ -3,7 +3,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-import datetime
+import datetime as dt
 import logging
 from typing import Any
 
@@ -380,28 +380,26 @@ def _profile_next_temp(profile_id, entity: HeatmiserNeoEntity) -> float | None:
     return None
 
 
-def _profile_next_time(
-    profile_id, entity: HeatmiserNeoEntity
-) -> datetime.datetime | None:
+def _profile_next_time(profile_id, entity: HeatmiserNeoEntity) -> dt.datetime | None:
     level = _profile_next_level(profile_id, entity)
     if not level:
         return None
     device_time = entity.data._data_.TIME
     if len(device_time) == 4:
         device_time = f"0{device_time}"
-    profile_time = datetime.datetime.strptime(level.time, "%H:%M")
+    profile_time = dt.datetime.strptime(level.time, "%H:%M")
     tz = entity.coordinator.system_data.TIME_ZONE
     if entity.coordinator.system_data.DST_ON:
         tz = tz + 1
-    profile_datetime = datetime.datetime.now().replace(
+    profile_datetime = dt.datetime.now().replace(
         hour=profile_time.hour,
         minute=profile_time.minute,
         second=0,
         microsecond=0,
-        tzinfo=datetime.timezone(datetime.timedelta(minutes=tz * 60)),
+        tzinfo=dt.timezone(dt.timedelta(minutes=tz * 60)),
     )
     if level.time < device_time:
-        return profile_datetime + datetime.timedelta(days=1)
+        return profile_datetime + dt.timedelta(days=1)
     return profile_datetime
 
 
@@ -410,7 +408,7 @@ def _profile_next_level(profile_id, entity: HeatmiserNeoEntity) -> ProfileLevel 
     return profile_level(profile_id, entity.data, entity.coordinator, True)
 
 
-def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | None:
+def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> dt.datetime | None:
     """Convert the holiday end to a datetime."""
     holiday = coordinator.live_data.HUB_HOLIDAY
     holiday_end = coordinator.live_data.HOLIDAY_END
@@ -419,10 +417,10 @@ def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | No
         return None
 
     try:
-        parsed_datetime = datetime.datetime.strptime(holiday_end, HOLIDAY_FORMAT)
+        parsed_datetime = dt.datetime.strptime(holiday_end, HOLIDAY_FORMAT)
         return parsed_datetime.replace(
-            tzinfo=datetime.timezone(
-                datetime.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)
+            tzinfo=dt.timezone(
+                dt.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)
             )
         )
     except ValueError:

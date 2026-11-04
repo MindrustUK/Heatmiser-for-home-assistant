@@ -10,8 +10,8 @@ from homeassistant.components.climate import (
     FAN_LOW,
     FAN_MEDIUM,
     FAN_OFF,
-    UnitOfTemperature,
 )
+from homeassistant.const import UnitOfTemperature
 
 DOMAIN = "heatmiserneo"
 

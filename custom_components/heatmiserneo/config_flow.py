@@ -11,11 +11,16 @@ from typing import Any, Self
 
 from neohubapi.discovery import NeoHubConnectDetails, NeoHubDetails
 from neohubapi.neohub import NeoHub, NeoHubConnectionError
-import voluptuous as vol
+import probatio
 
-from homeassistant.components.climate import UnitOfTemperature
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_API_TOKEN, CONF_HOST, CONF_NAME, CONF_PORT
+from homeassistant.const import (
+    CONF_API_TOKEN,
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    UnitOfTemperature,
+)
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import device_registry as dr
@@ -337,7 +342,9 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="no_new_devices_discovered")
         return self.async_show_form(
             step_id=CONF_DISCOVERY_METHOD_HUBSEEK,
-            data_schema=vol.Schema({vol.Required(CONF_DEVICE): vol.In(devices_name)}),
+            data_schema=probatio.Schema(
+                {probatio.Required(CONF_DEVICE): probatio.In(devices_name)}
+            ),
         )
 
     async def async_step_discovery_method_manual(
@@ -377,15 +384,15 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                 return result
         return self.async_show_form(
             step_id=CONF_CONN_METHOD_WEBSOCKET,
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(
+                    probatio.Required(
                         CONF_HOST,
                         default=self._discovered_device.ip_address
                         if self._discovered_device
                         else self.host or DEFAULT_HOST,
                     ): str,
-                    vol.Required(CONF_API_TOKEN, default=self._token): str,
+                    probatio.Required(CONF_API_TOKEN, default=self._token): str,
                 }
             ),
             errors=errors,
@@ -414,9 +421,9 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id=CONF_CONN_METHOD_LEGACY,
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(
+                    probatio.Required(
                         CONF_HOST,
                         default=self._discovered_device.ip_address
                         if self._discovered_device
@@ -588,9 +595,9 @@ class OptionsFlowHandler(OptionsFlow):
                     },
                 )
 
-        options_schema = vol.Schema(
+        options_schema = probatio.Schema(
             {
-                vol.Required(
+                probatio.Required(
                     d,
                     default=set(self._hvac_config.get(d, self._system_modes))
                     - self._mandatory_modes,
@@ -654,12 +661,12 @@ class OptionsFlowHandler(OptionsFlow):
                     },
                 )
         temperature_step = await self.config_entry.runtime_data.coordinator.hub.target_temperature_step()
-        options_schema = vol.Schema(
+        options_schema = probatio.Schema(
             {
-                vol.Required(CONF_THERMOSTAT_OPTIONS): section(
-                    vol.Schema(
+                probatio.Required(CONF_THERMOSTAT_OPTIONS): section(
+                    probatio.Schema(
                         {
-                            vol.Required(
+                            probatio.Required(
                                 CONF_STAT_MAX_TEMPERATURE,
                                 default=self._defaults_config.get(
                                     CONF_THERMOSTAT_OPTIONS, {}
@@ -676,7 +683,7 @@ class OptionsFlowHandler(OptionsFlow):
                                     unit_of_measurement=self._unit_of_measurement,
                                 )
                             ),
-                            vol.Required(
+                            probatio.Required(
                                 CONF_STAT_MIN_TEMPERATURE,
                                 default=self._defaults_config.get(
                                     CONF_THERMOSTAT_OPTIONS, {}
@@ -693,7 +700,7 @@ class OptionsFlowHandler(OptionsFlow):
                                     unit_of_measurement=self._unit_of_measurement,
                                 )
                             ),
-                            vol.Required(
+                            probatio.Required(
                                 CONF_STAT_HOLD_DURATION,
                                 default={
                                     "minutes": self._defaults_config.get(
@@ -710,7 +717,7 @@ class OptionsFlowHandler(OptionsFlow):
                                     allow_negative=False,
                                 )
                             ),
-                            vol.Required(
+                            probatio.Required(
                                 CONF_STAT_HOLD_TEMP,
                                 default=self._defaults_config.get(
                                     CONF_THERMOSTAT_OPTIONS, {}
@@ -730,10 +737,10 @@ class OptionsFlowHandler(OptionsFlow):
                         }
                     )
                 ),
-                vol.Required(CONF_TIMER_OPTIONS): section(
-                    vol.Schema(
+                probatio.Required(CONF_TIMER_OPTIONS): section(
+                    probatio.Schema(
                         {
-                            vol.Required(
+                            probatio.Required(
                                 CONF_TIMER_HOLD_DURATION,
                                 default={
                                     "minutes": self._defaults_config.get(
@@ -793,9 +800,9 @@ class OptionsFlowHandler(OptionsFlow):
                 device_join, "waiting_for_device_connect", "device_added"
             )
 
-        options_schema = vol.Schema(
+        options_schema = probatio.Schema(
             {
-                vol.Required(CONF_NAME): str,
+                probatio.Required(CONF_NAME): str,
             }
         )
 

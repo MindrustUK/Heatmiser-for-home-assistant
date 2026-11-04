@@ -4,13 +4,13 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-import datetime
+import datetime as dt
 import json
 import logging
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat, ScheduleFormat
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.climate import (
     FAN_AUTO,
@@ -134,16 +134,18 @@ SCHEDULE_WEEKDAYS = {
     ],
 }
 
+ensure_list = probatio.EnsureList()
+
 
 def time_str(value: Any) -> str:
     """Input validator for time string in profile services."""
     try:
         time_val = dt_util.parse_time(value)
     except TypeError as err:
-        raise vol.Invalid("Not a parseable type") from err
+        raise probatio.Invalid("Not a parseable type") from err
 
     if time_val is None:
-        raise vol.Invalid(f"Invalid time specified: {value}")
+        raise probatio.Invalid(f"Invalid time specified: {value}")
 
     return time_val.strftime("%H:%M")
 
@@ -186,26 +188,26 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_RENAME_PROFILE,
         {
-            vol.Required(ATTR_NAME_OLD): cv.string,
-            vol.Required(ATTR_NAME_NEW): cv.string,
+            probatio.Required(ATTR_NAME_OLD): cv.string,
+            probatio.Required(ATTR_NAME_NEW): cv.string,
         },
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_DELETE_PROFILE,
-        {vol.Required(ATTR_NAME): cv.string},
+        {probatio.Required(ATTR_NAME): cv.string},
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_CREATE_PROFILE_ONE,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
-            ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
         },
         call_custom_action,
@@ -213,17 +215,17 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_CREATE_PROFILE_TWO,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_MONDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_MONDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
-            vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
-            ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
         },
         call_custom_action,
@@ -231,37 +233,45 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_CREATE_PROFILE_SEVEN,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_MONDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_MONDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
-            vol.Required(ATTR_MONDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_TUESDAY_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_TUESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_TUESDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
-            vol.Required(ATTR_WEDNESDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_WEDNESDAY_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_THURSDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_WEDNESDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
-            vol.Required(ATTR_FRIDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_THURSDAY_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_SATURDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_THURSDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
-            vol.Required(ATTR_SUNDAY_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_TEMPERATURES): vol.All(
-                cv.ensure_list, [vol.Coerce(float)]
+            probatio.Required(ATTR_FRIDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_FRIDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
+            ),
+            probatio.Required(ATTR_SATURDAY_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SATURDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
+            ),
+            probatio.Required(ATTR_SUNDAY_TIMES): probatio.All(ensure_list, [time_str]),
+            probatio.Required(ATTR_SUNDAY_TEMPERATURES): probatio.All(
+                ensure_list, [probatio.Coerce(float)]
             ),
         },
         call_custom_action,
@@ -269,57 +279,97 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_CREATE_TIMER_PROFILE_ONE,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+            probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
         },
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_CREATE_TIMER_PROFILE_TWO,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_MONDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+            probatio.Required(ATTR_MONDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
         },
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_CREATE_TIMER_PROFILE_SEVEN,
         {
-            vol.Required(ATTR_NAME): cv.string,
-            vol.Optional(ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE): vol.In(
-                OPTIONS_CREATE_MODE
+            probatio.Required(ATTR_NAME): cv.string,
+            probatio.Optional(
+                ATTR_CREATE_MODE, default=OPTION_CREATE_MODE_CREATE
+            ): probatio.In(OPTIONS_CREATE_MODE),
+            probatio.Required(ATTR_MONDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
             ),
-            vol.Required(ATTR_MONDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_MONDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_TUESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_WEDNESDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_THURSDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_FRIDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SATURDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_ON_TIMES): vol.All(cv.ensure_list, [time_str]),
-            vol.Required(ATTR_SUNDAY_OFF_TIMES): vol.All(cv.ensure_list, [time_str]),
+            probatio.Required(ATTR_MONDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_TUESDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_TUESDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_WEDNESDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_WEDNESDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_THURSDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_THURSDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_FRIDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_FRIDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SATURDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SATURDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SUNDAY_ON_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
+            probatio.Required(ATTR_SUNDAY_OFF_TIMES): probatio.All(
+                ensure_list, [time_str]
+            ),
         },
         call_custom_action,
     )
     platform.async_register_entity_service(
         SERVICE_GET_PROFILE_DEFINITIONS,
         {
-            vol.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
+            probatio.Optional(ATTR_FRIENDLY_MODE, default=False): cv.boolean,
         },
         call_custom_action,
         supports_response=SupportsResponse.ONLY,
@@ -836,28 +886,26 @@ def _profile_next_temp(profile_id, entity: HeatmiserNeoEntity) -> float | None:
     return None
 
 
-def _profile_next_time(
-    profile_id, entity: HeatmiserNeoEntity
-) -> datetime.datetime | None:
+def _profile_next_time(profile_id, entity: HeatmiserNeoEntity) -> dt.datetime | None:
     level = _profile_next_level(profile_id, entity)
     if not level:
         return None
     device_time = entity.data._data_.TIME
     if len(device_time) == 4:
         device_time = f"0{device_time}"
-    profile_time = datetime.datetime.strptime(level.time, "%H:%M")
+    profile_time = dt.datetime.strptime(level.time, "%H:%M")
     tz = entity.coordinator.system_data.TIME_ZONE
     if entity.coordinator.system_data.DST_ON:
         tz = tz + 1
-    profile_datetime = datetime.datetime.now().replace(
+    profile_datetime = dt.datetime.now().replace(
         hour=profile_time.hour,
         minute=profile_time.minute,
         second=0,
         microsecond=0,
-        tzinfo=datetime.timezone(datetime.timedelta(minutes=tz * 60)),
+        tzinfo=dt.timezone(dt.timedelta(minutes=tz * 60)),
     )
     if level.time < device_time:
-        return profile_datetime + datetime.timedelta(days=1)
+        return profile_datetime + dt.timedelta(days=1)
     return profile_datetime
 
 
@@ -866,7 +914,7 @@ def _profile_next_level(profile_id, entity: HeatmiserNeoEntity) -> ProfileLevel 
     return profile_level(profile_id, entity.data, entity.coordinator, True)
 
 
-def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | None:
+def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> dt.datetime | None:
     """Convert the holiday end to a datetime."""
     holiday = coordinator.live_data.HUB_HOLIDAY
     holiday_end = coordinator.live_data.HOLIDAY_END
@@ -875,10 +923,10 @@ def _holiday_end(coordinator: HeatmiserNeoCoordinator) -> datetime.datetime | No
         return None
 
     try:
-        parsed_datetime = datetime.datetime.strptime(holiday_end, HOLIDAY_FORMAT)
+        parsed_datetime = dt.datetime.strptime(holiday_end, HOLIDAY_FORMAT)
         return parsed_datetime.replace(
-            tzinfo=datetime.timezone(
-                datetime.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)
+            tzinfo=dt.timezone(
+                dt.timedelta(minutes=coordinator.system_data.TIME_ZONE * 60)
             )
         )
     except ValueError:

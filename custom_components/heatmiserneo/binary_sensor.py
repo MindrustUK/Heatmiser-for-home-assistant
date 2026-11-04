@@ -4,13 +4,13 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-import datetime
+import datetime as dt
 from functools import partial
 import logging
 from typing import Any
 
 from neohubapi.neohub import NeoHub, NeoStat
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -63,23 +63,25 @@ def _dates_only_provided_when_setting_away(
         end_val = obj.get(end_key)
         if not state_val:
             # if start_val:
-            #     raise vol.Invalid(
+            #     raise probatio.Invalid(
             #         "Start date should only be specified if setting away."
             #     )
             if end_val:
-                raise vol.Invalid("End date should only be specified if setting away.")
+                raise probatio.Invalid(
+                    "End date should only be specified if setting away."
+                )
         return obj
 
     return validate
 
 
-SET_AWAY_MODE_SCHEMA = vol.Schema(
-    vol.All(
+SET_AWAY_MODE_SCHEMA = probatio.Schema(
+    probatio.All(
         cv.make_entity_service_schema(
             {
-                vol.Required(ATTR_AWAY_STATE, default=False): cv.boolean,
-                # vol.Optional(ATTR_AWAY_START): cv.datetime,
-                vol.Optional(ATTR_AWAY_END): cv.datetime,
+                probatio.Required(ATTR_AWAY_STATE, default=False): cv.boolean,
+                # probatio.Optional(ATTR_AWAY_START): cv.datetime,
+                probatio.Optional(ATTR_AWAY_END): cv.datetime,
             }
         ),
         _dates_only_provided_when_setting_away(ATTR_AWAY_STATE, ATTR_AWAY_END),
@@ -109,7 +111,7 @@ async def async_set_away_mode(
                 away = False
 
             await entity.coordinator.hub.set_holiday(
-                datetime.datetime.now() - datetime.timedelta(days=1), end_date
+                dt.datetime.now() - dt.timedelta(days=1), end_date
             )
             holiday = True
         else:

@@ -110,7 +110,7 @@ async def test_create_manual_legacy(
     # Mock the NeoHub to simulate successful connection
     with (
         patch("custom_components.heatmiserneo.config_flow.NeoHub") as mock_neohub_class,
-        patch("custom_components.heatmiserneo.async_setup_entry") as mock_setup_entry,
+        patch("custom_components.heatmiserneo.async_setup_entry", return_value=None) as mock_setup_entry,
     ):
         mock_hub_instance = mock_neohub_class.return_value
         mock_hub_instance.firmware = AsyncMock(
@@ -164,7 +164,7 @@ async def test_create_manual_websocket(
     # Mock the NeoHub to simulate successful connection
     with (
         patch("custom_components.heatmiserneo.config_flow.NeoHub") as mock_neohub_class,
-        patch("custom_components.heatmiserneo.async_setup_entry") as mock_setup_entry,
+        patch("custom_components.heatmiserneo.async_setup_entry", return_value=None) as mock_setup_entry,
     ):
         mock_hub_instance = mock_neohub_class.return_value
         mock_hub_instance.firmware = AsyncMock(
@@ -223,7 +223,7 @@ async def test_zeroconf_discovery(
     # Mock the NeoHub to simulate successful connection
     with (
         patch("custom_components.heatmiserneo.config_flow.NeoHub") as mock_neohub_class,
-        patch("custom_components.heatmiserneo.async_setup_entry") as mock_setup_entry,
+        patch("custom_components.heatmiserneo.async_setup_entry", return_value=None) as mock_setup_entry,
     ):
         mock_hub_instance = mock_neohub_class.return_value
         mock_hub_instance.firmware = AsyncMock(
@@ -329,7 +329,7 @@ async def test_integration_discovery_using_legacy(
     # Mock the NeoHub to simulate successful connection
     with (
         patch("custom_components.heatmiserneo.config_flow.NeoHub") as mock_neohub_class,
-        patch("custom_components.heatmiserneo.async_setup_entry") as mock_setup_entry,
+        patch("custom_components.heatmiserneo.async_setup_entry", return_value=None) as mock_setup_entry,
     ):
         mock_hub_instance = mock_neohub_class.return_value
         mock_hub_instance.firmware = AsyncMock(

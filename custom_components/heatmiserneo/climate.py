@@ -164,7 +164,7 @@ class NeoStatEntity(
         super().__init__(neostat, coordinator, hub, entity_descriptor, config_entry)
 
         self._attr_native_temperature_unit = unit_of_measurement
-        self._attr_native_target_temperature_step = temperature_step
+        self._attr_target_temperature_step = temperature_step
         self._attr_max_temp = defaults.get(
             CONF_STAT_MAX_TEMPERATURE, neostat.max_temperature_limit
         )

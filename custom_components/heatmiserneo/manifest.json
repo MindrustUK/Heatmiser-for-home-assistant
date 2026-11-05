@@ -1,6 +1,7 @@
 {
   "domain": "heatmiserneo",
   "name": "Heatmiser Neo Climate",
+  "categories": ["climate.thermostats_heating", "plugs_switches"],
   "codeowners": ["@MindrustUK"],
   "config_flow": true,
   "dependencies": ["network"],

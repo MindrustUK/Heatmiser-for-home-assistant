@@ -6,7 +6,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
-from typing import Any
+from typing import Any, override
 
 from neohubapi.neohub import HCMode, NeoHub, NeoStat
 
@@ -163,8 +163,8 @@ class NeoStatEntity(
         """Initialize Heatmiser Neo Climate entity."""
         super().__init__(neostat, coordinator, hub, entity_descriptor, config_entry)
 
-        self._attr_temperature_unit = unit_of_measurement
-        self._attr_target_temperature_step = temperature_step
+        self._attr_native_temperature_unit = unit_of_measurement
+        self._attr_native_target_temperature_step = temperature_step
         self._attr_max_temp = defaults.get(
             CONF_STAT_MAX_TEMPERATURE, neostat.max_temperature_limit
         )
@@ -225,6 +225,7 @@ class NeoStatEntity(
 
         self._attr_hvac_modes = hvac_modes
         self._attr_supported_features = supported_features
+        self._update_hvac_attributes()
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
@@ -299,40 +300,10 @@ class NeoStatEntity(
                     response,
                 )
 
+        # self.coordinator.async_update_listeners()
         # The change of target temperature may trigger a change in the current hvac_action
         # so we schedule a refresh to get new data asap.
         await self.coordinator.async_request_refresh()
-
-    @property
-    def current_temperature(self):
-        """Returns the current temperature."""
-        if self.data.offline:
-            return None
-
-        # Checking for unreasonable temperatures, happens on hub disconnection.
-        # Centigrade
-        if (
-            float(self.data.temperature) < -50.0 or float(self.data.temperature) > 70.0
-        ) and self.temperature_unit == UnitOfTemperature.CELSIUS:
-            _LOGGER.error(
-                "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Centigrade, Hub lost connection?",
-                self.data.name,
-                self.data.temperature,
-            )
-            return None
-
-        # Fahrenheit
-        if (
-            float(self.data.temperature) < -58.0 or float(self.data.temperature) > 158.0
-        ) and self.temperature_unit == UnitOfTemperature.FAHRENHEIT:
-            _LOGGER.error(
-                "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Fahrenheit, Hub lost connection?",
-                self.data.name,
-                self.data.temperature,
-            )
-            return None
-
-        return float(self.data.temperature)
 
     @property
     def extra_state_attributes(self):
@@ -352,40 +323,6 @@ class NeoStatEntity(
         attributes["sensor_mode"] = self.data.sensor_mode
 
         return attributes
-
-    @property
-    def hvac_action(self):
-        # See: https://developers.home-assistant.io/docs/core/entity/climate/
-        """The current HVAC action (heating, cooling)."""
-        if self.data.preheat_active:
-            return HVACAction.PREHEATING
-        if self.data.cool_on:
-            return HVACAction.COOLING
-        if self.data.heat_on:
-            return HVACAction.HEATING
-        if self.data.fan_speed != "Off":
-            return HVACAction.FAN  # Should fan be combined? Ie can you have fan on and other functions together?
-        if self.data.standby or self.data.away or self.data.holiday:
-            if self.data._data_.FROST_TEMP >= 127:
-                # If the frost protection temperature is not set, then the thermostat is truly off.
-                return HVACAction.OFF
-            if self.data.device_type in HEATMISER_TYPE_IDS_HC:
-                if self.hvac_mode in {HVACMode.COOL, HVACMode.FAN_ONLY}:
-                    # NeoStat HC doesn't have frost protection unless in heat or heat_cool
-                    return HVACAction.OFF
-        return HVACAction.IDLE
-
-    @property
-    def hvac_mode(self):
-        """Return The current operation (e.g. heat, cool, idle). Used to determine state."""
-        if self.data.device_type in HEATMISER_TYPE_IDS_HC:
-            if self.data.hc_mode == "COOLING":
-                return HVACMode.COOL
-            if self.data.hc_mode == "AUTO":
-                return HVACMode.HEAT_COOL
-            if self.data.hc_mode == "VENT":
-                return HVACMode.FAN_ONLY
-        return HVACMode.HEAT
 
     async def set_hold(self, hold_duration: timedelta, hold_temperature: float):
         """Set Hold for Zone."""
@@ -428,48 +365,6 @@ class NeoStatEntity(
         await self.coordinator.async_request_refresh()
 
         return result
-
-    @property
-    def target_temperature(self):
-        """Return the temperature we try to reach."""
-        target = float(self.data.target_temperature)
-        if self.hvac_action != HVACAction.OFF and target < 255:
-            return target
-        return None
-
-    @property
-    def target_temperature_high(self):
-        """Return the temperature we try to reach."""
-        target = float(self.data.cool_temp)
-        if self.hvac_action != HVACAction.OFF and target < 255:
-            return target
-        return None
-
-    @property
-    def target_temperature_low(self):
-        """Return the temperature we try to reach."""
-        target = float(self.data.target_temperature)
-        if self.hvac_action != HVACAction.OFF and target < 255:
-            return target
-        return None
-
-    @property
-    def preset_mode(self) -> str:
-        """Return the preset_mode."""
-        if self.data.hold_on:
-            return PRESET_BOOST
-        if self.data.standby:
-            return PRESET_STANDBY
-        if self.data.away or self.data.holiday:
-            return PRESET_AWAY
-        return PRESET_HOME
-
-    @property
-    def fan_mode(self) -> str | None:
-        """Return the fan setting."""
-        if self.data.fan_control != "Manual":
-            return FAN_AUTO
-        return HEATMISER_FAN_SPEED_HA_FAN_MODE.get(self.data.fan_speed, FAN_OFF)
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set the fan mode/speed."""
@@ -528,3 +423,120 @@ class NeoStatEntity(
             device.hold_time = timedelta(minutes=hold_duration)
 
         self.coordinator.async_update_listeners()
+
+    @callback
+    @override
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self._update_hvac_attributes()
+        super()._handle_coordinator_update()
+
+    def _update_hvac_attributes(self) -> None:
+        """Update hvac mode and temperatures from coordinator data."""
+        data = self.data
+        self._attr_hvac_mode = _hvac_mode(data)
+        self._attr_hvac_action = _hvac_action(data, self.hvac_mode)
+        self._attr_preset_mode = _preset_mode(data)
+        self._attr_fan_mode = _fan_mode(data)
+        target = float(data.target_temperature)
+        if self.hvac_action is HVACAction.OFF:
+            self._attr_native_target_temperature = None
+            self._attr_native_target_temperature_high = None
+            self._attr_native_target_temperature_low = None
+        else:
+            target = float(data.target_temperature)
+            if target < 255:
+                self._attr_native_target_temperature = target
+                self._attr_native_target_temperature_low = target
+
+            high_target = float(data.cool_temp)
+            if high_target < 255:
+                self._attr_native_target_temperature_high = high_target
+        self._attr_native_current_temperature = _current_temperature(
+            data, self.native_temperature_unit
+        )
+
+
+def _hvac_mode(data: NeoStat):
+    """Return The current operation (e.g. heat, cool, idle). Used to determine state."""
+    if data.device_type in HEATMISER_TYPE_IDS_HC:
+        if data.hc_mode == "COOLING":
+            return HVACMode.COOL
+        if data.hc_mode == "AUTO":
+            return HVACMode.HEAT_COOL
+        if data.hc_mode == "VENT":
+            return HVACMode.FAN_ONLY
+    return HVACMode.HEAT
+
+
+def _preset_mode(data: NeoStat) -> str:
+    """Return the preset_mode."""
+    if data.hold_on:
+        return PRESET_BOOST
+    if data.standby:
+        return PRESET_STANDBY
+    if data.away or data.holiday:
+        return PRESET_AWAY
+    return PRESET_HOME
+
+
+def _hvac_action(data: NeoStat, hvac_mode: HVACMode):
+    # See: https://developers.home-assistant.io/docs/core/entity/climate/
+    """The current HVAC action (heating, cooling)."""
+    if data.preheat_active:
+        return HVACAction.PREHEATING
+    if data.cool_on:
+        return HVACAction.COOLING
+    if data.heat_on:
+        return HVACAction.HEATING
+    if data.fan_speed != "Off":
+        return HVACAction.FAN  # Should fan be combined? Ie can you have fan on and other functions together?
+    if data.standby or data.away or data.holiday:
+        if data._data_.FROST_TEMP >= 127:
+            # If the frost protection temperature is not set, then the thermostat is truly off.
+            return HVACAction.OFF
+        if data.device_type in HEATMISER_TYPE_IDS_HC:
+            if hvac_mode in {HVACMode.COOL, HVACMode.FAN_ONLY}:
+                # NeoStat HC doesn't have frost protection unless in heat or heat_cool
+                return HVACAction.OFF
+    return HVACAction.IDLE
+
+
+def _fan_mode(data: NeoStat) -> str | None:
+    """Return the fan setting."""
+    if data.fan_control != "Manual":
+        return FAN_AUTO
+    return HEATMISER_FAN_SPEED_HA_FAN_MODE.get(data.fan_speed, FAN_OFF)
+
+
+def _current_temperature(
+    data: NeoStat, temperature_unit: UnitOfTemperature
+) -> float | None:
+    """Returns the current temperature."""
+    if data.offline:
+        return None
+
+    # Checking for unreasonable temperatures, happens on hub disconnection.
+    # Centigrade
+    if (
+        float(data.temperature) < -50.0 or float(data.temperature) > 70.0
+    ) and temperature_unit == UnitOfTemperature.CELSIUS:
+        _LOGGER.error(
+            "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Centigrade, Hub lost connection?",
+            data.name,
+            data.temperature,
+        )
+        return None
+
+    # Fahrenheit
+    if (
+        float(data.temperature) < -58.0 or float(data.temperature) > 158.0
+    ) and temperature_unit == UnitOfTemperature.FAHRENHEIT:
+        _LOGGER.error(
+            "Error: Climate entity '%s' has an invalid current_temperature value: %s degrees Fahrenheit, Hub lost connection?",
+            data.name,
+            data.temperature,
+        )
+        return None
+
+    return float(data.temperature)

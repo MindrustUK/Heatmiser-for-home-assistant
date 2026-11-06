@@ -71,24 +71,28 @@ async def async_set_frost_temperature(entity: HeatmiserNeoEntity, val: float) ->
     """Set the frost temperature on a device."""
     await entity.data.set_frost_temp(val)
     entity.data._data_.FROST_TEMP = val
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_output_delay(entity: HeatmiserNeoEntity, val: float) -> None:
     """Set the output delay on a device."""
     await entity.data.set_output_delay(int(val))
     entity.data._data_.OUTPUT_DELAY = int(val)
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_floor_limit(entity: HeatmiserNeoEntity, val: float) -> None:
     """Set the floor limit temperature on a device."""
     await entity.data.set_floor_limit(int(val))
     entity.data._data_.ENG_FLOOR_LIMIT = int(val)
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_user_limit(entity: HeatmiserNeoEntity, val: float) -> None:
     """Set the user limit temperature on a device."""
     await entity.data.set_user_limit(int(val))
     entity.data._data_.USER_LIMIT = int(val)
+    entity.coordinator.async_update_listeners()
 
 
 NUMBERS: tuple[HeatmiserNeoNumberEntityDescription, ...] = (

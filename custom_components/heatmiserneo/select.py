@@ -235,6 +235,7 @@ async def async_set_dst_mode(coordinator: HeatmiserNeoCoordinator, option: str):
         await async_set_dst(coordinator, option)
         coordinator.system_data.DST_AUTO = True
         coordinator.system_data.TIMEZONESTR = option
+    coordinator.async_update_listeners()
 
 
 def _timer_icon(device: NeoStat) -> str | None:
@@ -283,6 +284,7 @@ async def async_set_switching_differential(
     """Set the switching differential on a device."""
     await entity.data.set_diff(int(val))
     setattr(entity.data._data_, "SWITCHING DIFFERENTIAL", int(val))
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_preheat(
@@ -292,6 +294,7 @@ async def async_set_preheat(
     """Set the maximum preheat time on a device."""
     await entity.data.set_preheat(int(val))
     entity.data._data_.MAX_PREHEAT = int(val)
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_profile(
@@ -322,6 +325,7 @@ async def async_base_set_profile(
     else:
         await entity.data.set_profile_id(profile_id)
     entity.data.active_profile = profile_id
+    entity.coordinator.async_update_listeners()
 
 
 TIMER_SET_MODE = {
@@ -355,13 +359,17 @@ PLUG_SET_MODE = {
 def _timer_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
     function = TIMER_SET_MODE.get(ModeSelectOption(mode))
     assert function
-    return function(entity)
+    ret_val = function(entity)
+    entity.coordinator.async_update_listeners()
+    return ret_val
 
 
 def _plug_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
     function = PLUG_SET_MODE.get(ModeSelectOption(mode))
     assert function
-    return function(entity)
+    ret_val = function(entity)
+    entity.coordinator.async_update_listeners()
+    return ret_val
 
 
 SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (

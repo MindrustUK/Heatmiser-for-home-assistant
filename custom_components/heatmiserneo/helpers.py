@@ -499,3 +499,8 @@ async def async_set_away_mode(
             coordinator.update_in_memory_state(
                 partial(set_away, True), device_supports_away
             )
+
+
+def is_hold_on(device: NeoStat) -> bool:
+    """Check if hold is currently active on the device."""
+    return device.hold_on and device.hold_time.total_seconds() > 0

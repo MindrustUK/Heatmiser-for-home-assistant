@@ -35,7 +35,7 @@ from .entity import (
     async_setup_entities,
     profile_sensor_enabled_by_default,
 )
-from .helpers import async_cancel_away_or_holiday, async_set_away_mode
+from .helpers import async_cancel_away_or_holiday, async_set_away_mode, is_hold_on
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ async def set_timer_auto(entity: HeatmiserNeoEntity):
     assert entity.coordinator.config_entry
     if dev.standby:
         await set_timer_standby(entity.coordinator.config_entry, dev, False)
-    if dev.hold_on:
+    if is_hold_on(dev):
         await set_timer_override(
             entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0
         )
@@ -82,7 +82,7 @@ async def set_timer_away(entity: HeatmiserNeoEntity):
     assert entity.coordinator.config_entry
     if dev.standby:
         await set_timer_standby(entity.coordinator.config_entry, dev, False)
-    if dev.hold_on:
+    if is_hold_on(dev):
         await set_timer_override(
             entity.coordinator.config_entry, dev, dev.hold_temp == 1, 0
         )
@@ -122,7 +122,7 @@ async def set_timer_standby(
     config_entry: HeatmiserNeoConfigEntry, dev: NeoStat, state: bool = True
 ):
     """Set standby mode. Disable hold if set."""
-    if state and dev.hold_on:
+    if state and is_hold_on(dev):
         await set_timer_override(config_entry, dev, dev.hold_temp == 1, 0)
     await dev.set_frost(state)
     dev.standby = state
@@ -201,8 +201,8 @@ def _timer_mode(device: NeoStat) -> ModeSelectOption:
         if device.standby:
             return ModeSelectOption.STANDBY
         return ModeSelectOption.AWAY
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on:
             return ModeSelectOption.OVERRIDE_ON
         return ModeSelectOption.OVERRIDE_OFF
     if device.standby:
@@ -243,8 +243,8 @@ def _timer_icon(device: NeoStat) -> str | None:
         if device.standby:
             return "mdi:timer-off-outline"
         return "mdi:account-arrow-right"
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return "mdi:timer-stop"
         return "mdi:timer-stop-outline"
     if device.standby:
@@ -259,8 +259,8 @@ def _plug_mode(device: NeoStat) -> ModeSelectOption:
         return ModeSelectOption.MANUAL_OFF
     # if device.away or device.holiday:
     #     return ModeSelectOption.AWAY
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return ModeSelectOption.OVERRIDE_ON
         return ModeSelectOption.OVERRIDE_OFF
     return ModeSelectOption.AUTO
@@ -271,8 +271,8 @@ def _plug_icon(device: NeoStat) -> str | None:
         if device.timer_on:
             return "mdi:toggle-switch-variant"
         return "mdi:toggle-switch-variant-off"
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return "mdi:timer-stop"
         return "mdi:timer-stop-outline"
     return "mdi:timer" if device.timer_on else "mdi:timer-outline"

@@ -44,7 +44,7 @@ from .entity import (
     async_setup_entities,
     profile_sensor_enabled_by_default,
 )
-from .helpers import ProfileLevel, TemperatureProfileLevel, profile_level
+from .helpers import ProfileLevel, TemperatureProfileLevel, is_hold_on, profile_level
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.MINUTES,
         value_fn=lambda device: (
             int(device.data.hold_time.total_seconds() / 60)
-            if device.data.hold_on
+            if is_hold_on(device.data)
             else None
         ),
         setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_HOLD,
@@ -180,7 +180,9 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Temperature",
-        value_fn=lambda device: device.data.hold_temp if device.data.hold_on else None,
+        value_fn=lambda device: (
+            device.data.hold_temp if is_hold_on(device.data) else None
+        ),
         setup_filter_fn=lambda device, sys_data: (
             (
                 device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
@@ -199,7 +201,9 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         key="heatmiser_neo_stat_hold_temp_cool",
         device_class=SensorDeviceClass.TEMPERATURE,
         name="Hold Cooling Temperature",
-        value_fn=lambda device: device.data.hold_cool if device.data.hold_on else None,
+        value_fn=lambda device: (
+            device.data.hold_cool if is_hold_on(device.data) else None
+        ),
         setup_filter_fn=lambda device, sys_data: (
             device.device_type in HEATMISER_TYPE_IDS_HC
             and not device.time_clock_mode

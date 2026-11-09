@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Repairs flows for Home Connect."""
 
 import logging

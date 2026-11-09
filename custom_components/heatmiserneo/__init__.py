@@ -75,7 +75,7 @@ async def async_setup(hass: HomeAssistant, hass_config: ConfigType) -> bool:
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: HeatmiserNeoConfigEntry,
-) -> bool:
+) -> None:
     """Set up Heatmiser Neo from a config entry."""
     # Set the Hub up to use and save
     host = entry.data[CONF_HOST]
@@ -114,8 +114,6 @@ async def async_setup_entry(
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 
-    return True
-
 
 async def async_update_options(
     hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
@@ -126,14 +124,13 @@ async def async_update_options(
 
 async def async_unload_entry(
     hass: HomeAssistant, entry: HeatmiserNeoConfigEntry
-) -> bool:
+) -> None:
     """Unload a config entry."""
     hub = entry.runtime_data.hub
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-    await hub.disconnect()
-
-    return unload_ok
+    try:
+        await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
+    finally:
+        await hub.disconnect()
 
 
 async def options_update_listener(

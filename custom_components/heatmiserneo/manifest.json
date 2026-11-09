@@ -1,6 +1,7 @@
 {
   "domain": "heatmiserneo",
   "name": "Heatmiser Neo Climate",
+  "categories": ["climate.thermostats_heating", "plugs_switches"],
   "codeowners": ["@MindrustUK"],
   "config_flow": true,
   "dependencies": ["network"],
@@ -9,7 +10,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MindrustUK/Heatmiser-for-home-assistant/issues",
   "loggers": ["neohub"],
-  "requirements": ["neohubapi==3.2"],
+  "requirements": ["neohubapi==3.3"],
   "version": "v0.0.0",
   "zeroconf": [{ "type": "_hap._tcp.local.", "name": "heatmiser neohub*" }]
 }

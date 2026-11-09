@@ -186,6 +186,14 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         ),
         enabled_by_default_fn=profile_sensor_enabled_by_default,
     ),
+    HeatmiserNeoBinarySensorEntityDescription(
+        key="heatmiser_neo_write_pending",
+        name="Write Pending",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        check_pending_write=False,
+        value_fn=lambda device: device.coordinator.has_write_pending(device.data),
+    ),
 )
 
 HUB_BINARY_SENSORS: tuple[HeatmiserNeoHubBinarySensorEntityDescription, ...] = (

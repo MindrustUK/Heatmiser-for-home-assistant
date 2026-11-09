@@ -33,6 +33,8 @@ type HeatmiserNeoConfigEntry = ConfigEntry[HeatmiserNeoData]
 
 type HeatmiserNeoCoordinatorData = tuple[dict[str, NeoStat], dict[str, Any]]
 
+KNOWN_PENDING_MASKS = (0x80, 0xC0)
+
 
 class HeatmiserNeoCoordinator(DataUpdateCoordinator[HeatmiserNeoCoordinatorData]):
     """Coordinator Class for Heatmiser Neo Hub."""
@@ -53,6 +55,7 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[HeatmiserNeoCoordinatorData]
             config_entry=entry,
         )
         self.previous_device_sns: set[str] = set()
+        self._write_states: dict[str, WriteCountState] = {}
         assert self.config_entry
 
     async def _async_update_data(self) -> HeatmiserNeoCoordinatorData:
@@ -87,6 +90,10 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[HeatmiserNeoCoordinatorData]
                             remove_config_entry_id=self.config_entry.entry_id,
                         )
             self.previous_device_sns = current_device_sns
+
+            for device in devices.values():
+                self._write_pending(device)
+
             return devices, all_live_data
 
     def update_in_memory_state(
@@ -134,6 +141,50 @@ class HeatmiserNeoCoordinator(DataUpdateCoordinator[HeatmiserNeoCoordinatorData]
         (_, all_data) = self.data
         return all_data.get(ATTR_TIMER_PROFILES_0, {})
 
+    def has_write_pending(self, device: NeoStat) -> bool:
+        """Return True if there is a pending write for this device."""
+        serial = device.serial_number
+        state = self._write_states.get(serial)
+        return state.pending if state else False
+
+    def _write_pending(self, device: NeoStat) -> bool:
+        """Return True if HA state updates for this device should be suppressed."""
+        serial = device.serial_number
+        current = device.write_count
+
+        state = self._write_states.get(serial)
+        if state is None:
+            self._write_states[serial] = WriteCountState(
+                last_seen=current,
+                confirmed=current,
+            )
+            return False
+
+        if not state.pending:
+            diff = current ^ state.last_seen
+            if diff in KNOWN_PENDING_MASKS:
+                state.pending = True
+                state.mask = diff
+                state.last_seen = current
+                return True
+
+            # normal change or unchanged
+            state.confirmed = current
+            state.last_seen = current
+            return False
+
+        # currently pending
+        expected_pending = state.confirmed ^ (state.mask or 0)
+        if current == expected_pending:
+            state.last_seen = current
+            return True  # still pending
+
+        # resolved (or unexpected; just accept the new value)
+        state.pending = False
+        state.confirmed = current
+        state.last_seen = current
+        return False
+
 
 @dataclass
 class HeatmiserNeoData:
@@ -141,3 +192,13 @@ class HeatmiserNeoData:
 
     hub: NeoHub
     coordinator: HeatmiserNeoCoordinator
+
+
+@dataclass
+class WriteCountState:
+    """Class to store the write count state."""
+
+    last_seen: int = 0
+    confirmed: int = 0
+    pending: bool = False
+    mask: int | None = None

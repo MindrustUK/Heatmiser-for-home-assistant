@@ -52,6 +52,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
         ]
         | None
     ) = None
+    check_pending_write: bool = True
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -226,6 +227,24 @@ class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
                 self.coordinator.update_in_memory_state(
                     partial(set_away, True), _device_supports_away
                 )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        if (
+            self.entity_description.check_pending_write
+            and self.coordinator.has_write_pending(self.data)
+        ):
+            return
+        self._apply_coordinator_update()
+
+    @callback
+    def _apply_coordinator_update(self) -> None:
+        """Apply coordinator data and write state.
+
+        Subclasses that need extra work before writing state should override
+        this method (not _handle_coordinator_update) and call super() at the end.
+        """
+        super()._handle_coordinator_update()
 
 
 class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](

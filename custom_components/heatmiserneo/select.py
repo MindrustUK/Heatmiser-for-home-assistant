@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
-from typing import Final
+from typing import Final, override
 
 from neohubapi.neohub import NeoHub, NeoStat
 
@@ -582,13 +582,14 @@ class HeatmiserNeoSelectEntity(
         self.coordinator.async_update_listeners()
 
     @callback
-    def _handle_coordinator_update(self) -> None:
+    @override
+    def _apply_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         if self.entity_description.options_fn:
             self._attr_options = self.entity_description.options_fn(self)
         if self.available:
             self._attr_current_option = self.entity_description.value_fn(self)
-        super()._handle_coordinator_update()
+        super()._apply_coordinator_update()
 
 
 class HeatmiserNeoHubSelectEntity(

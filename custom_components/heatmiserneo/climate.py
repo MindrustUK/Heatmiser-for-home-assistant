@@ -135,6 +135,7 @@ CLIMATE: tuple[HeatmiserNeoClimateEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
         ),
+        check_pending_write=False,
     ),
 )
 
@@ -398,14 +399,19 @@ class NeoStatEntity(
 
     @callback
     @override
-    def _handle_coordinator_update(self) -> None:
+    def _apply_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self._update_hvac_attributes()
-        super()._handle_coordinator_update()
+        super()._apply_coordinator_update()
 
     def _update_hvac_attributes(self) -> None:
         """Update hvac mode and temperatures from coordinator data."""
         data = self.data
+        self._attr_native_current_temperature = _current_temperature(
+            data, self.native_temperature_unit
+        )
+        if self.coordinator.has_write_pending(data):
+            return
         self._attr_hvac_mode = _hvac_mode(data)
         self._attr_hvac_action = _hvac_action(data, self.hvac_mode)
         self._attr_preset_mode = _preset_mode(data)
@@ -424,9 +430,6 @@ class NeoStatEntity(
             high_target = float(data.cool_temp)
             if high_target < 255:
                 self._attr_native_target_temperature_high = high_target
-        self._attr_native_current_temperature = _current_temperature(
-            data, self.native_temperature_unit
-        )
 
 
 def _hvac_mode(data: NeoStat):

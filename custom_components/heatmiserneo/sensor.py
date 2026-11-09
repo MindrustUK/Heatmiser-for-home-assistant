@@ -128,6 +128,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        check_pending_write=False,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_stat_current_temperature",
@@ -143,6 +144,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        check_pending_write=False,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_timer_device_temperature",
@@ -159,6 +161,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        check_pending_write=False,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_stat_floor_temp",
@@ -175,6 +178,7 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
         unit_of_measurement_fn=lambda _, sys_data: (
             HEATMISER_TEMPERATURE_UNIT_HA_UNIT.get(sys_data.CORF, None)
         ),
+        check_pending_write=False,
     ),
     HeatmiserNeoSensorEntityDescription(
         key="heatmiser_neo_stat_hold_temp",
@@ -266,6 +270,14 @@ SENSORS: tuple[HeatmiserNeoSensorEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT_NOT_HC
         ),
         enabled_by_default_fn=profile_sensor_enabled_by_default,
+    ),
+    HeatmiserNeoSensorEntityDescription(
+        key="heatmiser_neo_write_count",
+        name="Write Count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda device: device.data.write_count,
+        check_pending_write=False,
     ),
 )
 

@@ -39,6 +39,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     property_exists_fn: Callable[[NeoStat], bool] = lambda device: True
     enabled_by_default_fn: Callable[[HeatmiserNeoEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
+    check_pending_write: bool = False
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -167,6 +168,24 @@ class HeatmiserNeoEntity[DescriptionT: HeatmiserNeoEntityDescription](
         if self.entity_description.enabled_by_default_fn:
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        if (
+            self.entity_description.check_pending_write
+            and self.coordinator.has_write_pending(self.data)
+        ):
+            return
+        self._apply_coordinator_update()
+
+    @callback
+    def _apply_coordinator_update(self) -> None:
+        """Apply coordinator data and write state.
+
+        Subclasses that need extra work before writing state should override
+        this method (not _handle_coordinator_update) and call super() at the end.
+        """
+        super()._handle_coordinator_update()
 
 
 class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](

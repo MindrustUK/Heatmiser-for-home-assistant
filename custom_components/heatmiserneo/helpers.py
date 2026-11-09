@@ -440,3 +440,8 @@ def get_profile_definition(
         result = result | levels
 
     return result
+
+
+def is_hold_on(device: NeoStat) -> bool:
+    """Check if hold is currently active on the device."""
+    return device.hold_on and device.hold_time.total_seconds() > 0

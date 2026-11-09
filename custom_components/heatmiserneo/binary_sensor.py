@@ -45,7 +45,7 @@ from .entity import (
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import TimerProfileLevel, profile_level, set_away, set_holiday
+from .helpers import TimerProfileLevel, is_hold_on, profile_level, set_away, set_holiday
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -217,7 +217,7 @@ BINARY_SENSORS: tuple[HeatmiserNeoBinarySensorEntityDescription, ...] = (
         key="heatmiser_neo_device_hold_active",
         entity_category=EntityCategory.DIAGNOSTIC,
         name="Hold Active",
-        value_fn=lambda device: device.data.hold_on,
+        value_fn=lambda device: is_hold_on(device.data),
         setup_filter_fn=lambda device, _: device.device_type in HEATMISER_TYPE_IDS_HOLD,
     ),
     HeatmiserNeoBinarySensorEntityDescription(

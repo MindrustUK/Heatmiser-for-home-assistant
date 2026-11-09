@@ -135,7 +135,7 @@ async def async_unload_entry(
     try:
         await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
     finally:
-        hub.disconnect()
+        await hub.disconnect()
 
 
 async def options_update_listener(

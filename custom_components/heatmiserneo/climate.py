@@ -58,7 +58,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     async_setup_entities,
 )
-from .helpers import async_cancel_away_or_holiday, async_set_away_mode
+from .helpers import async_cancel_away_or_holiday, async_set_away_mode, is_hold_on
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -386,7 +386,7 @@ class NeoStatEntity(
             )
             hold_on = True
 
-        if device.hold_on != hold_on:
+        if is_hold_on(device) != hold_on:
             hold_hours, hold_minutes = divmod(hold_duration, 60)
             await self._hub.set_hold(hold_temp, hold_hours, hold_minutes, [device])
             device.hold_temp = hold_temp
@@ -443,7 +443,7 @@ def _hvac_mode(data: NeoStat):
 
 def _preset_mode(data: NeoStat) -> str:
     """Return the preset_mode."""
-    if data.hold_on:
+    if is_hold_on(data):
         return PRESET_BOOST
     if data.standby:
         return PRESET_STANDBY

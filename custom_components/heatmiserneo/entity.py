@@ -39,7 +39,7 @@ class HeatmiserNeoEntityDescription(EntityDescription):
     property_exists_fn: Callable[[NeoStat], bool] = lambda device: True
     enabled_by_default_fn: Callable[[HeatmiserNeoEntity], bool] | None = None
     icon_fn: Callable[[NeoStat], str | None] | None = None
-    check_pending_write: bool = False
+    check_pending_write: bool = True
 
 
 @dataclass(frozen=True, kw_only=True)

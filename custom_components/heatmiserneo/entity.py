@@ -217,21 +217,8 @@ class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](
         self._attr_should_poll = False
         self._attr_unique_id = f"{config_entry.unique_id}_{self._key}"
 
-        identifier_key = DOMAIN
-        if unique_id_is_mac(config_entry.unique_id):
-            identifier_key = CONNECTION_NETWORK_MAC
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={
-                (
-                    identifier_key,
-                    config_entry.unique_id,
-                )
-            },
-            name=f"NeoHub - {self._hub._host}",  # noqa: SLF001
-            manufacturer="Heatmiser",
-            model=f"{HEATMISER_HUB_PRODUCT_LIST[self.coordinator.system_data.HUB_TYPE]}",
-            sw_version=str(self.coordinator.system_data.HUB_VERSION),
+        self._attr_device_info = hub_device_info(
+            self._hub, self.coordinator, config_entry
         )
 
     @property
@@ -255,6 +242,26 @@ class HeatmiserNeoHubEntity[DescriptionT: HeatmiserNeoHubEntityDescription](
         if self.entity_description.enabled_by_default_fn:
             return self.entity_description.enabled_by_default_fn(self)
         return super().entity_registry_enabled_default
+
+
+def hub_device_info(
+    hub: NeoHub,
+    coordinator: HeatmiserNeoCoordinator,
+    config_entry: HeatmiserNeoConfigEntry,
+) -> DeviceInfo:
+    """Return device information for the NeoHub."""
+    assert config_entry.unique_id
+    identifier_key = DOMAIN
+    if unique_id_is_mac(config_entry.unique_id):
+        identifier_key = CONNECTION_NETWORK_MAC
+
+    return DeviceInfo(
+        identifiers={(identifier_key, config_entry.unique_id)},
+        name=f"NeoHub - {hub._host}",  # noqa: SLF001
+        manufacturer="Heatmiser",
+        model=HEATMISER_HUB_PRODUCT_LIST[coordinator.system_data.HUB_TYPE],
+        sw_version=str(coordinator.system_data.HUB_VERSION),
+    )
 
 
 def profile_sensor_enabled_by_default(entity: HeatmiserNeoEntity) -> bool:

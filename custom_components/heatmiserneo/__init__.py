@@ -38,6 +38,7 @@ from .discovery import (
     async_trigger_discovery,
     async_update_entry_from_discovery,
 )
+from .entity import hub_device_info
 from .services import async_setup_services
 from .utils import unique_id_is_mac
 
@@ -115,6 +116,10 @@ async def async_setup_entry(
     entry.runtime_data = HeatmiserNeoData(hub, coordinator)
 
     await coordinator.async_config_entry_first_refresh()
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id,
+        device_info=hub_device_info(hub, coordinator, entry),
+    )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))

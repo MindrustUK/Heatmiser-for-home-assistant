@@ -464,7 +464,7 @@ def _hvac_action(data: NeoStat, hvac_mode: HVACMode):
         return HVACAction.COOLING
     if data.heat_on:
         return HVACAction.HEATING
-    if data.fan_speed != "Off":
+    if data.device_type in HEATMISER_TYPE_IDS_HC and data.fan_speed != "Off":
         return HVACAction.FAN  # Should fan be combined? Ie can you have fan on and other functions together?
     if data.standby or data.away or data.holiday:
         if data._data_.FROST_TEMP >= 127:

@@ -1,0 +1,94 @@
+# serializer version: 1
+# name: test_climate_entities[climate.kitchen_kitchen-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <ClimateEntityCapabilityAttribute.HVAC_MODES: 'hvac_modes'>: list([
+        <HVACMode.HEAT: 'heat'>,
+      ]),
+      <ClimateEntityCapabilityAttribute.MAX_TEMP: 'max_temp'>: 20.0,
+      <ClimateEntityCapabilityAttribute.MIN_TEMP: 'min_temp'>: 5.0,
+      <ClimateEntityCapabilityAttribute.PRESET_MODES: 'preset_modes'>: list([
+        'home',
+        'boost',
+        'away',
+        'standby',
+      ]),
+      <ClimateEntityCapabilityAttribute.TARGET_TEMP_STEP: 'target_temp_step'>: 0.5,
+      <ClimateEntityCapabilityAttribute.TEMPERATURE_UNIT: 'temperature_unit'>: <UnitOfTemperature.CELSIUS: '°C'>,
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('heatmiserneo', 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4')]>,
+    'disabled_by': None,
+    'domain': 'climate',
+    'entity_category': None,
+    'entity_id': 'climate.kitchen_kitchen',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': None,
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': None,
+    'platform': 'heatmiserneo',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': <ClimateEntityFeature: 17>,
+    'translation_key': 'heatmiserneo',
+    'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4_heatmiser_neostat',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_climate_entities[climate.kitchen_kitchen-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <ClimateEntityStateAttribute.CURRENT_TEMPERATURE: 'current_temperature'>: 21.0,
+      'device_type': 12,
+      'floor_temperature': 127.5,
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Kitchen',
+      'hc_mode': 'HEATING',
+      'hold_on': False,
+      'hold_temp': 27,
+      'hold_time': '0:00',
+      <ClimateEntityStateAttribute.HVAC_ACTION: 'hvac_action'>: <HVACAction.HEATING: 'heating'>,
+      <ClimateEntityCapabilityAttribute.HVAC_MODES: 'hvac_modes'>: list([
+        <HVACMode.HEAT: 'heat'>,
+      ]),
+      'low_battery': False,
+      <ClimateEntityCapabilityAttribute.MAX_TEMP: 'max_temp'>: 20.0,
+      <ClimateEntityCapabilityAttribute.MIN_TEMP: 'min_temp'>: 5.0,
+      'offline': False,
+      'preheat_active': False,
+      <ClimateEntityStateAttribute.PRESET_MODE: 'preset_mode'>: 'home',
+      <ClimateEntityCapabilityAttribute.PRESET_MODES: 'preset_modes'>: list([
+        'home',
+        'boost',
+        'away',
+        'standby',
+      ]),
+      'sensor_mode': 'BUILT_IN',
+      'standby': False,
+      <EntityStateAttribute.SUPPORTED_FEATURES: 'supported_features'>: <ClimateEntityFeature: 17>,
+      <ClimateEntityCapabilityAttribute.TARGET_TEMP_STEP: 'target_temp_step'>: 0.5,
+      <ClimateEntityStateAttribute.TARGET_TEMPERATURE: 'temperature'>: 21.5,
+      <ClimateEntityCapabilityAttribute.TEMPERATURE_UNIT: 'temperature_unit'>: <UnitOfTemperature.CELSIUS: '°C'>,
+    }),
+    'context': <ANY>,
+    'entity_id': 'climate.kitchen_kitchen',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'heat',
+  })
+# ---

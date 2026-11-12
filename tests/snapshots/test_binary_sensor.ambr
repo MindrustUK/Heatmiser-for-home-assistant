@@ -371,59 +371,6 @@
     'state': 'off',
   })
 # ---
-# name: test_binary_sensor_entities[binary_sensor.hot_water_hot_water_write_pending-entry]
-  EntityRegistryEntrySnapshot({
-    'aliases': list([
-      None,
-    ]),
-    'area_id': None,
-    'capabilities': None,
-    'config_entry_id': <ANY>,
-    'config_subentry_id': None,
-    'device_class': None,
-    'device_id': <DeviceEntry identifiers=[('heatmiserneo', 'aa:bb:cc:dd:ee:ff_REDACTED-SN-1')]>,
-    'disabled_by': None,
-    'domain': 'binary_sensor',
-    'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
-    'entity_id': 'binary_sensor.hot_water_hot_water_write_pending',
-    'has_entity_name': True,
-    'hidden_by': None,
-    'icon': None,
-    'id': <ANY>,
-    'labels': set({
-    }),
-    'name': None,
-    'object_id_base': 'Write Pending',
-    'options': dict({
-    }),
-    'original_device_class': None,
-    'original_icon': None,
-    'original_name': 'Write Pending',
-    'platform': 'heatmiserneo',
-    'previous_unique_id': None,
-    'suggested_object_id': None,
-    'supported_features': 0,
-    'translation_key': None,
-    'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-1_heatmiser_neo_write_pending',
-    'unit_of_measurement': None,
-  })
-# ---
-# name: test_binary_sensor_entities[binary_sensor.hot_water_hot_water_write_pending-state]
-  StateSnapshot({
-    'attributes': ReadOnlyDict({
-      'device_id': 7,
-      'device_type': 12,
-      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Hot Water Write Pending',
-      'offline': False,
-    }),
-    'context': <ANY>,
-    'entity_id': 'binary_sensor.hot_water_hot_water_write_pending',
-    'last_changed': <ANY>,
-    'last_reported': <ANY>,
-    'last_updated': <ANY>,
-    'state': 'off',
-  })
-# ---
 # name: test_binary_sensor_entities[binary_sensor.kitchen_kitchen_away-entry]
   EntityRegistryEntrySnapshot({
     'aliases': list([
@@ -688,59 +635,6 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': 'on',
-  })
-# ---
-# name: test_binary_sensor_entities[binary_sensor.kitchen_kitchen_write_pending-entry]
-  EntityRegistryEntrySnapshot({
-    'aliases': list([
-      None,
-    ]),
-    'area_id': None,
-    'capabilities': None,
-    'config_entry_id': <ANY>,
-    'config_subentry_id': None,
-    'device_class': None,
-    'device_id': <DeviceEntry identifiers=[('heatmiserneo', 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4')]>,
-    'disabled_by': None,
-    'domain': 'binary_sensor',
-    'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
-    'entity_id': 'binary_sensor.kitchen_kitchen_write_pending',
-    'has_entity_name': True,
-    'hidden_by': None,
-    'icon': None,
-    'id': <ANY>,
-    'labels': set({
-    }),
-    'name': None,
-    'object_id_base': 'Write Pending',
-    'options': dict({
-    }),
-    'original_device_class': None,
-    'original_icon': None,
-    'original_name': 'Write Pending',
-    'platform': 'heatmiserneo',
-    'previous_unique_id': None,
-    'suggested_object_id': None,
-    'supported_features': 0,
-    'translation_key': None,
-    'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4_heatmiser_neo_write_pending',
-    'unit_of_measurement': None,
-  })
-# ---
-# name: test_binary_sensor_entities[binary_sensor.kitchen_kitchen_write_pending-state]
-  StateSnapshot({
-    'attributes': ReadOnlyDict({
-      'device_id': 1,
-      'device_type': 12,
-      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Kitchen Write Pending',
-      'offline': False,
-    }),
-    'context': <ANY>,
-    'entity_id': 'binary_sensor.kitchen_kitchen_write_pending',
-    'last_changed': <ANY>,
-    'last_reported': <ANY>,
-    'last_updated': <ANY>,
-    'state': 'off',
   })
 # ---
 # name: test_binary_sensor_entities[binary_sensor.neohub_test_hub_away-entry]

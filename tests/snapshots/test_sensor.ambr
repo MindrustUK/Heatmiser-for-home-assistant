@@ -172,59 +172,6 @@
     'state': '2026-11-11T17:30:00+00:00',
   })
 # ---
-# name: test_sensor_entities[sensor.hot_water_hot_water_write_count-entry]
-  EntityRegistryEntrySnapshot({
-    'aliases': list([
-      None,
-    ]),
-    'area_id': None,
-    'capabilities': None,
-    'config_entry_id': <ANY>,
-    'config_subentry_id': None,
-    'device_class': None,
-    'device_id': <DeviceEntry identifiers=[('heatmiserneo', 'aa:bb:cc:dd:ee:ff_REDACTED-SN-1')]>,
-    'disabled_by': None,
-    'domain': 'sensor',
-    'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
-    'entity_id': 'sensor.hot_water_hot_water_write_count',
-    'has_entity_name': True,
-    'hidden_by': None,
-    'icon': None,
-    'id': <ANY>,
-    'labels': set({
-    }),
-    'name': None,
-    'object_id_base': 'Write Count',
-    'options': dict({
-    }),
-    'original_device_class': None,
-    'original_icon': None,
-    'original_name': 'Write Count',
-    'platform': 'heatmiserneo',
-    'previous_unique_id': None,
-    'suggested_object_id': None,
-    'supported_features': 0,
-    'translation_key': None,
-    'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-1_heatmiser_neo_write_count',
-    'unit_of_measurement': None,
-  })
-# ---
-# name: test_sensor_entities[sensor.hot_water_hot_water_write_count-state]
-  StateSnapshot({
-    'attributes': ReadOnlyDict({
-      'device_id': 7,
-      'device_type': 12,
-      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Hot Water Write Count',
-      'offline': False,
-    }),
-    'context': <ANY>,
-    'entity_id': 'sensor.hot_water_hot_water_write_count',
-    'last_changed': <ANY>,
-    'last_reported': <ANY>,
-    'last_updated': <ANY>,
-    'state': '152',
-  })
-# ---
 # name: test_sensor_entities[sensor.kitchen_kitchen_current_temperature-entry]
   EntityRegistryEntrySnapshot({
     'aliases': list([
@@ -511,59 +458,6 @@
     'translation_key': None,
     'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4_heatmiser_neo_profile_next_time',
     'unit_of_measurement': None,
-  })
-# ---
-# name: test_sensor_entities[sensor.kitchen_kitchen_write_count-entry]
-  EntityRegistryEntrySnapshot({
-    'aliases': list([
-      None,
-    ]),
-    'area_id': None,
-    'capabilities': None,
-    'config_entry_id': <ANY>,
-    'config_subentry_id': None,
-    'device_class': None,
-    'device_id': <DeviceEntry identifiers=[('heatmiserneo', 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4')]>,
-    'disabled_by': None,
-    'domain': 'sensor',
-    'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
-    'entity_id': 'sensor.kitchen_kitchen_write_count',
-    'has_entity_name': True,
-    'hidden_by': None,
-    'icon': None,
-    'id': <ANY>,
-    'labels': set({
-    }),
-    'name': None,
-    'object_id_base': 'Write Count',
-    'options': dict({
-    }),
-    'original_device_class': None,
-    'original_icon': None,
-    'original_name': 'Write Count',
-    'platform': 'heatmiserneo',
-    'previous_unique_id': None,
-    'suggested_object_id': None,
-    'supported_features': 0,
-    'translation_key': None,
-    'unique_id': 'aa:bb:cc:dd:ee:ff_REDACTED-SN-4_heatmiser_neo_write_count',
-    'unit_of_measurement': None,
-  })
-# ---
-# name: test_sensor_entities[sensor.kitchen_kitchen_write_count-state]
-  StateSnapshot({
-    'attributes': ReadOnlyDict({
-      'device_id': 1,
-      'device_type': 12,
-      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Kitchen Write Count',
-      'offline': False,
-    }),
-    'context': <ANY>,
-    'entity_id': 'sensor.kitchen_kitchen_write_count',
-    'last_changed': <ANY>,
-    'last_reported': <ANY>,
-    'last_updated': <ANY>,
-    'state': '146',
   })
 # ---
 # name: test_sensor_entities[sensor.neohub_test_hub_away_end-entry]

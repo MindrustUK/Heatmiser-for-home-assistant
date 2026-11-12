@@ -13,6 +13,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 
+@pytest.mark.freeze_time("2026-11-11 21:00:00+00:00")
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_sensor_entities(
     hass: HomeAssistant,

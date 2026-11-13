@@ -1,5 +1,6 @@
 {
   "name": "Heatmiser Neo Integration",
+  "homeassistant": "2026.11.0",
   "render_readme": true,
   "zip_release": true,
   "filename": "heatmiserneo.zip",

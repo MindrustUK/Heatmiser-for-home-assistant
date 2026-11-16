@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import logging
 import re
-from typing import Any
+from typing import Any, override
 
 from neohubapi.neohub import NeoHub, NeoStat
 
@@ -145,10 +145,11 @@ class HeatmiserNeoLockEntity(
         self.coordinator.async_update_listeners()
 
     @callback
-    def _handle_coordinator_update(self) -> None:
+    @override
+    def _apply_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self._update()
-        super()._handle_coordinator_update()
+        super()._apply_coordinator_update()
 
     def _update(self):
         if self.entity_description.default_pin_fn:

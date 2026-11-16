@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-only
 """Heatmiser NeoStat control via Heatmiser Neo-hub."""
 
-import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import timedelta
@@ -65,6 +64,7 @@ from .entity import (
     HeatmiserNeoEntityDescription,
     async_setup_entities,
 )
+from .helpers import is_hold_on
 from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
@@ -160,6 +160,7 @@ CLIMATE: tuple[HeatmiserNeoClimateEntityDescription, ...] = (
             device.device_type in HEATMISER_TYPE_IDS_THERMOSTAT
             and not device.time_clock_mode
         ),
+        check_pending_write=False,
     ),
 )
 
@@ -278,15 +279,9 @@ class NeoStatEntity(
             _LOGGER.warning("No mapping for mode %s", hvac_mode)
             return None
 
-        set_hc_mode_task = asyncio.create_task(self.data.set_hc_mode(hc_mode))
-        response = await set_hc_mode_task
-        _LOGGER.info(
-            "%s : Called set_hc_mode() with: %s (response: %s)",
-            self.name,
-            hc_mode,
-            response,
-        )
+        await self.data.set_hc_mode(hc_mode)
         self.data.hc_mode = hc_mode
+
         self.coordinator.async_update_listeners()
         return await self.coordinator.async_request_refresh()
 
@@ -299,32 +294,14 @@ class NeoStatEntity(
         high_temp = kwargs.get(ATTR_TARGET_TEMP_HIGH)
 
         if low_temp:
-            set_target_temperature_task = asyncio.create_task(
-                self.data.set_target_temperature(low_temp)
-            )
-            response = await set_target_temperature_task
-            if response:
-                _LOGGER.info(
-                    "%s : Called set_target_temperature with: %s (response: %s)",
-                    self.name,
-                    low_temp,
-                    response,
-                )
+            await self.data.set_target_temperature(low_temp)
+            self.data.target_temperature = low_temp
 
         if high_temp:
-            set_target_cool_temperature_task = asyncio.create_task(
-                self.data.set_cool_temp(high_temp)
-            )
-            response = await set_target_cool_temperature_task
-            if response:
-                _LOGGER.info(
-                    "%s : Called set_cool_temp with: %s (response: %s)",
-                    self.name,
-                    high_temp,
-                    response,
-                )
+            await self.data.set_cool_temp(high_temp)
+            self.data.cool_temp = high_temp
 
-        # self.coordinator.async_update_listeners()
+        self.coordinator.async_update_listeners()
         # The change of target temperature may trigger a change in the current hvac_action
         # so we schedule a refresh to get new data asap.
         await self.coordinator.async_request_refresh()
@@ -362,7 +339,7 @@ class NeoStatEntity(
         hold_minutes = min(hold_minutes, 60 * 99)
         hold_hours, hold_minutes = divmod(hold_minutes, 60)
 
-        result = await self._hub.set_hold(
+        await self._hub.set_hold(
             hold_temperature, hold_hours, hold_minutes, [self.data]
         )
 
@@ -375,11 +352,9 @@ class NeoStatEntity(
         self.coordinator.async_update_listeners()
         await self.coordinator.async_request_refresh()
 
-        return result
-
     async def unset_hold(self):
         """Unsets Hold for Zone."""
-        result = await self._hub.set_hold(self.data.hold_temp, 0, 0, [self.data])
+        await self._hub.set_hold(self.data.hold_temp, 0, 0, [self.data])
 
         # Optimistically update the mode so that the UI feels snappy.
         # The value will be confirmed next time we get new data.
@@ -387,8 +362,6 @@ class NeoStatEntity(
         self.data.hold_time = timedelta(minutes=0)
         self.coordinator.async_update_listeners()
         await self.coordinator.async_request_refresh()
-
-        return result
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set the fan mode/speed."""
@@ -434,7 +407,7 @@ class NeoStatEntity(
             )
             hold_on = True
 
-        if device.hold_on != hold_on:
+        if is_hold_on(device) != hold_on:
             hold_hours, hold_minutes = divmod(hold_duration, 60)
             await self._hub.set_hold(hold_temp, hold_hours, hold_minutes, [device])
             device.hold_temp = hold_temp
@@ -442,17 +415,23 @@ class NeoStatEntity(
             device.hold_time = timedelta(minutes=hold_duration)
 
         self.coordinator.async_update_listeners()
+        await self.coordinator.async_request_refresh()
 
     @callback
     @override
-    def _handle_coordinator_update(self) -> None:
+    def _apply_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self._update_hvac_attributes()
-        super()._handle_coordinator_update()
+        super()._apply_coordinator_update()
 
     def _update_hvac_attributes(self) -> None:
         """Update hvac mode and temperatures from coordinator data."""
         data = self.data
+        self._attr_native_current_temperature = _current_temperature(
+            data, self.native_temperature_unit
+        )
+        if self.coordinator.has_write_pending(data):
+            return
         self._attr_hvac_mode = _hvac_mode(data)
         self._attr_hvac_action = _hvac_action(data, self.hvac_mode)
         self._attr_preset_mode = _preset_mode(data)
@@ -471,9 +450,6 @@ class NeoStatEntity(
             high_target = float(data.cool_temp)
             if high_target < 255:
                 self._attr_native_target_temperature_high = high_target
-        self._attr_native_current_temperature = _current_temperature(
-            data, self.native_temperature_unit
-        )
 
 
 def _hvac_mode(data: NeoStat):
@@ -490,7 +466,7 @@ def _hvac_mode(data: NeoStat):
 
 def _preset_mode(data: NeoStat) -> str:
     """Return the preset_mode."""
-    if data.hold_on:
+    if is_hold_on(data):
         return PRESET_BOOST
     if data.standby:
         return PRESET_STANDBY

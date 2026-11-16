@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
-from typing import Final
+from typing import Final, override
 
 from neohubapi.neohub import NeoHub, NeoStat
 import probatio
@@ -44,7 +44,7 @@ from .entity import (
     call_custom_action,
     profile_sensor_enabled_by_default,
 )
-from .helpers import get_profile_definition
+from .helpers import get_profile_definition, is_hold_on
 from .utils import hold_duration_validation
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ async def set_timer_auto(entity: HeatmiserNeoEntity):
     dev = entity.data
     if dev.standby:
         await set_timer_standby(entity, False)
-    if dev.hold_on:
+    if is_hold_on(dev):
         await set_timer_override(entity, dev.hold_temp == 1, 0)
     await entity.async_cancel_away_or_holiday()
 
@@ -86,7 +86,7 @@ async def set_timer_away(entity: HeatmiserNeoEntity):
     dev = entity.data
     if dev.standby:
         await set_timer_standby(entity, False)
-    if dev.hold_on:
+    if is_hold_on(dev):
         await set_timer_override(entity, dev.hold_temp == 1, 0)
     await entity.async_set_away_mode()
 
@@ -122,7 +122,7 @@ async def set_timer_override(
 async def set_timer_standby(entity: HeatmiserNeoEntity, state: bool = True):
     """Set standby mode. Disable hold if set."""
     dev = entity.data
-    if state and dev.hold_on:
+    if state and is_hold_on(dev):
         await set_timer_override(entity, dev.hold_temp == 1, 0)
     await dev.set_frost(state)
     dev.standby = state
@@ -196,8 +196,8 @@ def _timer_mode(device: NeoStat) -> ModeSelectOption:
         if device.standby:
             return ModeSelectOption.STANDBY
         return ModeSelectOption.AWAY
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on:
             return ModeSelectOption.OVERRIDE_ON
         return ModeSelectOption.OVERRIDE_OFF
     if device.standby:
@@ -230,6 +230,7 @@ async def async_set_dst_mode(coordinator: HeatmiserNeoCoordinator, option: str):
         await async_set_dst(coordinator, option)
         coordinator.system_data.DST_AUTO = True
         coordinator.system_data.TIMEZONESTR = option
+    coordinator.async_update_listeners()
 
 
 def _timer_icon(device: NeoStat) -> str | None:
@@ -237,8 +238,8 @@ def _timer_icon(device: NeoStat) -> str | None:
         if device.standby:
             return "mdi:timer-off-outline"
         return "mdi:account-arrow-right"
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return "mdi:timer-stop"
         return "mdi:timer-stop-outline"
     if device.standby:
@@ -253,8 +254,8 @@ def _plug_mode(device: NeoStat) -> ModeSelectOption:
         return ModeSelectOption.MANUAL_OFF
     # if device.away or device.holiday:
     #     return ModeSelectOption.AWAY
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return ModeSelectOption.OVERRIDE_ON
         return ModeSelectOption.OVERRIDE_OFF
     return ModeSelectOption.AUTO
@@ -265,8 +266,8 @@ def _plug_icon(device: NeoStat) -> str | None:
         if device.timer_on:
             return "mdi:toggle-switch-variant"
         return "mdi:toggle-switch-variant-off"
-    if device.hold_on:
-        if device.hold_temp == 1:
+    if is_hold_on(device):
+        if device.timer_on == 1:
             return "mdi:timer-stop"
         return "mdi:timer-stop-outline"
     return "mdi:timer" if device.timer_on else "mdi:timer-outline"
@@ -296,6 +297,7 @@ async def async_set_switching_differential(
     """Set the switching differential on a device."""
     await entity.data.set_diff(int(val))
     setattr(entity.data._data_, "SWITCHING DIFFERENTIAL", int(val))
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_preheat(
@@ -305,6 +307,7 @@ async def async_set_preheat(
     """Set the maximum preheat time on a device."""
     await entity.data.set_preheat(int(val))
     entity.data._data_.MAX_PREHEAT = int(val)
+    entity.coordinator.async_update_listeners()
 
 
 async def async_set_profile(
@@ -335,6 +338,7 @@ async def async_base_set_profile(
     else:
         await entity.data.set_profile_id(profile_id)
     entity.data.active_profile = profile_id
+    entity.coordinator.async_update_listeners()
 
 
 async def _async_get_profile_definition(
@@ -372,13 +376,17 @@ PLUG_SET_MODE = {
 def _timer_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
     function = TIMER_SET_MODE.get(ModeSelectOption(mode))
     assert function
-    return function(entity)
+    ret_val = function(entity)
+    entity.coordinator.async_update_listeners()
+    return ret_val
 
 
 def _plug_set_mode(mode: str, entity: HeatmiserNeoEntity) -> Awaitable[None]:
     function = PLUG_SET_MODE.get(ModeSelectOption(mode))
     assert function
-    return function(entity)
+    ret_val = function(entity)
+    entity.coordinator.async_update_listeners()
+    return ret_val
 
 
 SELECT: Final[tuple[HeatmiserNeoSelectEntityDescription, ...]] = (
@@ -619,13 +627,14 @@ class HeatmiserNeoSelectEntity(
         self.coordinator.async_update_listeners()
 
     @callback
-    def _handle_coordinator_update(self) -> None:
+    @override
+    def _apply_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         if self.entity_description.options_fn:
             self._attr_options = self.entity_description.options_fn(self)
         if self.available:
             self._attr_current_option = self.entity_description.value_fn(self)
-        super()._handle_coordinator_update()
+        super()._apply_coordinator_update()
 
 
 class HeatmiserNeoHubSelectEntity(
